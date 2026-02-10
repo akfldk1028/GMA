@@ -24,14 +24,8 @@ dependencies:
   # PDF Viewer
   pdfrx: ^2.2.0
 
-  # HTTP
-  dio: ^5.7.0
-
   # Local Storage
   hive_flutter: ^1.1.0
-
-  # Secure Storage
-  flutter_secure_storage: ^9.2.2
 
   # Model
   freezed_annotation: ^2.4.4
