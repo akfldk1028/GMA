@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../constants/marker_colors.dart';
 import '../../../../utils/note_storage_service.dart';
+import '../../../note_editor/pages/providers/note_editor_provider.dart';
 import '../../models/pdf_marker_model.dart';
 import '../../models/workspace_state.dart';
 
@@ -137,6 +138,18 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     state = AsyncData(
       currentState.copyWith(markers: updatedMarkers),
     );
+
+    // Insert marker into note editor if a note is currently loaded
+    final currentNoteId = currentState.currentNoteId;
+    if (currentNoteId != null && selectedText != null) {
+      await ref
+          .read(noteEditorProvider(currentNoteId).notifier)
+          .insertMarker(
+            color: color,
+            pageNumber: pageNumber,
+            text: selectedText,
+          );
+    }
 
     return marker;
   }
