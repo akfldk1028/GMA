@@ -1,9 +1,11 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../constants/marker_colors.dart';
+import '../../../workspace/pages/providers/workspace_provider.dart';
 import '../../models/pdf_marker_model.dart' as model;
 import '../providers/pdf_document_provider.dart';
 import '../providers/pdf_marker_provider.dart';
@@ -47,6 +49,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   String? _selectedText;
   int? _selectedPageNumber;
   PdfRect? _selectedTextRect;
+
 
   @override
   Widget build(BuildContext context) {
@@ -309,25 +312,100 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     );
   }
 
+  /// Load a PDF file from path into both workspace and document provider
+  Future<void> _loadPdfFromPath(String pdfPath) async {
+    final filename = pdfPath.split(RegExp(r'[/\\]')).last;
+    try {
+      await ref.read(workspaceProviderProvider.notifier).loadPdf(pdfPath);
+      await ref.read(pdfDocumentProvider.notifier).loadFromFile(pdfPath);
+
+      if (mounted) {
+        ShadToaster.of(context).show(
+          ShadToast(
+            title: const Text('PDF Loaded'),
+            description: Text('Opened $filename'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ShadToaster.of(context).show(
+          ShadToast.destructive(
+            title: const Text('Failed to open PDF'),
+            description: Text(e.toString()),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Handle PDF file selection from empty state
+  Future<void> _handleOpenPdf() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        dialogTitle: 'Select PDF File',
+      );
+
+      if (result != null && result.files.single.path != null) {
+        await _loadPdfFromPath(result.files.single.path!);
+      }
+    } catch (e) {
+      if (mounted) {
+        ShadToaster.of(context).show(
+          ShadToast.destructive(
+            title: const Text('Failed to open PDF'),
+            description: Text(e.toString()),
+          ),
+        );
+      }
+    }
+  }
+
   /// Build empty state when no PDF is loaded.
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.picture_as_pdf_outlined,
-            size: 64,
-            color: Colors.grey.shade400,
-          ),
-          const SizedBox(height: 16),
-          Text('No PDF loaded', style: ShadTheme.of(context).textTheme.h3),
-          const SizedBox(height: 8),
-          Text(
-            'Open a PDF file to start viewing and annotating',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-          ),
-        ],
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: ShadTheme.of(context).colorScheme.border,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.picture_as_pdf_outlined,
+              size: 72,
+              color: ShadTheme.of(context).colorScheme.mutedForeground,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No PDF loaded',
+              style: ShadTheme.of(context).textTheme.h3,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Open a PDF file to start viewing and annotating',
+              style: ShadTheme.of(context).textTheme.muted,
+            ),
+            const SizedBox(height: 24),
+            ShadButton(
+              onPressed: _handleOpenPdf,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.folder_open, size: 18),
+                  SizedBox(width: 8),
+                  Text('Open PDF'),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

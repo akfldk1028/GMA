@@ -7,7 +7,6 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../models/note_metadata_model.dart';
 import '../providers/note_list_provider.dart';
-import '../widgets/file_tree_widget.dart';
 import '../widgets/note_create_dialog.dart';
 import '../widgets/note_list_item.dart';
 
@@ -130,143 +129,83 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
             );
           }
 
-          return Row(
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left panel: File tree
-              Expanded(
-                flex: 2,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      right: BorderSide(
-                        color: theme.colorScheme.border,
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          'Files',
-                          style: theme.textTheme.large.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const Divider(height: 1),
-                      Expanded(
-                        child: FileTreeWidget(
-                          notes: notes,
-                          onNoteSelected: (note) => _handleNoteSelected(context, note),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Right panel: Note list with search
-              Expanded(
-                flex: 3,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Header with note count + create button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                child: Row(
                   children: [
-                    // Header with note count
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Notes',
-                            style: theme.textTheme.large.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            '${notes.length} ${notes.length == 1 ? 'note' : 'notes'}',
-                            style: theme.textTheme.muted,
-                          ),
-                        ],
+                    Text(
+                      'Notes',
+                      style: theme.textTheme.small.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    // Search bar
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: ShadInput(
-                              controller: _searchController,
-                              placeholder: const Text('Search notes...'),
-                            ),
-                          ),
-                          if (isSearchActive) ...[
-                            const SizedBox(width: 8),
-                            ShadButton.outline(
-                              size: ShadButtonSize.sm,
-                              onPressed: _clearSearch,
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.close, size: 16),
-                                  SizedBox(width: 4),
-                                  Text('Clear'),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '(${notes.length})',
+                      style: theme.textTheme.muted.copyWith(fontSize: 11),
                     ),
-                    const SizedBox(height: 12),
-                    const Divider(height: 1),
-                    // Note list
-                    Expanded(
-                      child: notes.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.search_off,
-                                    size: 48,
-                                    color: theme.colorScheme.mutedForeground,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'No notes match your search',
-                                    style: theme.textTheme.muted,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  ShadButton.outline(
-                                    size: ShadButtonSize.sm,
-                                    onPressed: _clearSearch,
-                                    child: const Text('Clear search'),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: notes.length,
-                              itemBuilder: (context, index) {
-                                final note = notes[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: NoteListItem(
-                                    note: note,
-                                    onTap: () =>
-                                        _handleNoteSelected(context, note),
-                                  ),
-                                );
-                              },
-                            ),
+                    const Spacer(),
+                    ShadButton.outline(
+                      size: ShadButtonSize.sm,
+                      onPressed: () => _showCreateNoteDialog(context),
+                      child: const Icon(Icons.add, size: 16),
                     ),
                   ],
                 ),
+              ),
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: ShadInput(
+                  controller: _searchController,
+                  placeholder: const Text('Search...'),
+                ),
+              ),
+              if (isSearchActive)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  child: ShadButton.outline(
+                    size: ShadButtonSize.sm,
+                    onPressed: _clearSearch,
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.close, size: 14),
+                        SizedBox(width: 4),
+                        Text('Clear'),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Divider(height: 1, color: theme.colorScheme.border),
+              // Note list
+              Expanded(
+                child: notes.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No notes match your search',
+                          style: theme.textTheme.muted.copyWith(fontSize: 12),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(8),
+                        itemCount: notes.length,
+                        itemBuilder: (context, index) {
+                          final note = notes[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: NoteListItem(
+                              note: note,
+                              onTap: () => _handleNoteSelected(context, note),
+                            ),
+                          );
+                        },
+                      ),
               ),
             ],
           );
@@ -309,11 +248,6 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
             ],
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCreateNoteDialog(context),
-        tooltip: 'Create Note',
-        child: const Icon(Icons.add),
       ),
     );
   }

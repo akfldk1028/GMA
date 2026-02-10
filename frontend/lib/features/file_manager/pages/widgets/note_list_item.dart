@@ -88,57 +88,59 @@ class NoteListItem extends ConsumerWidget {
             : note.previewText!)
         : 'No preview available';
 
-    return ShadCard(
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: () => _showDeleteConfirmation(context, ref),
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title row with PDF indicator
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      note.title,
-                      style: theme.textTheme.large.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+    return InkWell(
+      onTap: onTap,
+      onLongPress: () => _showDeleteConfirmation(context, ref),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: theme.colorScheme.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title with optional PDF indicator
+            Row(
+              children: [
+                if (note.hasLinkedPdf) ...[
+                  Icon(
+                    Icons.picture_as_pdf,
+                    size: 14,
+                    color: theme.colorScheme.primary,
                   ),
-                  if (note.hasLinkedPdf) ...[
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.picture_as_pdf,
-                      size: 18,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ],
+                  const SizedBox(width: 6),
                 ],
-              ),
-              const SizedBox(height: 6),
-              // Modified date
-              Text(
-                _dateFormatter.format(note.modifiedAt),
-                style: theme.textTheme.muted.copyWith(
-                  fontSize: 12,
+                Expanded(
+                  child: Text(
+                    note.title,
+                    style: theme.textTheme.small.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              // Preview text
-              Text(
-                previewText,
-                style: theme.textTheme.small,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            // Modified date
+            Text(
+              _dateFormatter.format(note.modifiedAt),
+              style: theme.textTheme.muted.copyWith(fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            // Preview text
+            Text(
+              previewText,
+              style: theme.textTheme.muted.copyWith(fontSize: 11),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );

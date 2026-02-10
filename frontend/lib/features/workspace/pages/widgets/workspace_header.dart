@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/workspace_provider.dart';
 
@@ -36,8 +37,9 @@ class WorkspaceHeader extends ConsumerWidget {
       if (result != null && result.files.single.path != null) {
         final pdfPath = result.files.single.path!;
 
-        // Load PDF into workspace
+        // Load PDF into workspace state and document provider
         await ref.read(workspaceProviderProvider.notifier).loadPdf(pdfPath);
+        await ref.read(pdfDocumentProvider.notifier).loadFromFile(pdfPath);
 
         // Show success toast
         if (context.mounted) {

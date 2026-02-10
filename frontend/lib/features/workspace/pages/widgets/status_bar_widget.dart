@@ -44,12 +44,14 @@ class StatusBarWidget extends ConsumerWidget {
     final pdfFilename = pdfPath != null ? _extractFilename(pdfPath) : null;
     final isPdfConnected = pdfPath != null;
 
-    // Get page info from PDF document provider
-    final currentPage = pdfDocState.controller?.pageNumber;
-    final pageCount = pdfDocState.controller?.pageCount;
+    // Get page info from PDF document provider (only when controller is ready)
+    final pdfController = pdfDocState.controller;
+    final isReady = pdfController != null && pdfController.isReady;
+    final currentPage = isReady ? pdfController.pageNumber : null;
+    final pageCount = isReady ? pdfController.pageCount : null;
 
-    // Get zoom level from controller if available
-    final zoom = controller?.currentZoom ?? pdfDocState.controller?.currentZoom;
+    // Get zoom level from controller if available (only when ready)
+    final zoom = isReady ? pdfController.currentZoom : null;
 
     return Container(
       height: 28,
