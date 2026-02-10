@@ -6,7 +6,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../constants/marker_colors.dart';
 import '../../../workspace/pages/providers/workspace_provider.dart';
-import '../../models/pdf_marker_model.dart' as model;
+import '../../models/pdf_marker_model.dart' as local_model;
 import '../providers/pdf_document_provider.dart';
 import '../providers/pdf_marker_provider.dart';
 import '../widgets/pdf_page_overlay.dart';
@@ -124,16 +124,6 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     }
   }
 
-  /// Convert pdfrx PdfRect to our model's PdfRect.
-  model.PdfRect _convertPdfRectToModel(PdfRect pdfRect) {
-    return model.PdfRect(
-      x: pdfRect.left,
-      y: pdfRect.bottom,
-      width: pdfRect.width,
-      height: pdfRect.height,
-    );
-  }
-
   /// Build the text selection toolbar.
   Widget _buildTextSelectionToolbar() {
     return Positioned(
@@ -153,18 +143,28 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     // Create marker via provider
     try {
       final markerProvider = ref.read(pdfMarkerStateProvider.notifier);
+      final pageNum = _selectedPageNumber!;
+
+      // Convert pdfrx PdfRect to local PdfRect model
+      final localRect = _selectedTextRect != null
+          ? local_model.PdfRect(
+              x: _selectedTextRect!.left,
+              y: _selectedTextRect!.top,
+              width: _selectedTextRect!.width,
+              height: _selectedTextRect!.height,
+            )
+          : null;
+
       await markerProvider.createMarker(
-        pageNumber: _selectedPageNumber!,
+        pageNumber: pageNum,
         color: color,
         selectedText: _selectedText,
-        textRect: _selectedTextRect != null
-            ? _convertPdfRectToModel(_selectedTextRect!)
-            : null,
+        textRect: localRect,
       );
 
-      // Notify parent via callback
+      // Notify parent via callback (workspace will insert marker into note)
       widget.onTextSelectionChange?.call(
-        pageNumber: _selectedPageNumber!,
+        pageNumber: pageNum,
         color: color,
         selectedText: _selectedText,
         textRect: _selectedTextRect,
@@ -177,18 +177,6 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         _selectedPageNumber = null;
         _selectedTextRect = null;
       });
-
-      // Show success toast
-      if (mounted) {
-        ShadToaster.of(context).show(
-          ShadToast(
-            title: const Text('Marker created'),
-            description: Text(
-              '${color.emoji} marker added to page $_selectedPageNumber',
-            ),
-          ),
-        );
-      }
     } catch (e) {
       // Show error toast
       if (mounted) {

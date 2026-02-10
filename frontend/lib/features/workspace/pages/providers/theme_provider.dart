@@ -25,7 +25,7 @@ class ThemeMode$ extends _$ThemeMode$ {
   ThemeMode build() {
     // Load theme mode from Hive synchronously
     final box = Hive.box(_boxName);
-    final savedMode = box.get(_themeModeKey, defaultValue: 'dark');
+    final savedMode = box.get(_themeModeKey, defaultValue: 'light');
 
     return _parseThemeMode(savedMode as String);
   }
@@ -40,7 +40,7 @@ class ThemeMode$ extends _$ThemeMode$ {
       case 'system':
         return ThemeMode.system;
       default:
-        return ThemeMode.dark;
+        return ThemeMode.light;
     }
   }
 

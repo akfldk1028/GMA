@@ -5,6 +5,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../constants/marker_colors.dart';
 import '../../../file_manager/pages/screens/file_browser_screen.dart';
+import '../../../note_editor/pages/providers/note_editor_provider.dart';
 import '../../../note_editor/pages/screens/note_editor_screen.dart';
 import '../../../pdf_viewer/pages/screens/pdf_viewer_screen.dart';
 import '../../models/workspace_state.dart';
@@ -112,17 +113,38 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     required MarkerColor color,
     String? selectedText,
     PdfRect? textRect,
-  }) {
+  }) async {
     try {
-      // Call workspace provider to create marker
-      // This will add the marker to the workspace state and eventually
-      // insert a marker line in the note editor (e.g., "- 🔴 P3 Selected text...")
-      ref.read(workspaceProviderProvider.notifier).createMarker(
+      // Create marker in workspace state
+      final marker = await ref.read(workspaceProviderProvider.notifier).createMarker(
             pageNumber: pageNumber,
             color: color,
             selectedText: selectedText,
             textRect: textRect,
           );
+
+      // Insert marker line into note editor if a note is open
+      final workspaceState = ref.read(workspaceProviderProvider).valueOrNull;
+      final noteId = workspaceState?.currentNoteId;
+      if (noteId != null) {
+        await ref.read(noteEditorProvider(noteId).notifier).insertMarker(
+              color: color,
+              pageNumber: pageNumber,
+              text: selectedText ?? '',
+            );
+      }
+
+      // Show success toast
+      if (mounted) {
+        ShadToaster.of(context).show(
+          ShadToast(
+            title: const Text('Marker Added'),
+            description: Text(
+              '${color.emoji} P$pageNumber added to note',
+            ),
+          ),
+        );
+      }
     } catch (e) {
       // Show error notification if marker creation fails
       if (mounted) {
@@ -288,6 +310,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   Expanded(
                     flex: (_rightRatio * 100).round(),
                     child: NoteEditorScreen(
+                      noteId: state.currentNoteId,
                       // Wire up marker click to PDF navigation flow
                       onMarkerClick: _handleMarkerClick,
                     ),
