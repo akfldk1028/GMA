@@ -41,9 +41,10 @@ class NoteState extends _$NoteState {
       if (!await noteFile.exists()) {
         return Note(
           id: noteId,
-          frontmatter: null,
+          title: '',
           content: '',
-          markers: [],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         );
       }
 
@@ -53,9 +54,10 @@ class NoteState extends _$NoteState {
       if (content.trim().isEmpty) {
         return Note(
           id: noteId,
-          frontmatter: null,
+          title: '',
           content: '',
-          markers: [],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         );
       }
 
@@ -64,22 +66,21 @@ class NoteState extends _$NoteState {
       final frontmatter = parsedData['frontmatter'] as Frontmatter?;
       final bodyContent = parsedData['content'] as String;
 
-      // Extract markers from content
-      final markers = _extractMarkers(bodyContent);
-
       return Note(
         id: noteId,
-        frontmatter: frontmatter,
+        title: frontmatter?.file ?? '',
         content: bodyContent,
-        markers: markers,
+        createdAt: frontmatter?.created ?? DateTime.now(),
+        updatedAt: DateTime.now(),
       );
     } catch (e) {
-      // If any error occurs, return empty note with null frontmatter
+      // If any error occurs, return empty note
       return Note(
         id: noteId,
-        frontmatter: null,
+        title: '',
         content: '',
-        markers: [],
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
     }
   }
@@ -163,13 +164,13 @@ class NoteState extends _$NoteState {
 
   /// Extracts markers from note content using MarkerParser.
   List<Marker> _extractMarkers(String content) {
-    final parseResults = MarkerParser.extractAll(content);
+    final parseResults = MarkerParser.extractMarkers(content);
 
     return parseResults.map((result) {
       return Marker(
         id: const Uuid().v4(),
-        color: result.color,
-        pageNumber: result.pageNumber,
+        color: result.color!,
+        pageNumber: result.pageNumber!,
         selectedText: result.text,
         rect: null, // rect is not stored in markdown, only in memory during PDF interaction
       );
@@ -185,20 +186,23 @@ class NoteState extends _$NoteState {
       final noteFile = File('${notesDir.path}/${note.id}.md');
 
       // Generate frontmatter YAML
-      final frontmatterYaml = note.frontmatter != null
-          ? _generateFrontmatterYaml(note.frontmatter!)
-          : '';
+      final frontmatter = Frontmatter(
+        file: note.title,
+        filePath: note.filePath ?? '',
+        tags: [],
+        created: note.createdAt,
+      );
+      final frontmatterYaml = _generateFrontmatterYaml(frontmatter);
 
       // Combine frontmatter and content
-      final fullContent = frontmatterYaml.isNotEmpty
-          ? '$frontmatterYaml\n${note.content}'
-          : note.content;
+      final fullContent = '$frontmatterYaml\n${note.content}';
 
       // Write to file
       await noteFile.writeAsString(fullContent);
 
-      // Update state
-      state = AsyncData(note);
+      // Update state with updated timestamp
+      final updatedNote = note.copyWith(updatedAt: DateTime.now());
+      state = AsyncData(updatedNote);
     } catch (e, stackTrace) {
       state = AsyncError(e, stackTrace);
     }
@@ -221,13 +225,12 @@ class NoteState extends _$NoteState {
     final currentNote = state.valueOrNull;
     if (currentNote == null) return;
 
-    // Extract markers from new content
-    final markers = _extractMarkers(newContent);
+    // Extract markers from new content (stored in memory, not in Note model)
+    _extractMarkers(newContent);
 
     // Create updated note
     final updatedNote = currentNote.copyWith(
       content: newContent,
-      markers: markers,
     );
 
     // Save to file system

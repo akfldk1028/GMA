@@ -136,7 +136,7 @@ void main() {
             pageNumber: 3,
             color: MarkerColor.red,
             selectedText: 'This is selected text from PDF',
-            textRect: PdfRect(10.0, 20.0, 100.0, 50.0),
+            textRect: PdfRect(10.0, 50.0, 100.0, 20.0),
           );
 
       // Assert: Verify marker was created with correct properties
@@ -145,9 +145,9 @@ void main() {
       expect(marker.color, MarkerColor.red);
       expect(marker.selectedText, 'This is selected text from PDF');
       expect(marker.textRect?.left, 10.0);
-      expect(marker.textRect?.top, 20.0);
+      expect(marker.textRect?.top, 50.0);
       expect(marker.textRect?.right, 100.0);
-      expect(marker.textRect?.bottom, 50.0);
+      expect(marker.textRect?.bottom, 20.0);
 
       // Assert: Verify marker is in workspace state
       final state = await container.read(workspaceProviderProvider.future);
@@ -168,14 +168,14 @@ void main() {
             pageNumber: 1,
             color: MarkerColor.yellow,
             selectedText: 'First selection',
-            textRect: PdfRect(0, 0, 50, 25),
+            textRect: PdfRect(0, 25, 50, 0),
           );
 
       await container.read(workspaceProviderProvider.notifier).createMarker(
             pageNumber: 5,
             color: MarkerColor.blue,
             selectedText: 'Second selection',
-            textRect: PdfRect(100, 200, 300, 400),
+            textRect: PdfRect(100, 400, 300, 200),
           );
 
       await container.read(workspaceProviderProvider.notifier).createMarker(
@@ -246,7 +246,7 @@ void main() {
             pageNumber: 12,
             color: MarkerColor.red,
             selectedText: 'Captured region text',
-            textRect: PdfRect(50, 50, 200, 200),
+            textRect: PdfRect(50, 200, 200, 50),
             capturedImagePath: './captures/p12_capture.png',
           );
 

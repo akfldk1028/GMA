@@ -7,8 +7,6 @@ part 'marker_model.g.dart';
 
 @freezed
 class Marker with _$Marker {
-  const Marker._();
-
   const factory Marker({
     required String id,
     @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)

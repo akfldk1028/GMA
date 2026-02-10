@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 
-import '../../models/pdf_marker_model.dart';
+import '../../models/pdf_marker_model.dart' as marker_model;
 import '../providers/pdf_marker_provider.dart';
 
 /// Widget that creates paint callbacks for rendering markers on PDF pages.
@@ -49,7 +49,7 @@ class PdfPageOverlay extends ConsumerWidget {
       for (final marker in markers) {
         if (marker.textRect == null) continue;
 
-        // Convert PdfRectData to Rect in page coordinates
+        // Convert PdfRect to Rect in page coordinates
         final markerRect = _convertPdfRectToPageRect(
           marker.textRect!,
           pageRect,
@@ -76,7 +76,7 @@ class PdfPageOverlay extends ConsumerWidget {
     };
   }
 
-  /// Converts a PdfRectData to a Rect in page coordinate system.
+  /// Converts a PdfRect to a Rect in page coordinate system.
   ///
   /// PDF coordinates have origin at bottom-left with Y-axis pointing up.
   /// Flutter Canvas coordinates have origin at top-left with Y-axis pointing down.
@@ -88,7 +88,7 @@ class PdfPageOverlay extends ConsumerWidget {
   ///
   /// Returns: A Rect in Flutter Canvas coordinates, or null if conversion fails.
   static Rect? _convertPdfRectToPageRect(
-    PdfRectData pdfRect,
+    marker_model.PdfRect pdfRect,
     Rect pageRect,
     PdfPage page,
   ) {
@@ -106,13 +106,14 @@ class PdfPageOverlay extends ConsumerWidget {
       // Flutter: origin at top-left, Y-axis pointing down
 
       // Convert Y coordinates (flip vertical axis)
-      final flutterTop = pageHeight - pdfRect.bottom;
-      final flutterBottom = pageHeight - pdfRect.top;
+      final pdfBottom = pdfRect.y + pdfRect.height;
+      final flutterTop = pageHeight - pdfBottom;
+      final flutterBottom = pageHeight - pdfRect.y;
 
       // Scale to page rect
-      final left = pageRect.left + (pdfRect.left * scaleX);
+      final left = pageRect.left + (pdfRect.x * scaleX);
       final top = pageRect.top + (flutterTop * scaleY);
-      final right = pageRect.left + (pdfRect.right * scaleX);
+      final right = pageRect.left + ((pdfRect.x + pdfRect.width) * scaleX);
       final bottom = pageRect.top + (flutterBottom * scaleY);
 
       return Rect.fromLTRB(left, top, right, bottom);

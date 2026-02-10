@@ -259,7 +259,7 @@ void main() {
         pageNumber: 3,
         color: MarkerColor.red,
         selectedText: 'Test text',
-        textRect: PdfRect(10, 20, 100, 50),
+        textRect: PdfRect(10, 50, 100, 20),
         capturedImagePath: '/path/to/image.png',
       );
 
@@ -271,7 +271,7 @@ void main() {
       expect(restored.color, MarkerColor.red);
       expect(restored.selectedText, 'Test text');
       expect(restored.textRect?.left, 10);
-      expect(restored.textRect?.top, 20);
+      expect(restored.textRect?.top, 50);
       expect(restored.capturedImagePath, '/path/to/image.png');
     });
 
