@@ -163,13 +163,15 @@ class NoteState extends _$NoteState {
 
   /// Extracts markers from note content using MarkerParser.
   List<Marker> _extractMarkers(String content) {
-    final parseResults = MarkerParser.extractAll(content);
+    final parseResults = MarkerParser.extractMarkers(content);
 
-    return parseResults.map((result) {
+    return parseResults
+        .where((result) => result.color != null && result.pageNumber != null)
+        .map((result) {
       return Marker(
         id: const Uuid().v4(),
-        color: result.color,
-        pageNumber: result.pageNumber,
+        color: result.color!,
+        pageNumber: result.pageNumber!,
         selectedText: result.text,
         rect: null, // rect is not stored in markdown, only in memory during PDF interaction
       );
