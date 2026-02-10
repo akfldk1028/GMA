@@ -10,6 +10,7 @@ import '../../../pdf_viewer/pages/screens/pdf_viewer_screen.dart';
 import '../../models/workspace_state.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/resizable_panel_divider.dart';
+import '../widgets/status_bar_widget.dart';
 import '../widgets/workspace_header.dart';
 
 /// Main 3-panel workspace: Sidebar + PDF Viewer + Markdown Editor.
@@ -296,6 +297,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             },
           ),
               ),
+              // Status bar at bottom showing workspace info
+              StatusBarWidget(controller: _pdfController),
             ],
           ),
         );
