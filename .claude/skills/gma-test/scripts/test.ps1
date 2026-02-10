@@ -1,0 +1,64 @@
+# GMA Test Script
+# Usage: .\test.ps1 [scope]
+# Scopes: all, unit, widget, integration, [feature_name]
+
+param(
+    [string]$Scope = "all"
+)
+
+$ErrorActionPreference = "Stop"
+$FrontendPath = "C:\DK\GMA\frontend"
+
+function Write-Step($message) {
+    Write-Host "`n[$((Get-Date).ToString('HH:mm:ss'))] $message" -ForegroundColor Cyan
+}
+
+function Write-Success($message) {
+    Write-Host $message -ForegroundColor Green
+}
+
+function Write-Error($message) {
+    Write-Host $message -ForegroundColor Red
+}
+
+# Navigate to frontend
+Set-Location $FrontendPath
+
+switch ($Scope) {
+    "all" {
+        Write-Step "Running all tests..."
+        flutter test
+    }
+    "unit" {
+        Write-Step "Running unit tests..."
+        flutter test test/unit/
+    }
+    "widget" {
+        Write-Step "Running widget tests..."
+        flutter test test/widgets/
+    }
+    "integration" {
+        Write-Step "Running integration tests..."
+        flutter test integration_test/
+    }
+    "coverage" {
+        Write-Step "Running tests with coverage..."
+        flutter test --coverage
+        Write-Success "Coverage report: $FrontendPath\coverage\"
+    }
+    default {
+        # Assume it's a feature name
+        $featureTestPath = "test/features/$Scope/"
+        if (Test-Path $featureTestPath) {
+            Write-Step "Running tests for feature: $Scope"
+            flutter test $featureTestPath
+        } else {
+            Write-Error "Unknown scope or feature: $Scope"
+            Write-Host "Available scopes: all, unit, widget, integration, coverage"
+            Write-Host "Or specify a feature name (e.g., pdf_viewer, note_editor, workspace)"
+            exit 1
+        }
+    }
+}
+
+Write-Success "Tests completed!"
