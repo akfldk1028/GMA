@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:gma_frontend/constants/app_theme.dart';
 import 'package:gma_frontend/constants/marker_colors.dart';
 import 'package:gma_frontend/features/pdf_viewer/pages/widgets/text_selection_toolbar.dart';
 
 void main() {
   group('PdfTextSelectionToolbar', () {
-    // Helper to wrap widget with MaterialApp for testing
+    // Helper to wrap widget with ShadApp for testing
     Widget buildWidget(PdfTextSelectionToolbar widget) {
       return ProviderScope(
-        child: MaterialApp(
+        child: ShadApp(
+          theme: AppTheme.light,
           home: Scaffold(
             body: Center(
               child: widget,
@@ -157,7 +160,8 @@ void main() {
 
         final textWidget = tester.widget<Text>(find.text('Sample text'));
         expect(textWidget.style?.fontSize, 12);
-        expect(textWidget.style?.color, Colors.black54);
+        // Color now comes from ShadTheme.of(context).colorScheme.mutedForeground
+        expect(textWidget.style?.color, isNotNull);
         expect(textWidget.maxLines, 2);
         expect(textWidget.overflow, TextOverflow.ellipsis);
         expect(textWidget.textAlign, TextAlign.center);

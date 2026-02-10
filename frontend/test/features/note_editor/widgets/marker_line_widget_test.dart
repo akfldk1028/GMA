@@ -344,8 +344,8 @@ void main() {
         );
 
         final image = tester.widget<Image>(find.byType(Image));
-        final assetImage = image.image as AssetImage;
-        expect(assetImage.assetName, './captures/p3_capture.png');
+        final fileImage = image.image as FileImage;
+        expect(fileImage.file.path, './captures/p3_capture.png');
       });
 
       testWidgets('renders with both text and image', (WidgetTester tester) async {

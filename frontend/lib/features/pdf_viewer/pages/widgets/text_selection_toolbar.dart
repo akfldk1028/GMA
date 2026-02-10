@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:gma_frontend/constants/marker_colors.dart';
 
 /// A toolbar that appears when text is selected in the PDF viewer,
@@ -46,9 +47,9 @@ class PdfTextSelectionToolbar extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   selectedText!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Colors.black54,
+                    color: ShadTheme.of(context).colorScheme.mutedForeground,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
