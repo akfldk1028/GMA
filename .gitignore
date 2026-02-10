@@ -1,2 +1,5 @@
 ﻿nul
 clone
+
+# Auto Claude data directory
+.auto-claude/
