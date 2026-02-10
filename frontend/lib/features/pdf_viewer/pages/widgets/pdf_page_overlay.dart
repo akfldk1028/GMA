@@ -27,14 +27,6 @@ class PdfPageOverlay extends ConsumerWidget {
   }
 
   /// Creates a paint callback function for pdfrx's pagePaintCallbacks.
-  ///
-  /// This function will be called by pdfrx to render markers on the PDF page.
-  /// It draws colored rectangles based on marker data from PdfMarkerProvider.
-  ///
-  /// Parameters:
-  /// - [canvas]: Canvas to draw on
-  /// - [pageRect]: The visible rectangle of the PDF page
-  /// - [page]: The PdfPage object
   static void Function(Canvas, Rect, PdfPage) createPaintCallback(
     WidgetRef ref,
     int pageNumber,
@@ -80,13 +72,6 @@ class PdfPageOverlay extends ConsumerWidget {
   ///
   /// PDF coordinates have origin at bottom-left with Y-axis pointing up.
   /// Flutter Canvas coordinates have origin at top-left with Y-axis pointing down.
-  ///
-  /// Parameters:
-  /// - [pdfRect]: The PDF rectangle data
-  /// - [pageRect]: The visible page rectangle
-  /// - [page]: The PDF page object
-  ///
-  /// Returns: A Rect in Flutter Canvas coordinates, or null if conversion fails.
   static Rect? _convertPdfRectToPageRect(
     marker_model.PdfRect pdfRect,
     Rect pageRect,
@@ -102,18 +87,19 @@ class PdfPageOverlay extends ConsumerWidget {
       final scaleY = pageRect.height / pageHeight;
 
       // Convert PDF coordinates to Flutter coordinates
-      // PDF: origin at bottom-left, Y-axis pointing up
-      // Flutter: origin at top-left, Y-axis pointing down
+      final pdfLeft = pdfRect.x;
+      final pdfTop = pdfRect.y;
+      final pdfRight = pdfRect.x + pdfRect.width;
+      final pdfBottom = pdfRect.y + pdfRect.height;
 
       // Convert Y coordinates (flip vertical axis)
-      final pdfBottom = pdfRect.y + pdfRect.height;
       final flutterTop = pageHeight - pdfBottom;
-      final flutterBottom = pageHeight - pdfRect.y;
+      final flutterBottom = pageHeight - pdfTop;
 
       // Scale to page rect
-      final left = pageRect.left + (pdfRect.x * scaleX);
+      final left = pageRect.left + (pdfLeft * scaleX);
       final top = pageRect.top + (flutterTop * scaleY);
-      final right = pageRect.left + ((pdfRect.x + pdfRect.width) * scaleX);
+      final right = pageRect.left + (pdfRight * scaleX);
       final bottom = pageRect.top + (flutterBottom * scaleY);
 
       return Rect.fromLTRB(left, top, right, bottom);
@@ -124,17 +110,6 @@ class PdfPageOverlay extends ConsumerWidget {
   }
 
   /// Static helper to create a list of paint callbacks for PdfViewer.
-  ///
-  /// This is the main entry point for integrating markers into PdfViewer.
-  /// Use it in PdfViewer's pagePaintCallbacks parameter.
-  ///
-  /// Example:
-  /// ```dart
-  /// PdfViewer(
-  ///   controller: controller,
-  ///   pagePaintCallbacks: PdfPageOverlay.createPaintCallbacks(ref),
-  /// )
-  /// ```
   static List<void Function(Canvas, Rect, PdfPage)> createPaintCallbacks(
     WidgetRef ref,
   ) {

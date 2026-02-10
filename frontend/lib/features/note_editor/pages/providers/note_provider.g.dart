@@ -157,7 +157,7 @@ class _NoteExistsProviderElement extends AutoDisposeFutureProviderElement<bool>
   String get noteId => (origin as NoteExistsProvider).noteId;
 }
 
-String _$noteStateHash() => r'fed53b5183b90c0304189431ab8c7aed9461b0a1';
+String _$noteStateHash() => r'4caca1878ad48e3b2ed531a628cf24246e298e77';
 
 abstract class _$NoteState extends BuildlessAutoDisposeAsyncNotifier<Note> {
   late final String noteId;
@@ -165,65 +165,57 @@ abstract class _$NoteState extends BuildlessAutoDisposeAsyncNotifier<Note> {
   FutureOr<Note> build(String noteId);
 }
 
-/// Provider that manages a single note's state, including content, markers, and frontmatter.
+/// Provider that manages a single note's state, including content.
 ///
 /// This provider:
 /// - Loads note from file system based on noteId
-/// - Parses frontmatter YAML from the note content
-/// - Extracts markers from content using MarkerParser
-/// - Handles edge cases: empty note, corrupted frontmatter
+/// - Handles edge cases: empty note, non-existent file
 ///
 /// Usage:
 /// ```dart
-/// final note = ref.watch(noteProvider('note-id-123'));
+/// final note = ref.watch(noteStateProvider('note-id-123'));
 /// ```
 ///
 /// Copied from [NoteState].
 @ProviderFor(NoteState)
 const noteStateProvider = NoteStateFamily();
 
-/// Provider that manages a single note's state, including content, markers, and frontmatter.
+/// Provider that manages a single note's state, including content.
 ///
 /// This provider:
 /// - Loads note from file system based on noteId
-/// - Parses frontmatter YAML from the note content
-/// - Extracts markers from content using MarkerParser
-/// - Handles edge cases: empty note, corrupted frontmatter
+/// - Handles edge cases: empty note, non-existent file
 ///
 /// Usage:
 /// ```dart
-/// final note = ref.watch(noteProvider('note-id-123'));
+/// final note = ref.watch(noteStateProvider('note-id-123'));
 /// ```
 ///
 /// Copied from [NoteState].
 class NoteStateFamily extends Family<AsyncValue<Note>> {
-  /// Provider that manages a single note's state, including content, markers, and frontmatter.
+  /// Provider that manages a single note's state, including content.
   ///
   /// This provider:
   /// - Loads note from file system based on noteId
-  /// - Parses frontmatter YAML from the note content
-  /// - Extracts markers from content using MarkerParser
-  /// - Handles edge cases: empty note, corrupted frontmatter
+  /// - Handles edge cases: empty note, non-existent file
   ///
   /// Usage:
   /// ```dart
-  /// final note = ref.watch(noteProvider('note-id-123'));
+  /// final note = ref.watch(noteStateProvider('note-id-123'));
   /// ```
   ///
   /// Copied from [NoteState].
   const NoteStateFamily();
 
-  /// Provider that manages a single note's state, including content, markers, and frontmatter.
+  /// Provider that manages a single note's state, including content.
   ///
   /// This provider:
   /// - Loads note from file system based on noteId
-  /// - Parses frontmatter YAML from the note content
-  /// - Extracts markers from content using MarkerParser
-  /// - Handles edge cases: empty note, corrupted frontmatter
+  /// - Handles edge cases: empty note, non-existent file
   ///
   /// Usage:
   /// ```dart
-  /// final note = ref.watch(noteProvider('note-id-123'));
+  /// final note = ref.watch(noteStateProvider('note-id-123'));
   /// ```
   ///
   /// Copied from [NoteState].
@@ -251,33 +243,29 @@ class NoteStateFamily extends Family<AsyncValue<Note>> {
   String? get name => r'noteStateProvider';
 }
 
-/// Provider that manages a single note's state, including content, markers, and frontmatter.
+/// Provider that manages a single note's state, including content.
 ///
 /// This provider:
 /// - Loads note from file system based on noteId
-/// - Parses frontmatter YAML from the note content
-/// - Extracts markers from content using MarkerParser
-/// - Handles edge cases: empty note, corrupted frontmatter
+/// - Handles edge cases: empty note, non-existent file
 ///
 /// Usage:
 /// ```dart
-/// final note = ref.watch(noteProvider('note-id-123'));
+/// final note = ref.watch(noteStateProvider('note-id-123'));
 /// ```
 ///
 /// Copied from [NoteState].
 class NoteStateProvider
     extends AutoDisposeAsyncNotifierProviderImpl<NoteState, Note> {
-  /// Provider that manages a single note's state, including content, markers, and frontmatter.
+  /// Provider that manages a single note's state, including content.
   ///
   /// This provider:
   /// - Loads note from file system based on noteId
-  /// - Parses frontmatter YAML from the note content
-  /// - Extracts markers from content using MarkerParser
-  /// - Handles edge cases: empty note, corrupted frontmatter
+  /// - Handles edge cases: empty note, non-existent file
   ///
   /// Usage:
   /// ```dart
-  /// final note = ref.watch(noteProvider('note-id-123'));
+  /// final note = ref.watch(noteStateProvider('note-id-123'));
   /// ```
   ///
   /// Copied from [NoteState].
