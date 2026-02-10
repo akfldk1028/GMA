@@ -29,6 +29,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   // PDF viewer controller for programmatic navigation (Note → PDF flow)
   late final PdfViewerController _pdfController;
 
+  // Sidebar visibility state for iPad orientation support
+  bool _sidebarVisible = true;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +42,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
     // Initialize PDF controller
     _pdfController = PdfViewerController();
+  }
+
+  /// Toggle sidebar visibility (for iPad portrait mode)
+  void _toggleSidebar() {
+    setState(() {
+      _sidebarVisible = !_sidebarVisible;
+    });
   }
 
   @override
@@ -196,41 +206,68 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         _centerRatio = state.panelSizes.center;
         _rightRatio = state.panelSizes.right;
 
+        // Detect device orientation and size for responsive layout
+        final mediaQuery = MediaQuery.of(context);
+        final isPortrait = mediaQuery.orientation == Orientation.portrait;
+        final isTablet = mediaQuery.size.shortestSide >= 600;
+
+        // Auto-hide sidebar on iPad portrait mode (unless explicitly shown)
+        final shouldShowSidebar = _sidebarVisible && (!isTablet || !isPortrait || _sidebarVisible);
+
         return Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: Icon(_sidebarVisible ? Icons.menu_open : Icons.menu),
+              onPressed: _toggleSidebar,
+              tooltip: _sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar',
+            ),
+            title: const Text('GMA Workspace'),
+          ),
           body: LayoutBuilder(
             builder: (context, constraints) {
               final totalWidth = constraints.maxWidth;
 
               return Row(
                 children: [
-                  // Left Panel: File Manager
-                  Expanded(
-                    flex: (_leftRatio * 100).round(),
-                    child: FileBrowserScreen(
-                      onNoteSelected: (note) {
-                        // Load note in editor
-                        ref
-                            .read(workspaceProviderProvider.notifier)
-                            .loadNote(note.id);
-
-                        // Load linked PDF if available (File Browser → PDF flow)
-                        if (note.hasLinkedPdf) {
+                  // Left Panel: File Manager (conditionally rendered)
+                  if (shouldShowSidebar) ...[
+                    Expanded(
+                      flex: (_leftRatio * 100).round(),
+                      child: FileBrowserScreen(
+                        onNoteSelected: (note) {
+                          // Load note in editor
                           ref
                               .read(workspaceProviderProvider.notifier)
-                              .loadPdf(note.linkedPdfPath!);
-                        }
-                      },
-                    ),
-                  ),
+                              .loadNote(note.id);
 
-                  // Left Divider
-                  ResizablePanelDivider(
-                    onDrag: (delta) => _handleLeftDividerDrag(delta, totalWidth),
-                  ),
+                          // Load linked PDF if available (File Browser → PDF flow)
+                          if (note.hasLinkedPdf) {
+                            ref
+                                .read(workspaceProviderProvider.notifier)
+                                .loadPdf(note.linkedPdfPath!);
+                          }
+
+                          // Auto-hide sidebar on small screens after selection
+                          if (isTablet && isPortrait) {
+                            setState(() {
+                              _sidebarVisible = false;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+
+                    // Left Divider (only shown when sidebar is visible)
+                    ResizablePanelDivider(
+                      onDrag: (delta) => _handleLeftDividerDrag(delta, totalWidth),
+                    ),
+                  ],
 
                   // Center Panel: PDF Viewer
                   Expanded(
-                    flex: (_centerRatio * 100).round(),
+                    flex: shouldShowSidebar
+                        ? (_centerRatio * 100).round()
+                        : ((_centerRatio + _leftRatio) * 100).round(),
                     child: PdfViewerScreen(
                       // Pass controller for Note → PDF navigation
                       controller: _pdfController,
