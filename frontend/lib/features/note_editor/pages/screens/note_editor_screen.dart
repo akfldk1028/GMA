@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../providers/note_editor_provider.dart';
+import '../providers/note_provider.dart';
+
 /// Callback for marker click events in the note editor.
 /// Called when user taps on a marker line (e.g., "- 🔴 P3 Selected text...").
 typedef OnMarkerClickCallback = void Function(String markerId);
@@ -40,10 +43,73 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Note Editor',
-        style: ShadTheme.of(context).textTheme.h3,
+    // Handle case: no noteId provided
+    if (widget.noteId == null) {
+      return Center(
+        child: Text(
+          'Select a note to edit',
+          style: ShadTheme.of(context).textTheme.muted,
+        ),
+      );
+    }
+
+    // Watch note state for loading/error handling
+    final noteState = ref.watch(noteStateProvider(widget.noteId!));
+
+    // Watch editor provider for TextEditingController
+    final controller = ref.watch(noteEditorProvider(widget.noteId!));
+
+    return noteState.when(
+      data: (note) {
+        // Handle case: controller not yet initialized
+        if (controller == null) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        // Main editor UI will be built here in subsequent subtasks
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Note Editor - ${note.id}',
+                style: ShadTheme.of(context).textTheme.h3,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Controller initialized with ${controller.text.length} characters',
+                style: ShadTheme.of(context).textTheme.muted,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Markers: ${note.markers.length}',
+                style: ShadTheme.of(context).textTheme.muted,
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const Center(
+        child: CircularProgressIndicator(),
+      ),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Error loading note',
+              style: ShadTheme.of(context).textTheme.h4,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error.toString(),
+              style: ShadTheme.of(context).textTheme.muted,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
