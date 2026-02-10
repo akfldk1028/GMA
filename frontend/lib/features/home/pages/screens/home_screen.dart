@@ -27,6 +27,11 @@ class HomeScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ShadButton(
+                  onPressed: () => context.push('/file-browser'),
+                  child: const Text('File Browser'),
+                ),
+                const SizedBox(width: 12),
+                ShadButton(
                   onPressed: () => context.push('/login'),
                   child: const Text('Login'),
                 ),

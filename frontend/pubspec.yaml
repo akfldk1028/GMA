@@ -22,7 +22,7 @@ dependencies:
   go_router: ^14.6.2
 
   # PDF Viewer
-  pdfrx: ^1.0.98
+  pdfrx: ^2.2.0
 
   # HTTP
   dio: ^5.7.0
@@ -43,12 +43,14 @@ dependencies:
 
   # File System
   path_provider: ^2.1.4
+  path: ^1.9.0
   file_picker: ^8.1.6
 
   # Utils
   uuid: ^4.5.1
   yaml: ^3.1.2
   intl: ^0.20.2
+  marionette_flutter: ^0.3.0
 
 dev_dependencies:
   flutter_test:

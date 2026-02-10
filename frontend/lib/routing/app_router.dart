@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../features/auth/pages/screens/login_screen.dart';
+import '../features/file_manager/pages/screens/file_browser_screen.dart';
 import '../features/home/pages/screens/home_screen.dart';
 import '../features/note_editor/pages/screens/note_editor_screen.dart';
 import '../features/profile/pages/screens/profile_screen.dart';
@@ -25,6 +26,11 @@ GoRouter appRouter(AppRouterRef ref) {
         path: '/workspace',
         name: 'workspace',
         builder: (context, state) => const WorkspaceScreen(),
+      ),
+      GoRoute(
+        path: '/file-browser',
+        name: 'file-browser',
+        builder: (context, state) => const FileBrowserScreen(),
       ),
       GoRoute(
         path: '/note/:id',

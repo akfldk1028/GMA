@@ -1,0 +1,32 @@
+{
+  "project_type": "single",
+  "services": {
+    "frontend": {
+      "path": ".",
+      "tech_stack": ["flutter", "dart", "riverpod", "freezed", "pdfrx", "hive"],
+      "port": 8080,
+      "dev_command": "flutter run -d chrome --web-port 8080",
+      "test_command": "flutter test",
+      "build_command": "flutter build web"
+    }
+  },
+  "infrastructure": {
+    "docker": false,
+    "database": "hive_local",
+    "ci_cd": false
+  },
+  "conventions": {
+    "linter": "flutter_lints",
+    "formatter": "dart format",
+    "testing": "flutter_test",
+    "state_management": "riverpod",
+    "models": "freezed",
+    "code_generation": "build_runner"
+  },
+  "test_structure": {
+    "unit_tests": "test/",
+    "integration_tests": "test/integration/",
+    "e2e_tests": "test/e2e/",
+    "widget_tests": "test/features/"
+  }
+}
