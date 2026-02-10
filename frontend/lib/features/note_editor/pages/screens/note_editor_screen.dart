@@ -4,6 +4,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../providers/note_editor_provider.dart';
 import '../providers/note_provider.dart';
+import '../widgets/frontmatter_header.dart';
 
 /// Callback for marker click events in the note editor.
 /// Called when user taps on a marker line (e.g., "- 🔴 P3 Selected text...").
@@ -69,26 +70,40 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
         }
 
         // Main editor UI will be built here in subsequent subtasks
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Note Editor - ${note.id}',
-                style: ShadTheme.of(context).textTheme.h3,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Frontmatter header at the top
+            FrontmatterHeader(
+              frontmatter: note.frontmatter,
+            ),
+            const SizedBox(height: 16),
+
+            // Placeholder content (will be replaced in subsequent subtasks)
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Note Editor - ${note.id}',
+                      style: ShadTheme.of(context).textTheme.h3,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Controller initialized with ${controller.text.length} characters',
+                      style: ShadTheme.of(context).textTheme.muted,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Markers: ${note.markers.length}',
+                      style: ShadTheme.of(context).textTheme.muted,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Controller initialized with ${controller.text.length} characters',
-                style: ShadTheme.of(context).textTheme.muted,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Markers: ${note.markers.length}',
-                style: ShadTheme.of(context).textTheme.muted,
-              ),
-            ],
-          ),
+            ),
+          ],
         );
       },
       loading: () => const Center(
