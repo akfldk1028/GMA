@@ -41,7 +41,9 @@
       "Bash(cmd //c \"wmic process where \\(ParentProcessId=75768\\) get ProcessId,Name,CommandLine /format:list\")",
       "Bash(powershell.exe:*)",
       "Bash(python -c:*)",
-      "Bash(PYTHONUTF8=1 python:*)"
+      "Bash(PYTHONUTF8=1 python:*)",
+      "Bash(git merge:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }
