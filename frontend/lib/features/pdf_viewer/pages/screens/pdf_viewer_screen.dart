@@ -152,7 +152,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       final markerProvider = ref.read(pdfMarkerStateProvider.notifier);
       await markerProvider.createMarker(
         pageNumber: _selectedPageNumber!,
-        colorName: color.name,
+        color: color,
         selectedText: _selectedText,
         textRect: _selectedTextRect != null
             ? _convertPdfRectToModel(_selectedTextRect!)
@@ -206,7 +206,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     }
 
     final currentPage = controller.pageNumber ?? 1;
-    final totalPages = controller.pageCount ?? 0;
+    final totalPages = controller.pageCount;
 
     return Positioned(
       bottom: 16,

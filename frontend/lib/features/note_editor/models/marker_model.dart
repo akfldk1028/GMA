@@ -11,12 +11,10 @@ class Marker with _$Marker {
 
   const factory Marker({
     required String id,
-    @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
-    required MarkerColor color,
+    @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson) required MarkerColor color,
     required int pageNumber,
     String? selectedText,
-    @JsonKey(includeFromJson: false, includeToJson: false)
-    PdfRect? rect,
+    @JsonKey(includeFromJson: false, includeToJson: false) PdfRect? rect,
   }) = _Marker;
 
   factory Marker.fromJson(Map<String, dynamic> json) => _$MarkerFromJson(json);

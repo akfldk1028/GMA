@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pdfrx/pdfrx.dart';
+import 'package:pdfrx/pdfrx.dart' as pdfrx;
 
 import '../../models/pdf_marker_model.dart';
 import '../providers/pdf_marker_provider.dart';
@@ -34,12 +34,12 @@ class PdfPageOverlay extends ConsumerWidget {
   /// Parameters:
   /// - [canvas]: Canvas to draw on
   /// - [pageRect]: The visible rectangle of the PDF page
-  /// - [page]: The PdfPage object
-  static void Function(Canvas, Rect, PdfPage) createPaintCallback(
+  /// - [page]: The pdfrx.PdfPage object
+  static void Function(Canvas, Rect, pdfrx.PdfPage) createPaintCallback(
     WidgetRef ref,
     int pageNumber,
   ) {
-    return (Canvas canvas, Rect pageRect, PdfPage page) {
+    return (Canvas canvas, Rect pageRect, pdfrx.PdfPage page) {
       // Get markers for this page
       final markers = ref.read(markersForPageProvider(pageNumber));
 
@@ -49,7 +49,7 @@ class PdfPageOverlay extends ConsumerWidget {
       for (final marker in markers) {
         if (marker.textRect == null) continue;
 
-        // Convert PdfRectData to Rect in page coordinates
+        // Convert PdfRect to Rect in page coordinates
         final markerRect = _convertPdfRectToPageRect(
           marker.textRect!,
           pageRect,
@@ -76,7 +76,7 @@ class PdfPageOverlay extends ConsumerWidget {
     };
   }
 
-  /// Converts a PdfRectData to a Rect in page coordinate system.
+  /// Converts a PdfRect to a Rect in page coordinate system.
   ///
   /// PDF coordinates have origin at bottom-left with Y-axis pointing up.
   /// Flutter Canvas coordinates have origin at top-left with Y-axis pointing down.
@@ -88,9 +88,9 @@ class PdfPageOverlay extends ConsumerWidget {
   ///
   /// Returns: A Rect in Flutter Canvas coordinates, or null if conversion fails.
   static Rect? _convertPdfRectToPageRect(
-    PdfRectData pdfRect,
+    PdfRect pdfRect,
     Rect pageRect,
-    PdfPage page,
+    pdfrx.PdfPage page,
   ) {
     try {
       // Get page dimensions
@@ -105,14 +105,20 @@ class PdfPageOverlay extends ConsumerWidget {
       // PDF: origin at bottom-left, Y-axis pointing up
       // Flutter: origin at top-left, Y-axis pointing down
 
+      // Calculate PDF rect bounds
+      final pdfLeft = pdfRect.x;
+      final pdfRight = pdfRect.x + pdfRect.width;
+      final pdfBottom = pdfRect.y;
+      final pdfTop = pdfRect.y + pdfRect.height;
+
       // Convert Y coordinates (flip vertical axis)
-      final flutterTop = pageHeight - pdfRect.bottom;
-      final flutterBottom = pageHeight - pdfRect.top;
+      final flutterTop = pageHeight - pdfTop;
+      final flutterBottom = pageHeight - pdfBottom;
 
       // Scale to page rect
-      final left = pageRect.left + (pdfRect.left * scaleX);
+      final left = pageRect.left + (pdfLeft * scaleX);
       final top = pageRect.top + (flutterTop * scaleY);
-      final right = pageRect.left + (pdfRect.right * scaleX);
+      final right = pageRect.left + (pdfRight * scaleX);
       final bottom = pageRect.top + (flutterBottom * scaleY);
 
       return Rect.fromLTRB(left, top, right, bottom);
@@ -131,14 +137,14 @@ class PdfPageOverlay extends ConsumerWidget {
   /// ```dart
   /// PdfViewer(
   ///   controller: controller,
-  ///   pagePaintCallbacks: PdfPageOverlay.createPaintCallbacks(ref),
+  ///   pagePaintCallbacks: pdfrx.PdfPageOverlay.createPaintCallbacks(ref),
   /// )
   /// ```
-  static List<void Function(Canvas, Rect, PdfPage)> createPaintCallbacks(
+  static List<void Function(Canvas, Rect, pdfrx.PdfPage)> createPaintCallbacks(
     WidgetRef ref,
   ) {
     return [
-      (Canvas canvas, Rect pageRect, PdfPage page) {
+      (Canvas canvas, Rect pageRect, pdfrx.PdfPage page) {
         // Get the page number (1-indexed)
         final pageNumber = page.pageNumber;
 

@@ -1,14 +1,12 @@
 import 'dart:io';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:uuid/uuid.dart';
 import 'package:yaml/yaml.dart';
 
 import '../../../../utils/file_system_provider.dart';
 import '../../models/frontmatter_model.dart';
 import '../../models/marker_model.dart';
 import '../../models/note_model.dart';
-import '../../utils/marker_parser.dart';
 
 part 'note_provider.g.dart';
 
@@ -39,11 +37,13 @@ class NoteState extends _$NoteState {
 
       // Handle case: note file doesn't exist, create empty note
       if (!await noteFile.exists()) {
+        final now = DateTime.now();
         return Note(
           id: noteId,
-          frontmatter: null,
+          title: 'Untitled',
           content: '',
-          markers: [],
+          createdAt: now,
+          updatedAt: now,
         );
       }
 
@@ -51,11 +51,13 @@ class NoteState extends _$NoteState {
 
       // Handle case: empty file
       if (content.trim().isEmpty) {
+        final now = DateTime.now();
         return Note(
           id: noteId,
-          frontmatter: null,
+          title: 'Untitled',
           content: '',
-          markers: [],
+          createdAt: now,
+          updatedAt: now,
         );
       }
 
@@ -64,22 +66,28 @@ class NoteState extends _$NoteState {
       final frontmatter = parsedData['frontmatter'] as Frontmatter?;
       final bodyContent = parsedData['content'] as String;
 
-      // Extract markers from content
-      final markers = _extractMarkers(bodyContent);
+      // Extract title from frontmatter or use default
+      final title = frontmatter?.file.isNotEmpty == true ? frontmatter!.file : 'Untitled';
+      final createdAt = frontmatter?.created ?? DateTime.now();
+      final updatedAt = DateTime.now();
 
       return Note(
         id: noteId,
-        frontmatter: frontmatter,
+        title: title,
         content: bodyContent,
-        markers: markers,
+        filePath: '${notesDir.path}/$noteId.md',
+        createdAt: createdAt,
+        updatedAt: updatedAt,
       );
     } catch (e) {
-      // If any error occurs, return empty note with null frontmatter
+      // If any error occurs, return empty note
+      final now = DateTime.now();
       return Note(
         id: noteId,
-        frontmatter: null,
+        title: 'Untitled',
         content: '',
-        markers: [],
+        createdAt: now,
+        updatedAt: now,
       );
     }
   }
@@ -161,20 +169,6 @@ class NoteState extends _$NoteState {
     }
   }
 
-  /// Extracts markers from note content using MarkerParser.
-  List<Marker> _extractMarkers(String content) {
-    final parseResults = MarkerParser.extractAll(content);
-
-    return parseResults.map((result) {
-      return Marker(
-        id: const Uuid().v4(),
-        color: result.color,
-        pageNumber: result.pageNumber,
-        selectedText: result.text,
-        rect: null, // rect is not stored in markdown, only in memory during PDF interaction
-      );
-    }).toList();
-  }
 
   /// Saves the note to the file system.
   ///
@@ -184,21 +178,26 @@ class NoteState extends _$NoteState {
       final notesDir = await ref.watch(notesRootDirectoryProvider.future);
       final noteFile = File('${notesDir.path}/${note.id}.md');
 
+      // Generate frontmatter from note metadata
+      final frontmatter = Frontmatter(
+        file: note.title,
+        filePath: note.filePath ?? '',
+        tags: [],
+        created: note.createdAt,
+      );
+
       // Generate frontmatter YAML
-      final frontmatterYaml = note.frontmatter != null
-          ? _generateFrontmatterYaml(note.frontmatter!)
-          : '';
+      final frontmatterYaml = _generateFrontmatterYaml(frontmatter);
 
       // Combine frontmatter and content
-      final fullContent = frontmatterYaml.isNotEmpty
-          ? '$frontmatterYaml\n${note.content}'
-          : note.content;
+      final fullContent = '$frontmatterYaml\n${note.content}';
 
       // Write to file
       await noteFile.writeAsString(fullContent);
 
-      // Update state
-      state = AsyncData(note);
+      // Update state with updated timestamp
+      final updatedNote = note.copyWith(updatedAt: DateTime.now());
+      state = AsyncData(updatedNote);
     } catch (e, stackTrace) {
       state = AsyncError(e, stackTrace);
     }
@@ -216,18 +215,15 @@ class NoteState extends _$NoteState {
     return buffer.toString();
   }
 
-  /// Updates the note content and re-extracts markers.
+  /// Updates the note content.
   Future<void> updateContent(String newContent) async {
     final currentNote = state.valueOrNull;
     if (currentNote == null) return;
 
-    // Extract markers from new content
-    final markers = _extractMarkers(newContent);
-
     // Create updated note
     final updatedNote = currentNote.copyWith(
       content: newContent,
-      markers: markers,
+      updatedAt: DateTime.now(),
     );
 
     // Save to file system

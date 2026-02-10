@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import 'package:gma_frontend/features/file_manager/models/note_metadata_model.dart';
-import 'package:gma_frontend/features/file_manager/pages/screens/file_browser_screen.dart';
 import 'package:gma_frontend/features/file_manager/pages/widgets/note_list_item.dart';
 import 'package:gma_frontend/features/file_manager/pages/widgets/file_tree_widget.dart';
 import 'package:gma_frontend/constants/app_theme.dart';
