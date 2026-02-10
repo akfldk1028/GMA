@@ -10,6 +10,7 @@ import '../../../pdf_viewer/pages/screens/pdf_viewer_screen.dart';
 import '../../models/workspace_state.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/resizable_panel_divider.dart';
+import '../widgets/workspace_header.dart';
 
 /// Main 3-panel workspace: Sidebar + PDF Viewer + Markdown Editor.
 /// This is the core screen of GMA where PDF and notes are linked.
@@ -215,15 +216,16 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         final shouldShowSidebar = _sidebarVisible && (!isTablet || !isPortrait || _sidebarVisible);
 
         return Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: Icon(_sidebarVisible ? Icons.menu_open : Icons.menu),
-              onPressed: _toggleSidebar,
-              tooltip: _sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar',
-            ),
-            title: const Text('GMA Workspace'),
-          ),
-          body: LayoutBuilder(
+          body: Column(
+            children: [
+              // Custom header using shadcn_ui components
+              WorkspaceHeader(
+                sidebarVisible: _sidebarVisible,
+                onToggleSidebar: _toggleSidebar,
+              ),
+              // Main workspace content
+              Expanded(
+                child: LayoutBuilder(
             builder: (context, constraints) {
               final totalWidth = constraints.maxWidth;
 
@@ -292,6 +294,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 ],
               );
             },
+          ),
+              ),
+            ],
           ),
         );
       },
