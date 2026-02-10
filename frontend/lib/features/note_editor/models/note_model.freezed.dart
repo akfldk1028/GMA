@@ -22,11 +22,10 @@ Note _$NoteFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Note {
   String get id => throw _privateConstructorUsedError;
-  String get title => throw _privateConstructorUsedError;
   String get content => throw _privateConstructorUsedError;
   String? get filePath => throw _privateConstructorUsedError;
-  DateTime get createdAt => throw _privateConstructorUsedError;
-  DateTime get updatedAt => throw _privateConstructorUsedError;
+  Frontmatter? get frontmatter => throw _privateConstructorUsedError;
+  List<Marker> get markers => throw _privateConstructorUsedError;
 
   /// Serializes this Note to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -44,12 +43,13 @@ abstract class $NoteCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String title,
     String content,
     String? filePath,
-    DateTime createdAt,
-    DateTime updatedAt,
+    Frontmatter? frontmatter,
+    List<Marker> markers,
   });
+
+  $FrontmatterCopyWith<$Res>? get frontmatter;
 }
 
 /// @nodoc
@@ -68,21 +68,16 @@ class _$NoteCopyWithImpl<$Res, $Val extends Note>
   @override
   $Res call({
     Object? id = null,
-    Object? title = null,
     Object? content = null,
     Object? filePath = freezed,
-    Object? createdAt = null,
-    Object? updatedAt = null,
+    Object? frontmatter = freezed,
+    Object? markers = null,
   }) {
     return _then(
       _value.copyWith(
             id: null == id
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
-                      as String,
-            title: null == title
-                ? _value.title
-                : title // ignore: cast_nullable_to_non_nullable
                       as String,
             content: null == content
                 ? _value.content
@@ -92,17 +87,31 @@ class _$NoteCopyWithImpl<$Res, $Val extends Note>
                 ? _value.filePath
                 : filePath // ignore: cast_nullable_to_non_nullable
                       as String?,
-            createdAt: null == createdAt
-                ? _value.createdAt
-                : createdAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
-            updatedAt: null == updatedAt
-                ? _value.updatedAt
-                : updatedAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
+            frontmatter: freezed == frontmatter
+                ? _value.frontmatter
+                : frontmatter // ignore: cast_nullable_to_non_nullable
+                      as Frontmatter?,
+            markers: null == markers
+                ? _value.markers
+                : markers // ignore: cast_nullable_to_non_nullable
+                      as List<Marker>,
           )
           as $Val,
     );
+  }
+
+  /// Create a copy of Note
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $FrontmatterCopyWith<$Res>? get frontmatter {
+    if (_value.frontmatter == null) {
+      return null;
+    }
+
+    return $FrontmatterCopyWith<$Res>(_value.frontmatter!, (value) {
+      return _then(_value.copyWith(frontmatter: value) as $Val);
+    });
   }
 }
 
@@ -116,12 +125,14 @@ abstract class _$$NoteImplCopyWith<$Res> implements $NoteCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String title,
     String content,
     String? filePath,
-    DateTime createdAt,
-    DateTime updatedAt,
+    Frontmatter? frontmatter,
+    List<Marker> markers,
   });
+
+  @override
+  $FrontmatterCopyWith<$Res>? get frontmatter;
 }
 
 /// @nodoc
@@ -137,21 +148,16 @@ class __$$NoteImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? title = null,
     Object? content = null,
     Object? filePath = freezed,
-    Object? createdAt = null,
-    Object? updatedAt = null,
+    Object? frontmatter = freezed,
+    Object? markers = null,
   }) {
     return _then(
       _$NoteImpl(
         id: null == id
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
-                  as String,
-        title: null == title
-            ? _value.title
-            : title // ignore: cast_nullable_to_non_nullable
                   as String,
         content: null == content
             ? _value.content
@@ -161,14 +167,14 @@ class __$$NoteImplCopyWithImpl<$Res>
             ? _value.filePath
             : filePath // ignore: cast_nullable_to_non_nullable
                   as String?,
-        createdAt: null == createdAt
-            ? _value.createdAt
-            : createdAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-        updatedAt: null == updatedAt
-            ? _value.updatedAt
-            : updatedAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
+        frontmatter: freezed == frontmatter
+            ? _value.frontmatter
+            : frontmatter // ignore: cast_nullable_to_non_nullable
+                  as Frontmatter?,
+        markers: null == markers
+            ? _value._markers
+            : markers // ignore: cast_nullable_to_non_nullable
+                  as List<Marker>,
       ),
     );
   }
@@ -179,12 +185,11 @@ class __$$NoteImplCopyWithImpl<$Res>
 class _$NoteImpl implements _Note {
   const _$NoteImpl({
     required this.id,
-    required this.title,
     required this.content,
     this.filePath,
-    required this.createdAt,
-    required this.updatedAt,
-  });
+    this.frontmatter,
+    final List<Marker> markers = const [],
+  }) : _markers = markers;
 
   factory _$NoteImpl.fromJson(Map<String, dynamic> json) =>
       _$$NoteImplFromJson(json);
@@ -192,19 +197,23 @@ class _$NoteImpl implements _Note {
   @override
   final String id;
   @override
-  final String title;
-  @override
   final String content;
   @override
   final String? filePath;
   @override
-  final DateTime createdAt;
+  final Frontmatter? frontmatter;
+  final List<Marker> _markers;
   @override
-  final DateTime updatedAt;
+  @JsonKey()
+  List<Marker> get markers {
+    if (_markers is EqualUnmodifiableListView) return _markers;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_markers);
+  }
 
   @override
   String toString() {
-    return 'Note(id: $id, title: $title, content: $content, filePath: $filePath, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Note(id: $id, content: $content, filePath: $filePath, frontmatter: $frontmatter, markers: $markers)';
   }
 
   @override
@@ -213,14 +222,12 @@ class _$NoteImpl implements _Note {
         (other.runtimeType == runtimeType &&
             other is _$NoteImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.title, title) || other.title == title) &&
             (identical(other.content, content) || other.content == content) &&
             (identical(other.filePath, filePath) ||
                 other.filePath == filePath) &&
-            (identical(other.createdAt, createdAt) ||
-                other.createdAt == createdAt) &&
-            (identical(other.updatedAt, updatedAt) ||
-                other.updatedAt == updatedAt));
+            (identical(other.frontmatter, frontmatter) ||
+                other.frontmatter == frontmatter) &&
+            const DeepCollectionEquality().equals(other._markers, _markers));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -228,11 +235,10 @@ class _$NoteImpl implements _Note {
   int get hashCode => Object.hash(
     runtimeType,
     id,
-    title,
     content,
     filePath,
-    createdAt,
-    updatedAt,
+    frontmatter,
+    const DeepCollectionEquality().hash(_markers),
   );
 
   /// Create a copy of Note
@@ -252,11 +258,10 @@ class _$NoteImpl implements _Note {
 abstract class _Note implements Note {
   const factory _Note({
     required final String id,
-    required final String title,
     required final String content,
     final String? filePath,
-    required final DateTime createdAt,
-    required final DateTime updatedAt,
+    final Frontmatter? frontmatter,
+    final List<Marker> markers,
   }) = _$NoteImpl;
 
   factory _Note.fromJson(Map<String, dynamic> json) = _$NoteImpl.fromJson;
@@ -264,15 +269,13 @@ abstract class _Note implements Note {
   @override
   String get id;
   @override
-  String get title;
-  @override
   String get content;
   @override
   String? get filePath;
   @override
-  DateTime get createdAt;
+  Frontmatter? get frontmatter;
   @override
-  DateTime get updatedAt;
+  List<Marker> get markers;
 
   /// Create a copy of Note
   /// with the given fields replaced by the non-null parameter values.

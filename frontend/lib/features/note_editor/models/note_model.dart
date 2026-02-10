@@ -1,5 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'frontmatter_model.dart';
+import 'marker_model.dart';
+
 part 'note_model.freezed.dart';
 part 'note_model.g.dart';
 
@@ -11,11 +14,10 @@ part 'note_model.g.dart';
 class Note with _$Note {
   const factory Note({
     required String id,
-    required String title,
     required String content,
     String? filePath,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    Frontmatter? frontmatter,
+    @Default([]) List<Marker> markers,
   }) = _Note;
 
   factory Note.fromJson(Map<String, dynamic> json) => _$NoteFromJson(json);
