@@ -79,30 +79,31 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Placeholder content (will be replaced in subsequent subtasks)
+            // Multiline TextField for Markdown content editing
             Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Note Editor - ${note.id}',
-                      style: ShadTheme.of(context).textTheme.h3,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: TextField(
+                  controller: controller,
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  decoration: InputDecoration(
+                    hintText: 'Write your markdown notes here...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Controller initialized with ${controller.text.length} characters',
-                      style: ShadTheme.of(context).textTheme.muted,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Markers: ${note.markers.length}',
-                      style: ShadTheme.of(context).textTheme.muted,
-                    ),
-                  ],
+                    contentPadding: const EdgeInsets.all(16),
+                  ),
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
                 ),
               ),
             ),
+            const SizedBox(height: 16),
           ],
         );
       },
