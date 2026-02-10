@@ -1,0 +1,694 @@
+# GMA - PDF-Linked Markdown Annotation App
+
+## 1. 프로젝트 개요
+
+PDF 문서를 왼쪽에 열고, 오른쪽에 Markdown 노트를 작성하면서
+**PDF의 특정 페이지/좌표와 노트가 양방향으로 연결되는** 학습용 메모 앱.
+
+### 핵심 컨셉
+```
+┌─────────────────────────────────────────────────────────┐
+│                      GMA App                            │
+│                                                         │
+│  ┌──────────────────┐  ┌─────────────────────────────┐  │
+│  │   PDF Viewer      │  │   Markdown Editor           │  │
+│  │                   │  │                             │  │
+│  │  ┌─────────────┐  │  │  # DMDA WK06               │  │
+│  │  │ Page 3      │  │  │  file: DMDA_WK06.pdf       │  │
+│  │  │             │  │  │                             │  │
+│  │  │  📍 P3 표시  │◄─┼──│  🔴 P3  Dictionary-based.. │  │
+│  │  │             │  │  │  🔴 P3  It is widely used.. │  │
+│  │  │             │  │  │                             │  │
+│  │  └─────────────┘  │  │  [[3blue1brown/NN]]         │  │
+│  │  ┌─────────────┐  │  │  [[3blue1brown/LLM]]        │  │
+│  │  │ Page 5      │  │  │                             │  │
+│  │  │             │  │  │  🟡 P5                      │  │
+│  │  │  📍 P5 표시  │◄─┼──│  [이미지 캡처 from PDF]     │  │
+│  │  │             │  │  │                             │  │
+│  │  └─────────────┘  │  │  ▸ Unlinked References      │  │
+│  └──────────────────┘  └─────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 이미지 분석 결과 (사용자 레퍼런스)
+
+| 영역 | 기능 |
+|------|------|
+| **좌측 PDF** | 페이지 번호 표시, 스크롤 가능, 링크 클릭 가능 |
+| **우측 노트** | 파일 메타데이터 (file, file-path) |
+| | Wiki-link: `[[3blue1brown/NN]]`, `[[3blue1brown/LLM]]` |
+| | 색상 코드 마커: 🔴 P3, 🟡 P5 (페이지별 색상 구분) |
+| | PDF 텍스트 발췌 + 페이지 번호 |
+| | PDF 이미지/다이어그램 캡처 임베드 |
+| | Unlinked References 섹션 |
+
+---
+
+## 2. 핵심 기능 정의
+
+### 2.1 PDF Viewer (좌측 패널)
+- PDF 파일 열기 (로컬 파일, 드래그앤드롭)
+- 페이지 네비게이션 (스크롤, 페이지 점프)
+- 줌 인/아웃
+- **텍스트 선택** → 우클릭/버튼으로 노트에 발췌 추가
+- **영역 캡처** → 드래그로 이미지 영역 선택 → 노트에 임베드
+- 페이지 마커 오버레이 (노트에서 참조 중인 페이지에 색상 점 표시)
+- 텍스트 검색
+
+### 2.2 Markdown Editor (우측 패널)
+- Markdown 실시간 편집 + 프리뷰 토글
+- **파일 메타데이터 (Frontmatter)**:
+  ```yaml
+  ---
+  file: DMDA_WK06_1760326528155_0.pdf
+  file-path: ./assets/DMDA_WK06_1760326528155_0.pdf
+  created: 2026-02-04
+  tags: [machine-learning, logistic-regression]
+  ---
+  ```
+- **PDF 페이지 마커 문법**:
+  ```markdown
+  - 🔴 P3  Dictionary-based sentiment analysis is...
+  - 🟡 P5  [캡처된 이미지]
+  ```
+  - 클릭 시 PDF 뷰어가 해당 페이지로 자동 스크롤
+- **Wiki-link**: `[[노트이름]]` 또는 `[[폴더/노트이름]]`
+- **이미지 임베드**: PDF에서 캡처한 이미지 표시
+- LaTeX 수식 지원: `$inline$`, `$$block$$`
+- 자동 저장
+
+### 2.3 PDF ↔ 노트 연동 (핵심 차별점)
+- **PDF → 노트**: 텍스트 선택 시 페이지 번호 + 색상 마커로 노트에 자동 삽입
+- **노트 → PDF**: 마커(P3, P5) 클릭 시 PDF 해당 페이지로 점프
+- **영역 캡처**: PDF의 특정 영역을 이미지로 캡처해 노트에 임베드
+- **색상 코딩**: 페이지별 또는 카테고리별 색상 구분 (🔴🟡🟢🔵🟣)
+- **좌표 저장**: 텍스트 선택 좌표를 메타데이터에 저장하여 정확한 위치로 복귀
+
+### 2.4 파일 관리
+- 노트 폴더 구조 (로컬 파일시스템 기반)
+- PDF 에셋 관리 (./assets/ 폴더)
+- 노트 목록/검색/태그 필터링
+- Unlinked References (현재 노트를 참조하는 다른 노트 자동 탐색)
+
+---
+
+## 3. 기술 스택
+
+### 개발 방식: Auto-Claude (AC247) 자동화
+
+**AC247 = 개발 오케스트레이터**. 에이전트 팀이 자율적으로 코드를 작성한다.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    AC247 (Auto-Claude)                            │
+│               Planner → Coder → QA Reviewer → Merge              │
+│                                                                    │
+│  참조 코드베이스 (에이전트가 읽고 학습):                              │
+│  ├── C:\DK\GMA\clone\pdfrx       → PDF 렌더링/좌표 패턴           │
+│  └── C:\DK\GMA\clone\printnotes  → Markdown/Wiki-link 패턴       │
+│                                                                    │
+│  타겟 프로젝트:                                                     │
+│  └── C:\DK\GMA\frontend          → 빌드 결과물 (Flutter 앱)       │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### 참조 프로젝트 (에이전트가 읽을 레퍼런스)
+
+| 참조 프로젝트 | 경로 | 에이전트 활용 포인트 |
+|-------------|------|-------------------|
+| **pdfrx** | `clone/pdfrx` | PDF 렌더링, 텍스트 선택, 좌표 시스템, 페이지 네비게이션 |
+| **printnotes** | `clone/printnotes` | Markdown 편집/렌더링, Wiki-link, 프론트매터, 파일 관리 |
+
+### Flutter 패키지
+
+| 역할 | 패키지 | 용도 |
+|------|--------|------|
+| UI 컴포넌트 | `shadcn_ui` | 버튼, 카드, 입력, 토스트 |
+| PDF 뷰어 | `pdfrx` | PDF 렌더링, 텍스트 선택, 좌표 |
+| 상태관리 | `flutter_riverpod` | 전역 상태 (PDF 상태, 노트 상태, 연동) |
+| 코드생성 | `riverpod_generator` | Provider 자동 생성 |
+| 라우팅 | `go_router` | 화면 전환 |
+| HTTP | `dio` | 백엔드 API (향후) |
+| 로컬저장 | `hive_flutter` | 설정, 캐시, 마커 메타데이터 |
+| 보안저장 | `flutter_secure_storage` | 인증 토큰 |
+| 모델 | `freezed` | 불변 데이터 모델 |
+| Markdown | `markdown` | Markdown 파싱 |
+| LaTeX | `flutter_math_fork` | 수식 렌더링 |
+| 파일 | `path_provider` + `file_picker` | 파일 접근 |
+
+---
+
+## 4. 데이터 모델
+
+### 4.1 PDF 마커 (Annotation)
+
+```dart
+@freezed
+class PdfMarker with _$PdfMarker {
+  const factory PdfMarker({
+    required String id,
+    required String pdfPath,       // PDF 파일 경로
+    required int pageNumber,       // 페이지 번호 (P3, P5)
+    required MarkerColor color,    // 🔴🟡🟢🔵🟣
+    String? selectedText,          // 선택된 텍스트
+    PdfRect? textRect,             // PDF 좌표 (텍스트 위치)
+    PdfRect? captureRect,          // 이미지 캡처 영역
+    String? capturedImagePath,     // 캡처된 이미지 저장 경로
+    required DateTime createdAt,
+  }) = _PdfMarker;
+}
+
+enum MarkerColor { red, yellow, green, blue, purple }
+```
+
+### 4.2 노트 (Note)
+
+```dart
+@freezed
+class Note with _$Note {
+  const factory Note({
+    required String id,
+    required String title,
+    required String content,       // Markdown 원본
+    String? linkedPdfPath,         // 연결된 PDF 경로
+    required List<PdfMarker> markers,  // PDF 마커 목록
+    required List<String> tags,
+    required List<String> wikiLinks,   // [[참조]] 목록
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) = _Note;
+}
+```
+
+### 4.3 노트 파일 구조 (Markdown + Frontmatter)
+
+```markdown
+---
+file: DMDA_WK06_1760326528155_0.pdf
+file-path: ./assets/DMDA_WK06_1760326528155_0.pdf
+created: 2026-02-04
+tags: [machine-learning, logistic-regression]
+markers:
+  - id: m1
+    page: 3
+    color: red
+    text: "Dictionary-based sentiment analysis is..."
+    rect: [120.5, 340.2, 580.0, 360.8]
+  - id: m2
+    page: 5
+    color: yellow
+    capture: ./captures/p5_logistic_regression.png
+    rect: [100.0, 200.0, 500.0, 450.0]
+---
+
+# DMDA WK06
+
+[[컴퓨터&미디어&인터넷&컴퓨터]]
+
+- [[3blue1brown/NN]]
+- [[3blue1brown/LLM]]
+- test
+
+- 🔴 P3  Dictionary-based sentiment analysis is a method of evaluating...
+- 🔴 P3  It is widely used due to its simplicity and interpretability...
+
+- 🟡 P5
+  ![Logistic Regression](./captures/p5_logistic_regression.png)
+
+  $$\ln\left(\frac{p}{1-p}\right) = \beta_0 + \beta_1 x_1 + \beta_2 x_3 + \cdots + \beta_k x_k$$
+
+▸ Unlinked References
+```
+
+---
+
+## 5. 화면 구조
+
+### 5.1 메인 화면 (Split View)
+
+```
+┌──────────────────────────────────────────────────────┐
+│ 🔍 Search    [파일목록] [+새노트]          [설정]     │
+├────────────┬──────────────┬──────────────────────────┤
+│            │              │                          │
+│  Sidebar   │  PDF Viewer  │  Markdown Editor         │
+│            │              │                          │
+│  📁 Notes  │  ┌────────┐  │  ---                     │
+│   ├── WK01 │  │ Page 3 │  │  file: WK06.pdf         │
+│   ├── WK02 │  │        │  │  ---                     │
+│   ├── WK06 │  │  text  │  │                          │
+│   └── ...  │  │  text  │  │  # DMDA WK06             │
+│            │  │        │  │                          │
+│  📁 Refs   │  └────────┘  │  🔴 P3 Dictionary-based. │
+│   ├── NN   │  ┌────────┐  │  🟡 P5 [image]           │
+│   └── LLM  │  │ Page 5 │  │                          │
+│            │  │        │  │  [[3blue1brown/NN]]       │
+│            │  └────────┘  │                          │
+├────────────┴──────────────┴──────────────────────────┤
+│ Status: Page 3/42  |  Zoom: 100%  |  Auto-saved ✓   │
+└──────────────────────────────────────────────────────┘
+```
+
+### 5.2 화면 목록
+
+| 화면 | 경로 | 설명 |
+|------|------|------|
+| Home | `/` | 최근 노트 목록, 빠른 열기 |
+| Workspace | `/workspace` | **메인 3패널 (사이드바+PDF+에디터)** |
+| Note Only | `/note/:id` | 노트만 편집 (PDF 없이) |
+| Settings | `/settings` | 테마, 저장 경로, 마커 색상 설정 |
+| Login | `/login` | 인증 (향후 클라우드 동기화용) |
+
+---
+
+## 6. Feature 모듈 구조
+
+```
+lib/
+├── main.dart
+├── app.dart
+│
+├── common_widgets/
+│   ├── split_view.dart              # 리사이즈 가능한 패널 분할
+│   ├── color_dot.dart               # 🔴🟡🟢 색상 점
+│   └── wiki_link_chip.dart          # [[링크]] 칩 위젯
+│
+├── constants/
+│   ├── app_colors.dart
+│   ├── app_theme.dart
+│   ├── api_endpoints.dart
+│   └── marker_colors.dart           # 마커 색상 정의
+│
+├── routing/
+│   └── app_router.dart
+│
+├── utils/
+│   ├── dio_provider.dart
+│   ├── markdown_parser.dart         # 커스텀 Markdown 파서
+│   ├── frontmatter_parser.dart      # YAML frontmatter 파싱
+│   ├── wiki_link_resolver.dart      # [[링크]] 해석
+│   └── file_system_provider.dart    # 로컬 파일 접근
+│
+└── features/
+    ├── auth/                        # 인증 (기존)
+    │
+    ├── workspace/                   # ⭐ 메인 작업 화면
+    │   ├── models/
+    │   │   ├── workspace_model.dart     # 워크스페이스 상태
+    │   │   └── panel_layout_model.dart  # 패널 크기/배치
+    │   ├── pages/
+    │   │   ├── providers/
+    │   │   │   └── workspace_provider.dart
+    │   │   ├── screens/
+    │   │   │   └── workspace_screen.dart   # 3패널 메인
+    │   │   └── widgets/
+    │   │       ├── sidebar_panel.dart
+    │   │       └── status_bar.dart
+    │   ├── queries/
+    │   └── mutations/
+    │
+    ├── pdf_viewer/                  # ⭐ PDF 뷰어
+    │   ├── models/
+    │   │   ├── pdf_document_model.dart
+    │   │   └── pdf_marker_model.dart    # 마커 데이터
+    │   ├── pages/
+    │   │   ├── providers/
+    │   │   │   ├── pdf_provider.dart         # PDF 문서 상태
+    │   │   │   ├── pdf_marker_provider.dart  # 마커 관리
+    │   │   │   └── pdf_selection_provider.dart # 텍스트 선택
+    │   │   ├── screens/
+    │   │   │   └── pdf_viewer_screen.dart
+    │   │   └── widgets/
+    │   │       ├── pdf_page_overlay.dart     # 마커 오버레이
+    │   │       ├── text_selection_toolbar.dart
+    │   │       ├── area_capture_overlay.dart # 영역 캡처 UI
+    │   │       └── page_navigator.dart
+    │   ├── queries/
+    │   └── mutations/
+    │
+    ├── note_editor/                 # ⭐ Markdown 에디터
+    │   ├── models/
+    │   │   ├── note_model.dart
+    │   │   └── marker_syntax_model.dart  # 🔴 P3 파싱 모델
+    │   ├── pages/
+    │   │   ├── providers/
+    │   │   │   ├── note_provider.dart        # 노트 상태
+    │   │   │   ├── editor_provider.dart      # 에디터 모드
+    │   │   │   └── autosave_provider.dart    # 자동 저장
+    │   │   ├── screens/
+    │   │   │   └── note_editor_screen.dart
+    │   │   └── widgets/
+    │   │       ├── markdown_renderer.dart    # MD 렌더링
+    │   │       ├── marker_line_widget.dart   # 🔴 P3 라인
+    │   │       ├── wiki_link_widget.dart     # [[링크]] 렌더
+    │   │       ├── frontmatter_header.dart   # 메타 표시
+    │   │       ├── captured_image_widget.dart
+    │   │       ├── latex_block_widget.dart
+    │   │       ├── editor_toolbar.dart
+    │   │       └── unlinked_references.dart  # 역참조 섹션
+    │   ├── queries/
+    │   └── mutations/
+    │
+    ├── file_manager/                # 파일/폴더 관리
+    │   ├── models/
+    │   │   └── file_tree_model.dart
+    │   ├── pages/
+    │   │   ├── providers/
+    │   │   │   └── file_manager_provider.dart
+    │   │   ├── screens/
+    │   │   │   └── file_browser_screen.dart
+    │   │   └── widgets/
+    │   │       ├── file_tree_view.dart
+    │   │       └── search_bar.dart
+    │   ├── queries/
+    │   └── mutations/
+    │
+    ├── home/                        # 홈 (최근 노트)
+    │   └── pages/screens/
+    │       └── home_screen.dart
+    │
+    ├── profile/                     # 프로필
+    │   └── pages/screens/
+    │       └── profile_screen.dart
+    │
+    └── settings/                    # 설정
+        └── pages/screens/
+            └── settings_screen.dart
+```
+
+---
+
+## 7. 핵심 유저 플로우
+
+### Flow 1: PDF에서 텍스트 발췌 → 노트에 추가
+
+```
+1. PDF에서 텍스트 드래그 선택
+2. 선택 툴바 팝업: [색상 선택 🔴🟡🟢] [노트에 추가] [복사]
+3. "노트에 추가" 클릭
+4. 시스템이 자동으로:
+   a. 페이지 번호 추출 (예: P3)
+   b. 선택 텍스트 추출
+   c. PDF 좌표 저장 (PdfRect)
+   d. Markdown에 마커 라인 삽입:
+      "- 🔴 P3  Dictionary-based sentiment analysis is..."
+   e. frontmatter markers 배열에 추가
+5. 노트 자동 저장
+```
+
+### Flow 2: 노트에서 마커 클릭 → PDF 페이지 이동
+
+```
+1. 에디터에서 "🔴 P3" 마커 클릭
+2. pdf_marker_provider가 마커 ID 조회
+3. PdfViewerController.goToRectInsidePage(
+     pageNumber: 3,
+     rect: marker.textRect  // 저장된 좌표
+   )
+4. PDF 뷰어가 해당 페이지+위치로 스크롤 + 하이라이트
+```
+
+### Flow 3: PDF 영역 캡처 → 노트에 이미지 삽입
+
+```
+1. PDF 뷰어에서 캡처 모드 활성화 (버튼 클릭)
+2. 드래그로 영역 선택
+3. 시스템이:
+   a. PdfPage.render()로 선택 영역 렌더링
+   b. 이미지를 ./captures/ 폴더에 저장
+   c. Markdown에 삽입:
+      "- 🟡 P5"
+      "  ![캡처](./captures/p5_capture_001.png)"
+   d. frontmatter markers에 captureRect 저장
+```
+
+### Flow 4: Wiki-link 네비게이션
+
+```
+1. 에디터에서 [[3blue1brown/NN]] 클릭
+2. wiki_link_resolver가 파일 시스템에서 검색
+3. 해당 노트 파일을 에디터에 로드
+4. 이전 노트는 히스토리 스택에 push
+```
+
+---
+
+## 8. 상태 관리 설계
+
+### Provider 구조 (Riverpod)
+
+```
+┌─────────────────────────────────────────┐
+│           workspaceProvider             │
+│  (패널 레이아웃, 전체 상태 조율)          │
+└───────┬──────────────┬──────────────────┘
+        │              │
+┌───────▼──────┐ ┌─────▼──────────────────┐
+│ pdfProvider  │ │ noteProvider           │
+│ - document   │ │ - current note         │
+│ - controller │ │ - content              │
+│ - page num   │ │ - markers              │
+└───────┬──────┘ └─────┬──────────────────┘
+        │              │
+┌───────▼──────────────▼──────────────────┐
+│         pdfMarkerProvider               │
+│  (PDF ↔ 노트 연동의 핵심)                │
+│  - 마커 목록 관리                        │
+│  - 텍스트 선택 → 마커 생성               │
+│  - 마커 클릭 → PDF 페이지 점프           │
+│  - 영역 캡처 → 이미지 저장              │
+└─────────────────────────────────────────┘
+
+┌─────────────────┐  ┌──────────────────┐
+│ fileManagerProv  │  │ autosaveProv     │
+│ - 파일 트리      │  │ - 3초 디바운스   │
+│ - 검색           │  │ - 저장 상태 표시  │
+└─────────────────┘  └──────────────────┘
+```
+
+---
+
+## 9. PDF 좌표 시스템 활용 (pdfrx)
+
+```
+PDF 좌표계 (pdfrx):        Flutter 좌표계:
+  Y ▲                        (0,0) ────► X
+    │                          │
+    │  (x, y)                  │  (x, y)
+    │                          ▼
+    └──────► X                 Y
+
+주의: PDF는 좌하단이 원점, Flutter는 좌상단이 원점
+pdfrx가 내부적으로 변환 처리
+```
+
+### 마커 좌표 저장 형식
+
+```json
+{
+  "id": "m1",
+  "page": 3,
+  "color": "red",
+  "text": "Dictionary-based sentiment analysis...",
+  "rect": {
+    "left": 120.5,
+    "top": 360.8,
+    "right": 580.0,
+    "bottom": 340.2
+  }
+}
+```
+
+---
+
+## 10. 로컬 저장 구조
+
+```
+~/GMA_Notes/                         # 사용자 지정 루트 폴더
+├── .gma/
+│   ├── config.json                  # 앱 설정
+│   └── index.json                   # 노트 인덱스 (빠른 검색용)
+│
+├── assets/                          # PDF 원본 저장
+│   ├── DMDA_WK06_1760326528155_0.pdf
+│   └── ML_Lecture_02.pdf
+│
+├── captures/                        # PDF 캡처 이미지
+│   ├── p5_logistic_regression.png
+│   └── p12_neural_network.png
+│
+├── notes/                           # Markdown 노트
+│   ├── DMDA_WK06.md
+│   ├── ML_Lecture_02.md
+│   └── refs/
+│       ├── 3blue1brown/
+│       │   ├── NN.md
+│       │   └── LLM.md
+│       └── nvidia/
+│           └── sentiment-analysis.md
+│
+└── trash/                           # 휴지통
+```
+
+---
+
+## 11. 개발 우선순위
+
+### Phase 1: 코어 (MVP)
+1. ✅ Flutter 프로젝트 초기 셋업
+2. 3패널 레이아웃 (사이드바 + PDF + 에디터)
+3. pdfrx 기반 PDF 뷰어 통합
+4. 기본 Markdown 에디터 (편집 + 프리뷰)
+5. PDF 텍스트 선택 → 노트에 마커 추가
+6. 마커 클릭 → PDF 페이지 점프
+7. 로컬 파일 저장/로드
+
+### Phase 2: 고급 기능
+8. PDF 영역 캡처 → 이미지 저장 + 임베드
+9. Wiki-link `[[]]` 파싱 + 네비게이션
+10. Frontmatter 파싱 + 표시
+11. 파일 트리 사이드바
+12. 전체 텍스트 검색
+13. 자동 저장
+
+### Phase 3: 폴리싱
+14. Unlinked References 섹션
+15. LaTeX 수식 렌더링
+16. 마커 색상 커스터마이징
+17. 테마 (라이트/다크)
+18. 키보드 단축키
+19. 드래그앤드롭 PDF 열기
+
+### Phase 4: 확장 (향후)
+20. 클라우드 동기화 (백엔드 연동)
+21. OCR (이미지 PDF 텍스트 추출)
+22. AI 요약 (선택 텍스트 자동 요약)
+23. 멀티 PDF 동시 열기
+24. 모바일 대응
+
+---
+
+## 12. 참조 프로젝트 활용 계획
+
+### pdfrx에서 가져올 것
+- `PdfViewer` 위젯 직접 사용 (패키지 의존성)
+- `PdfViewerController` 로 페이지 네비게이션
+- `PdfTextSelectionParams` 로 텍스트 선택 핸들링
+- `PdfPage.render()` 로 영역 캡처
+- `PdfPageText` / `PdfRect` 로 좌표 관리
+- 예제 앱의 마커 시스템 패턴 참고
+
+### printnotes에서 참고할 것
+- 커스텀 Markdown 위젯 렌더링 구조
+- Wiki-link 파싱 (`[[filename]]`, `[[filename#header]]`)
+- Frontmatter 파싱 패턴 (cosmic_frontmatter)
+- 파일 시스템 기반 노트 관리
+- 에디터 ↔ 프리뷰 토글 구조
+- 태그 시스템
+
+---
+
+## 13. Auto-Claude (AC247) 실행 가이드
+
+### 13.1 전체 구조
+
+```
+C:\DK\GMA\
+├── frontend/                ← 타겟 프로젝트 (--project-dir)
+├── clone/
+│   ├── AC247/               ← Auto-Claude 엔진
+│   ├── pdfrx/               ← 참조 코드 (PDF)
+│   └── printnotes/          ← 참조 코드 (Markdown)
+├── docs/
+│   └── PROJECT_DESIGN.md    ← 이 문서
+└── .auto-claude/            ← AC247이 생성 (specs, worktrees)
+```
+
+### 13.2 사전 준비
+
+```powershell
+# 1. AC247 백엔드 의존성 설치
+cd C:\DK\GMA\clone\AC247\Auto-Claude\apps\backend
+uv venv && uv pip install -r requirements.txt
+
+# 2. AC247 프론트엔드 (Electron UI) 설치
+cd C:\DK\GMA\clone\AC247\Auto-Claude\apps\frontend
+npm install
+
+# 3. GMA frontend를 git repo로 초기화 (worktree에 필요)
+cd C:\DK\GMA\frontend
+git init && git add -A && git commit -m "Initial Flutter setup"
+
+# 4. 환경 변수 (.env)
+cd C:\DK\GMA\clone\AC247\Auto-Claude\apps\backend
+# .env 파일에 CLAUDE_CODE_OAUTH_TOKEN 설정 필요
+```
+
+### 13.3 Design Task로 전체 분해 (추천: 먼저 실행)
+
+```powershell
+cd C:\DK\GMA\clone\AC247\Auto-Claude\apps\backend
+
+# GMA 프로젝트를 자식 태스크들로 자동 분해
+python runners/spec_runner.py \
+  --task "PDF-Linked Markdown Annotation App: 3-panel layout (sidebar + PDF viewer + markdown editor), PDF text selection with page markers, marker click to PDF page jump, area capture to image, wiki-links, frontmatter, auto-save. Reference code: C:\DK\GMA\clone\pdfrx (PDF engine), C:\DK\GMA\clone\printnotes (Markdown patterns). Tech: Flutter + Riverpod + shadcn_ui + pdfrx + go_router + freezed. See C:\DK\GMA\docs\PROJECT_DESIGN.md for full spec." \
+  --project-dir C:\DK\GMA\frontend \
+  --task-type design \
+  --no-build
+```
+
+이렇게 하면 AC247이 자동으로 5~10개 자식 태스크로 분해한다:
+- `001-split-panel-layout`
+- `002-pdf-viewer-integration`
+- `003-markdown-editor`
+- `004-pdf-note-linking`
+- `005-wiki-links`
+- etc.
+
+### 13.4 데몬 시작 (자동 실행)
+
+```powershell
+# 데몬이 specs/ 감시하면서 자동으로 Planner → Coder → QA 실행
+python runners/daemon_runner.py \
+  --project-dir C:\DK\GMA\frontend \
+  --status-file C:\DK\GMA\frontend\.auto-claude\daemon_status.json
+```
+
+### 13.5 Electron UI로 모니터링
+
+```powershell
+cd C:\DK\GMA\clone\AC247\Auto-Claude\apps\frontend
+npm run dev
+# → Kanban Board에서 태스크 상태 확인
+# → Agent Terminals에서 실시간 로그 확인
+```
+
+### 13.6 수동 실행 (개별 태스크)
+
+```powershell
+# 특정 태스크만 빌드
+python run.py --spec 001 --project-dir C:\DK\GMA\frontend
+
+# QA만 재실행
+python run.py --spec 001 --qa --project-dir C:\DK\GMA\frontend
+
+# 태스크 목록 확인
+python run.py --list --project-dir C:\DK\GMA\frontend
+```
+
+### 13.7 에이전트 파이프라인 흐름
+
+```
+spec_runner --task-type design
+  ↓
+.auto-claude/specs/ 에 자식 태스크 생성
+  ↓
+daemon_runner (감시 중)
+  ↓ (각 태스크마다)
+  ├─ Planner: PROJECT_DESIGN.md + 참조코드 읽고 구현 계획 수립
+  ├─ Coder:   계획에 따라 코드 작성 (pdfrx/printnotes 패턴 참고)
+  ├─ QA:      flutter analyze + 빌드 검증 + 코드 리뷰
+  │    ↓ (실패 시)
+  │    QA Fixer → 수정 → QA 재검증 (최대 3회)
+  └─ Auto-merge → main 브랜치 반영
+```

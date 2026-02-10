@@ -1,0 +1,30 @@
+{
+  "project_dir": "C:\\DK\\GMA\\frontend",
+  "running": true,
+  "started_at": "2026-02-09T11:23:18.497578+00:00",
+  "config": {
+    "max_concurrent_tasks": 1,
+    "headless_mode": true
+  },
+  "running_tasks": {
+    "002-data-models-and-utilities-foundation-create-pdfmar": {
+      "spec_id": "002-data-models-and-utilities-foundation-create-pdfmar",
+      "spec_dir": "C:\\DK\\GMA\\frontend\\.auto-claude\\worktrees\\tasks\\002-data-models-and-utilities-foundation-create-pdfmar\\.auto-claude\\specs\\002-data-models-and-utilities-foundation-create-pdfmar",
+      "status": "in_progress",
+      "is_running": true,
+      "started_at": "2026-02-09T11:23:18.497578+00:00",
+      "last_update": "2026-02-09T11:31:49.708555+00:00",
+      "task_type": "impl",
+      "phase": "coding",
+      "session": 4,
+      "current_subtask": "subtask-3-1"
+    }
+  },
+  "queued_tasks": [],
+  "stats": {
+    "running": 1,
+    "queued": 0,
+    "completed": 13
+  },
+  "timestamp": "2026-02-09T16:58:11.959059+00:00"
+}
