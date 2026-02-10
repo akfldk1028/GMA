@@ -554,8 +554,8 @@ void main() {
 
         final decoration = container.decoration as BoxDecoration;
         expect(decoration.borderRadius, BorderRadius.circular(4));
-        expect(decoration.color, MarkerColor.red.color.withOpacity(0.1));
-        expect(decoration.border?.top.color, MarkerColor.red.color.withOpacity(0.3));
+        expect(decoration.color, MarkerColor.red.color.withValues(alpha: 0.1));
+        expect(decoration.border?.top.color, MarkerColor.red.color.withValues(alpha: 0.3));
         expect(decoration.border?.top.width, 1);
       });
 
@@ -714,7 +714,7 @@ void main() {
           ),
         );
         final decoration = container.decoration as BoxDecoration;
-        expect(decoration.color, const Color(0xFFEF4444).withOpacity(0.1));
+        expect(decoration.color, const Color(0xFFEF4444).withValues(alpha: 0.1));
       });
 
       testWidgets('yellow marker has correct color properties', (WidgetTester tester) async {
@@ -734,7 +734,7 @@ void main() {
           ),
         );
         final decoration = container.decoration as BoxDecoration;
-        expect(decoration.color, const Color(0xFFF59E0B).withOpacity(0.1));
+        expect(decoration.color, const Color(0xFFF59E0B).withValues(alpha: 0.1));
       });
 
       testWidgets('green marker has correct color properties', (WidgetTester tester) async {
@@ -754,7 +754,7 @@ void main() {
           ),
         );
         final decoration = container.decoration as BoxDecoration;
-        expect(decoration.color, const Color(0xFF22C55E).withOpacity(0.1));
+        expect(decoration.color, const Color(0xFF22C55E).withValues(alpha: 0.1));
       });
 
       testWidgets('blue marker has correct color properties', (WidgetTester tester) async {
@@ -774,7 +774,7 @@ void main() {
           ),
         );
         final decoration = container.decoration as BoxDecoration;
-        expect(decoration.color, const Color(0xFF3B82F6).withOpacity(0.1));
+        expect(decoration.color, const Color(0xFF3B82F6).withValues(alpha: 0.1));
       });
 
       testWidgets('purple marker has correct color properties', (WidgetTester tester) async {
@@ -794,7 +794,7 @@ void main() {
           ),
         );
         final decoration = container.decoration as BoxDecoration;
-        expect(decoration.color, const Color(0xFF8B5CF6).withOpacity(0.1));
+        expect(decoration.color, const Color(0xFF8B5CF6).withValues(alpha: 0.1));
       });
     });
   });
