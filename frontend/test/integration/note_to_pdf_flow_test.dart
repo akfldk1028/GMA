@@ -136,7 +136,7 @@ void main() {
             pageNumber: 5,
             color: MarkerColor.yellow,
             selectedText: 'Important text on page 5',
-            textRect: PdfRect(50.0, 100.0, 200.0, 150.0),
+            textRect: PdfRect(50.0, 150.0, 200.0, 100.0),
           );
 
       // Act: Simulate marker click by calling navigateToMarker
@@ -152,9 +152,9 @@ void main() {
       expect(marker.selectedText, 'Important text on page 5');
       expect(marker.textRect, isNotNull);
       expect(marker.textRect!.left, 50.0);
-      expect(marker.textRect!.top, 100.0);
+      expect(marker.textRect!.top, 150.0);
       expect(marker.textRect!.right, 200.0);
-      expect(marker.textRect!.bottom, 150.0);
+      expect(marker.textRect!.bottom, 100.0);
     });
 
     test('Marker click with page-only navigation (no textRect)', () async {
@@ -209,7 +209,7 @@ void main() {
             pageNumber: 1,
             color: MarkerColor.red,
             selectedText: 'First marker',
-            textRect: PdfRect(0, 0, 100, 100),
+            textRect: PdfRect(0, 100, 100, 0),
           );
 
       final marker2 = await container
@@ -218,7 +218,7 @@ void main() {
             pageNumber: 5,
             color: MarkerColor.green,
             selectedText: 'Second marker',
-            textRect: PdfRect(50, 50, 150, 150),
+            textRect: PdfRect(50, 150, 150, 50),
           );
 
       final marker3 = await container
@@ -227,7 +227,7 @@ void main() {
             pageNumber: 10,
             color: MarkerColor.purple,
             selectedText: 'Third marker',
-            textRect: PdfRect(100, 100, 200, 200),
+            textRect: PdfRect(100, 200, 200, 100),
           );
 
       // Act: Navigate to the second marker
@@ -259,7 +259,7 @@ void main() {
             pageNumber: 8,
             color: MarkerColor.red,
             selectedText: 'Captured area',
-            textRect: PdfRect(25.0, 75.0, 300.0, 400.0),
+            textRect: PdfRect(25.0, 400.0, 300.0, 75.0),
             capturedImagePath: './captures/p8_capture.png',
           );
 
