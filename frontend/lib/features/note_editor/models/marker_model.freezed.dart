@@ -169,7 +169,7 @@ class __$$MarkerImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$MarkerImpl extends _Marker {
+class _$MarkerImpl implements _Marker {
   const _$MarkerImpl({
     required this.id,
     @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
@@ -177,7 +177,7 @@ class _$MarkerImpl extends _Marker {
     required this.pageNumber,
     this.selectedText,
     @JsonKey(includeFromJson: false, includeToJson: false) this.rect,
-  }) : super._();
+  });
 
   factory _$MarkerImpl.fromJson(Map<String, dynamic> json) =>
       _$$MarkerImplFromJson(json);
@@ -233,7 +233,7 @@ class _$MarkerImpl extends _Marker {
   }
 }
 
-abstract class _Marker extends Marker {
+abstract class _Marker implements Marker {
   const factory _Marker({
     required final String id,
     @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
@@ -242,7 +242,6 @@ abstract class _Marker extends Marker {
     final String? selectedText,
     @JsonKey(includeFromJson: false, includeToJson: false) final PdfRect? rect,
   }) = _$MarkerImpl;
-  const _Marker._() : super._();
 
   factory _Marker.fromJson(Map<String, dynamic> json) = _$MarkerImpl.fromJson;
 

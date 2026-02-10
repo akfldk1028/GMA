@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../constants/marker_colors.dart';
 import '../../models/pdf_marker_model.dart';
 
 part 'pdf_marker_provider.g.dart';
@@ -44,9 +45,9 @@ class PdfMarkerState extends _$PdfMarkerState {
   /// Create a new marker and persist to storage.
   Future<PdfMarker> createMarker({
     required int pageNumber,
-    required String colorName,
+    required MarkerColor color,
     String? selectedText,
-    PdfRectData? textRect,
+    PdfRect? textRect,
     String? capturedImagePath,
   }) async {
     if (_box == null) {
@@ -56,7 +57,7 @@ class PdfMarkerState extends _$PdfMarkerState {
     final marker = PdfMarker(
       id: const Uuid().v4(),
       pageNumber: pageNumber,
-      colorName: colorName,
+      color: color,
       selectedText: selectedText,
       textRect: textRect,
       capturedImagePath: capturedImagePath,
