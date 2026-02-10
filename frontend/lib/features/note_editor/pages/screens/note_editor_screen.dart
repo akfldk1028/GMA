@@ -5,6 +5,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../providers/note_editor_provider.dart';
 import '../providers/note_provider.dart';
 import '../widgets/frontmatter_header.dart';
+import '../widgets/marker_line_widget.dart';
 
 /// Callback for marker click events in the note editor.
 /// Called when user taps on a marker line (e.g., "- 🔴 P3 Selected text...").
@@ -78,6 +79,37 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
               frontmatter: note.frontmatter,
             ),
             const SizedBox(height: 16),
+
+            // Render marker lines if there are any
+            if (note.markers.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'PDF Markers',
+                      style: ShadTheme.of(context).textTheme.small.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...note.markers.map(
+                      (marker) => MarkerLineWidget(
+                        color: marker.color,
+                        pageNumber: marker.pageNumber,
+                        text: marker.selectedText,
+                        imagePath: null, // Image path handling to be implemented
+                        onTap: widget.onMarkerClick != null
+                            ? () => widget.onMarkerClick!(marker.id)
+                            : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // Multiline TextField for Markdown content editing
             Expanded(
