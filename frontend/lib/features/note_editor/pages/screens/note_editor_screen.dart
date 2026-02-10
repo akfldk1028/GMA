@@ -136,6 +136,45 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // Save button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ShadButton(
+                onPressed: () async {
+                  // Capture context before async operation
+                  final scaffoldMessenger = ShadToaster.of(context);
+
+                  try {
+                    final content = controller.text;
+                    await ref
+                        .read(noteStateProvider(widget.noteId!).notifier)
+                        .updateContent(content);
+
+                    // Show success toast
+                    if (mounted) {
+                      scaffoldMessenger.show(
+                        ShadToast(
+                          title: const Text('Note saved successfully'),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    // Show error toast
+                    if (mounted) {
+                      scaffoldMessenger.show(
+                        ShadToast.destructive(
+                          title: const Text('Failed to save note'),
+                          description: Text(e.toString()),
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ),
+            const SizedBox(height: 16),
           ],
         );
       },
