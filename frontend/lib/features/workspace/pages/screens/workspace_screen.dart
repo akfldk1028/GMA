@@ -206,7 +206,21 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   // Left Panel: File Manager
                   Expanded(
                     flex: (_leftRatio * 100).round(),
-                    child: const FileBrowserScreen(),
+                    child: FileBrowserScreen(
+                      onNoteSelected: (note) {
+                        // Load note in editor
+                        ref
+                            .read(workspaceProviderProvider.notifier)
+                            .loadNote(note.id);
+
+                        // Load linked PDF if available (File Browser → PDF flow)
+                        if (note.hasLinkedPdf) {
+                          ref
+                              .read(workspaceProviderProvider.notifier)
+                              .loadPdf(note.linkedPdfPath!);
+                        }
+                      },
+                    ),
                   ),
 
                   // Left Divider
