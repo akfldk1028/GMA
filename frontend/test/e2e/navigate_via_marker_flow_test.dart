@@ -19,10 +19,9 @@ void main() {
       // Step 1: Create note with marker
       final note = Note(
         id: 'note-nav-1',
-        title: 'Test Note',
+        frontmatter: null,
         content: '# My Notes\n\n- 🔴 P3  Selected text from page 3',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Parse markers from note
@@ -70,14 +69,13 @@ void main() {
       // Step 1: Create note with multiple markers
       final note = Note(
         id: 'note-nav-2',
-        title: 'Multiple Markers',
+        frontmatter: null,
         content: '''# Research Notes
 
 - 🔴 P3  Neural networks
 - 🟡 P5  Deep learning
 - 🟢 P7  Backpropagation''',
-        createdAt: DateTime(2024, 1, 2),
-        updatedAt: DateTime(2024, 1, 2),
+        markers: [],
       );
 
       // Step 2: Parse markers
@@ -153,11 +151,9 @@ Important pages marked above.''';
 
       final note = Note(
         id: 'note-nav-3',
-        title: 'Machine Learning',
+        frontmatter: null,
         content: noteContent,
-        filePath: './notes/ml.md',
-        createdAt: DateTime(2024, 1, 3, 9, 0),
-        updatedAt: DateTime(2024, 1, 3, 10, 30),
+        markers: [],
       );
 
       // Step 2: Parse all markers from note
@@ -201,10 +197,9 @@ Important pages marked above.''';
 
       final note = Note(
         id: 'note-nav-4',
-        title: 'Diagrams',
+        frontmatter: null,
         content: noteContent,
-        createdAt: DateTime(2024, 1, 4),
-        updatedAt: DateTime(2024, 1, 4),
+        markers: [],
       );
 
       // Step 2: Parse marker with image
@@ -241,10 +236,9 @@ Quick access to important pages:
 
       final note = Note(
         id: 'note-nav-5',
-        title: 'Bookmarks',
+        frontmatter: null,
         content: noteContent,
-        createdAt: DateTime(2024, 1, 5),
-        updatedAt: DateTime(2024, 1, 5),
+        markers: [],
       );
 
       // Step 2: Parse bookmark markers
@@ -280,10 +274,9 @@ Quick access to important pages:
 
       final note = Note(
         id: 'note-nav-6',
-        title: 'Formulas',
+        frontmatter: null,
         content: markerLine,
-        createdAt: DateTime(2024, 1, 6),
-        updatedAt: DateTime(2024, 1, 6),
+        markers: [],
       );
 
       // Step 3: Parse marker from note
@@ -330,10 +323,9 @@ PDF References:
 
       final note = Note(
         id: 'note-nav-7',
-        title: 'Mixed Content',
+        frontmatter: null,
         content: noteContent,
-        createdAt: DateTime(2024, 1, 7),
-        updatedAt: DateTime(2024, 1, 7),
+        markers: [],
       );
 
       // Step 2: Parse only marker lines
@@ -370,10 +362,9 @@ PDF References:
 
       final note = Note(
         id: 'note-nav-8',
-        title: 'All Colors',
+        frontmatter: null,
         content: '# All Marker Colors\n\n$markerLines',
-        createdAt: DateTime(2024, 1, 8),
-        updatedAt: DateTime(2024, 1, 8),
+        markers: [],
       );
 
       // Step 3: Parse all markers
@@ -397,14 +388,13 @@ PDF References:
       // Step 1: Create note with multiple markers
       final note = Note(
         id: 'note-nav-9',
-        title: 'Rapid Navigation',
+        frontmatter: null,
         content: '''- 🔴 P1  First
 - 🟡 P2  Second
 - 🟢 P3  Third
 - 🔵 P4  Fourth
 - 🟣 P5  Fifth''',
-        createdAt: DateTime(2024, 1, 9),
-        updatedAt: DateTime(2024, 1, 9),
+        markers: [],
       );
 
       // Step 2: Parse markers
@@ -433,10 +423,9 @@ PDF References:
 
       final note = Note(
         id: 'note-nav-10',
-        title: 'Special Chars',
+        frontmatter: null,
         content: noteContent,
-        createdAt: DateTime(2024, 1, 10),
-        updatedAt: DateTime(2024, 1, 10),
+        markers: [],
       );
 
       // Step 2: Parse markers with special characters
@@ -475,11 +464,9 @@ PDF References:
 
       final note = Note(
         id: 'note-roundtrip',
-        title: 'Roundtrip Test',
+        frontmatter: null,
         content: '# Roundtrip\n\n$markerLine',
-        filePath: './notes/roundtrip.md',
-        createdAt: DateTime(2024, 1, 11, 14, 0),
-        updatedAt: DateTime(2024, 1, 11, 14, 30),
+        markers: [],
       );
 
       // Step 3: Serialize note (simulate save to storage)
@@ -636,11 +623,9 @@ pdf: ./papers/ml_survey.pdf
 
       final note = Note(
         id: 'note-e2e-final',
-        title: 'Research Summary',
+        frontmatter: null,
         content: noteContent,
-        filePath: './notes/research_summary.md',
-        createdAt: DateTime(2024, 1, 12, 10, 0),
-        updatedAt: DateTime(2024, 1, 12, 15, 30),
+        markers: [],
       );
 
       // Step 2: App parses markers from note

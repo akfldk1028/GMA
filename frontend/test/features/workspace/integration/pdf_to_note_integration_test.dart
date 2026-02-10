@@ -21,11 +21,8 @@ void main() {
 
       // Step 3: Add marker to note content
       final note = Note(
-        id: 'note-1',
-        title: 'ML Notes',
-        content: '# Machine Learning\n\n$markerLine',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        id: 'note-1',        content: '# Machine Learning\n\n$markerLine',
+        markers: [],
       );
 
       // Step 4: Verify marker line is in note content
@@ -60,11 +57,8 @@ void main() {
 
       // Step 3: Add marker to note content
       final note = Note(
-        id: 'note-2',
-        title: 'PDF Notes',
-        content: '# Notes\n\n$markerLines',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        id: 'note-2',        content: '# Notes\n\n$markerLines',
+        markers: [],
       );
 
       // Step 4: Verify marker and image are in note content
@@ -111,11 +105,8 @@ void main() {
 
       // Step 3: Create note with all markers
       final note = Note(
-        id: 'note-3',
-        title: 'ML Course Notes',
-        content: '# Machine Learning Course\n\n$markerLines',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        id: 'note-3',        content: '# Machine Learning Course\n\n$markerLines',
+        markers: [],
       );
 
       // Step 4: Verify all markers are in note
@@ -149,11 +140,8 @@ void main() {
 
       // Step 3: Add to note
       final note = Note(
-        id: 'note-4',
-        title: 'Figures',
-        content: '# Important Figures\n\n$markerLines',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        id: 'note-4',        content: '# Important Figures\n\n$markerLines',
+        markers: [],
       );
 
       // Step 4: Verify content
@@ -192,11 +180,8 @@ tags: [research, machine-learning]
 ---''';
 
       final note = Note(
-        id: 'note-5',
-        title: 'Research Notes',
-        content: '$frontmatter\n\n# Research Paper Notes\n\n$markerLine',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        id: 'note-5',        content: '$frontmatter\n\n# Research Paper Notes\n\n$markerLine',
+        markers: [],
       );
 
       // Step 4: Verify frontmatter and marker are both present
@@ -216,14 +201,11 @@ tags: [research, machine-learning]
     test('appends new marker to existing note content', () {
       // Step 1: Start with note containing existing markers
       final existingNote = Note(
-        id: 'note-6',
-        title: 'Ongoing Notes',
-        content: '''# Notes
+        id: 'note-6',        content: '''# Notes
 
 - 🔴 P1  First marker
 - 🟡 P2  Second marker''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Create new marker from PDF
@@ -240,7 +222,7 @@ tags: [research, machine-learning]
 
       final updatedNote = existingNote.copyWith(
         content: updatedContent,
-        updatedAt: DateTime(2024, 1, 2),
+        markers: [],
       );
 
       // Step 4: Verify all markers are present
@@ -271,11 +253,8 @@ tags: [research, machine-learning]
 
       // Step 3: Add to note
       final note = Note(
-        id: 'note-special',
-        title: 'Special Characters',
-        content: markerLine,
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        id: 'note-special',        content: markerLine,
+        markers: [],
       );
 
       // Step 4: Parse and verify special characters are preserved
@@ -298,11 +277,8 @@ tags: [research, machine-learning]
 
       // Step 3: Add to note
       final note = Note(
-        id: 'note-bookmark',
-        title: 'Bookmarks',
-        content: '# Page References\n\n$markerLine',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        id: 'note-bookmark',        content: '# Page References\n\n$markerLine',
+        markers: [],
       );
 
       // Step 4: Verify marker line is present
@@ -355,11 +331,8 @@ tags: [research, machine-learning]
 
       // Step 3: Create note
       final note = Note(
-        id: 'roundtrip-note',
-        title: 'Roundtrip Test',
-        content: '# Test\n\n$markerLines',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        id: 'roundtrip-note',        content: '# Test\n\n$markerLines',
+        markers: [],
       );
 
       // Step 4: Parse markers from note
@@ -402,9 +375,7 @@ tags: [research, machine-learning]
       final markerLine2 = '- ${marker2.color.emoji} P${marker2.pageNumber}  ${marker2.selectedText}';
 
       final note = Note(
-        id: 'mixed-note',
-        title: 'Complex Notes',
-        content: '''# Machine Learning Notes
+        id: 'mixed-note',        content: '''# Machine Learning Notes
 
 ## Chapter 1: Introduction
 
@@ -423,8 +394,7 @@ More explanatory text here.
 
 See also: [[related-note]]
 ''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 3: Parse markers (should only extract marker lines, not regular lists)
@@ -456,11 +426,8 @@ See also: [[related-note]]
 
       // Step 3: Create note
       final note = Note(
-        id: 'color-test',
-        title: 'Color Test',
-        content: markerLines,
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        id: 'color-test',        content: markerLines,
+        markers: [],
       );
 
       // Step 4: Verify all colors are in content

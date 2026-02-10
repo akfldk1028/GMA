@@ -23,11 +23,8 @@ void main() {
     test('parses marker from note and extracts navigation data', () {
       // Step 1: Create note with marker
       final note = Note(
-        id: 'note-1',
-        title: 'ML Notes',
-        content: '# Machine Learning\n\n- 🔴 P3  Dictionary-based sentiment analysis is...',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        id: 'note-1',        content: '# Machine Learning\n\n- 🔴 P3  Dictionary-based sentiment analysis is...',
+        markers: [],
       );
 
       // Step 2: Parse markers from note
@@ -73,15 +70,12 @@ void main() {
     testWidgets('clicking marker line navigates to correct PDF page', (WidgetTester tester) async {
       // Step 1: Create note with multiple markers
       final note = Note(
-        id: 'note-multi',
-        title: 'Multi Page Notes',
-        content: '''# Notes
+        id: 'note-multi',        content: '''# Notes
 
 - 🔴 P1  Introduction
 - 🟡 P5  Methods
 - 🟢 P10  Results''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Parse markers
@@ -134,14 +128,11 @@ void main() {
     testWidgets('marker with image navigates to PDF page', (WidgetTester tester) async {
       // Step 1: Create note with marker containing image
       final note = Note(
-        id: 'note-image',
-        title: 'Image Notes',
-        content: '''# Figures
+        id: 'note-image',        content: '''# Figures
 
 - 🟡 P5
   ![capture](./captures/p5_capture.png)''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Parse marker with image
@@ -177,14 +168,11 @@ void main() {
     testWidgets('marker with text and image navigates correctly', (WidgetTester tester) async {
       // Step 1: Create note with marker having both text and image
       final note = Note(
-        id: 'note-text-image',
-        title: 'Complete Marker',
-        content: '''# Notes
+        id: 'note-text-image',        content: '''# Notes
 
 - 🔵 P7  Figure 2.1: Network Architecture
   ![figure](./captures/p7_figure.png)''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Parse marker
@@ -282,11 +270,8 @@ void main() {
 
       // Step 3: Add to note
       final note = Note(
-        id: 'note-rect',
-        title: 'Notes with Coords',
-        content: '# Notes\n\n$markerLine',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        id: 'note-rect',        content: '# Notes\n\n$markerLine',
+        markers: [],
       );
 
       // Step 4: Parse marker from note
@@ -336,14 +321,11 @@ void main() {
     testWidgets('marker without text navigates correctly', (WidgetTester tester) async {
       // Step 1: Create note with text-less marker (bookmark)
       final note = Note(
-        id: 'bookmark-note',
-        title: 'Bookmarks',
-        content: '''# Page References
+        id: 'bookmark-note',        content: '''# Page References
 
 - 🔵 P15
 - 🟡 P20''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Parse markers
@@ -387,9 +369,7 @@ void main() {
     test('note with frontmatter parses markers correctly for navigation', () {
       // Step 1: Create note with frontmatter and markers
       final note = Note(
-        id: 'frontmatter-note',
-        title: 'Research Notes',
-        content: '''---
+        id: 'frontmatter-note',        content: '''---
 file: research_paper.pdf
 file-path: ./assets/research_paper.pdf
 created: 2024-01-01
@@ -400,8 +380,7 @@ tags: [research, machine-learning]
 
 - 🟣 P10  Key conclusion from the paper
 - 🔴 P5  Important methodology''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Parse markers (should ignore frontmatter)
@@ -418,9 +397,7 @@ tags: [research, machine-learning]
     testWidgets('mixed content: only markers trigger navigation', (WidgetTester tester) async {
       // Step 1: Create note with mixed content
       final note = Note(
-        id: 'mixed-note',
-        title: 'Mixed Content',
-        content: '''# Notes
+        id: 'mixed-note',        content: '''# Notes
 
 ## Chapter 1
 
@@ -437,8 +414,7 @@ Some explanatory text.
 
 More text here.
 ''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Parse markers (should only get marker lines, not regular list items)
@@ -456,17 +432,14 @@ More text here.
     testWidgets('all marker colors navigate correctly', (WidgetTester tester) async {
       // Step 1: Create markers with all colors
       final note = Note(
-        id: 'all-colors',
-        title: 'All Colors',
-        content: '''# Color Test
+        id: 'all-colors',        content: '''# Color Test
 
 - 🔴 P1  Red marker
 - 🟡 P2  Yellow marker
 - 🟢 P3  Green marker
 - 🔵 P4  Blue marker
 - 🟣 P5  Purple marker''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Parse all markers
@@ -539,11 +512,8 @@ More text here.
       // Step 2: Format and store in note
       final markerLine = '- ${originalMarker.color.emoji} P${originalMarker.pageNumber}  ${originalMarker.selectedText}';
       final note = Note(
-        id: 'roundtrip',
-        title: 'Roundtrip Test',
-        content: '# Test\n\n$markerLine',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        id: 'roundtrip',        content: '# Test\n\n$markerLine',
+        markers: [],
       );
 
       // Step 3: Parse marker from note for navigation
@@ -563,13 +533,10 @@ More text here.
     testWidgets('special characters in marker text do not break navigation', (WidgetTester tester) async {
       // Step 1: Create note with special characters
       final note = Note(
-        id: 'special-chars',
-        title: 'Special Characters',
-        content: '''# Notes
+        id: 'special-chars',        content: '''# Notes
 
 - 🔴 P5  Text with "quotes" and (parentheses) & symbols! 한글 テスト''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Parse marker

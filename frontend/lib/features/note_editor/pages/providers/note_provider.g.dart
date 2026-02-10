@@ -157,7 +157,7 @@ class _NoteExistsProviderElement extends AutoDisposeFutureProviderElement<bool>
   String get noteId => (origin as NoteExistsProvider).noteId;
 }
 
-String _$noteStateHash() => r'6ccb76382671634e59cdcde70a6eb62566d3ff4b';
+String _$noteStateHash() => r'5b7d31ac1ffe6ae28261368f264b488d76398e6c';
 
 abstract class _$NoteState extends BuildlessAutoDisposeAsyncNotifier<Note> {
   late final String noteId;

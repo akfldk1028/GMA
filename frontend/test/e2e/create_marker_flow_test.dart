@@ -115,11 +115,9 @@ void main() {
 
       final note = Note(
         id: 'note-e2e-1',
-        title: 'AI Research',
+        frontmatter: null,
         content: updatedContent,
-        filePath: './notes/ai_research.md',
-        createdAt: DateTime(2024, 1, 1, 10, 0),
-        updatedAt: DateTime(2024, 1, 1, 11, 30),
+        markers: [],
       );
 
       // Step 6: Verify note contains marker
@@ -171,10 +169,9 @@ void main() {
       // Step 6: Add to note
       final note = Note(
         id: 'note-e2e-2',
-        title: 'Diagrams',
+        frontmatter: null,
         content: '# Important Diagrams\n\n$markerLines',
-        createdAt: DateTime(2024, 1, 2),
-        updatedAt: DateTime(2024, 1, 2),
+        markers: [],
       );
 
       // Step 7: Verify note contains marker with image
@@ -226,10 +223,9 @@ void main() {
       // Step 5: Create note with all markers
       final note = Note(
         id: 'note-e2e-3',
-        title: 'Neural Networks',
+        frontmatter: null,
         content: '# Deep Learning\n\n$markerLines',
-        createdAt: DateTime(2024, 1, 3),
-        updatedAt: DateTime(2024, 1, 3),
+        markers: [],
       );
 
       // Step 6: Verify all markers are in note
@@ -266,10 +262,9 @@ void main() {
       // Step 3: Add to note
       final note = Note(
         id: 'note-e2e-4',
-        title: 'Bookmarks',
+        frontmatter: null,
         content: '# Quick Access\n\n$markerLine',
-        createdAt: DateTime(2024, 1, 4),
-        updatedAt: DateTime(2024, 1, 4),
+        markers: [],
       );
 
       // Step 4: Verify bookmark marker in note
@@ -302,10 +297,9 @@ void main() {
       // Step 3: Add to note
       final note = Note(
         id: 'note-e2e-5',
-        title: 'Long Excerpts',
+        frontmatter: null,
         content: markerLine,
-        createdAt: DateTime(2024, 1, 5),
-        updatedAt: DateTime(2024, 1, 5),
+        markers: [],
       );
 
       // Step 4: Verify note contains full text
@@ -337,10 +331,9 @@ void main() {
       // Step 3: Add to note
       final note = Note(
         id: 'note-e2e-6',
-        title: 'Equations',
+        frontmatter: null,
         content: markerLine,
-        createdAt: DateTime(2024, 1, 6),
-        updatedAt: DateTime(2024, 1, 6),
+        markers: [],
       );
 
       // Step 4: Verify special characters are preserved
@@ -371,11 +364,9 @@ void main() {
 
       final note = Note(
         id: 'note-roundtrip',
-        title: 'CNN Notes',
+        frontmatter: null,
         content: '---\ntags: [ml, cnn]\n---\n\n# CNNs\n\n$markerLine',
-        filePath: './notes/cnn.md',
-        createdAt: DateTime(2024, 1, 7, 9, 0),
-        updatedAt: DateTime(2024, 1, 7, 10, 15),
+        markers: [],
       );
 
       // Step 3: Serialize note (simulate save)
@@ -401,8 +392,6 @@ void main() {
 
       // Step 6: Verify full roundtrip integrity
       expect(parsedMarkers[0].isMarkerLine, true);
-      expect(loadedNote.title, 'CNN Notes');
-      expect(loadedNote.filePath, './notes/cnn.md');
     });
   });
 }

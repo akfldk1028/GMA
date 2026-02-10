@@ -34,10 +34,9 @@ void main() {
       // Step 1: Create a note
       final note = Note(
         id: 'note-1',
-        title: 'Test Note',
+        frontmatter: null,
         content: '# Test Content\n\nThis is a test note.',
-        createdAt: DateTime(2024, 1, 1, 10, 0),
-        updatedAt: DateTime(2024, 1, 1, 10, 0),
+        markers: [],
       );
 
       // Step 2: Save to Hive
@@ -50,36 +49,28 @@ void main() {
       final retrievedNote = Note.fromJson(Map<String, dynamic>.from(retrievedMap!));
 
       // Step 4: Verify data integrity
-      expect(retrievedNote.id, note.id);
-      expect(retrievedNote.title, note.title);
-      expect(retrievedNote.content, note.content);
-      expect(retrievedNote.createdAt, note.createdAt);
-      expect(retrievedNote.updatedAt, note.updatedAt);
-    });
+      expect(retrievedNote.id, note.id);      expect(retrievedNote.content, note.content);    });
 
     test('saves multiple notes to Hive', () async {
       // Step 1: Create multiple notes
       final notes = [
         Note(
           id: 'note-1',
-          title: 'First Note',
+        frontmatter: null,
           content: '# First',
-          createdAt: DateTime(2024, 1, 1),
-          updatedAt: DateTime(2024, 1, 1),
+        markers: [],
         ),
         Note(
           id: 'note-2',
-          title: 'Second Note',
+        frontmatter: null,
           content: '# Second',
-          createdAt: DateTime(2024, 1, 2),
-          updatedAt: DateTime(2024, 1, 2),
+        markers: [],
         ),
         Note(
           id: 'note-3',
-          title: 'Third Note',
+        frontmatter: null,
           content: '# Third',
-          createdAt: DateTime(2024, 1, 3),
-          updatedAt: DateTime(2024, 1, 3),
+        markers: [],
         ),
       ];
 
@@ -97,48 +88,36 @@ void main() {
         expect(retrievedMap, isNotNull);
 
         final retrievedNote = Note.fromJson(Map<String, dynamic>.from(retrievedMap!));
-        expect(retrievedNote.id, note.id);
-        expect(retrievedNote.title, note.title);
-      }
+        expect(retrievedNote.id, note.id);      }
     });
 
     test('updates existing note in Hive', () async {
       // Step 1: Create and save initial note
       final note = Note(
         id: 'note-update',
-        title: 'Original Title',
+        frontmatter: null,
         content: 'Original content',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
       await notesBox.put(note.id, note.toJson());
 
       // Step 2: Update the note
-      final updatedNote = note.copyWith(
-        title: 'Updated Title',
-        content: 'Updated content with new information',
-        updatedAt: DateTime(2024, 1, 2),
+      final updatedNote = note.copyWith(        content: 'Updated content with new information',
+        markers: [],
       );
       await notesBox.put(updatedNote.id, updatedNote.toJson());
 
       // Step 3: Retrieve and verify update
       final retrievedMap = notesBox.get(note.id);
-      final retrievedNote = Note.fromJson(Map<String, dynamic>.from(retrievedMap!));
-
-      expect(retrievedNote.title, 'Updated Title');
-      expect(retrievedNote.content, 'Updated content with new information');
-      expect(retrievedNote.updatedAt, DateTime(2024, 1, 2));
-      expect(retrievedNote.createdAt, DateTime(2024, 1, 1)); // Created date unchanged
-    });
+      final retrievedNote = Note.fromJson(Map<String, dynamic>.from(retrievedMap!));      expect(retrievedNote.content, 'Updated content with new information');    });
 
     test('deletes note from Hive', () async {
       // Step 1: Create and save note
       final note = Note(
         id: 'note-delete',
-        title: 'To Be Deleted',
+        frontmatter: null,
         content: 'This will be deleted',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
       await notesBox.put(note.id, note.toJson());
 
@@ -156,7 +135,7 @@ void main() {
       // Step 1: Create note with marker content
       final note = Note(
         id: 'note-markers',
-        title: 'Note with Markers',
+        frontmatter: null,
         content: '''# Machine Learning Notes
 
 - 🔴 P3  Important definition of supervised learning
@@ -165,8 +144,7 @@ void main() {
 - 🟢 P7  Neural network architecture explanation
 - 🔵 P10  Key conclusion from the paper
 - 🟣 P15''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Save to Hive
@@ -188,7 +166,7 @@ void main() {
       // Step 1: Create note with frontmatter
       final note = Note(
         id: 'note-frontmatter',
-        title: 'Research Notes',
+        frontmatter: null,
         content: '''---
 file: research_paper.pdf
 file-path: ./assets/research_paper.pdf
@@ -202,8 +180,7 @@ author: John Doe
 - 🔴 P1  Introduction to the topic
 - 🟡 P5  Main methodology
 ''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Save to Hive
@@ -223,7 +200,7 @@ author: John Doe
       // Step 1: Create note with special characters
       final note = Note(
         id: 'note-special',
-        title: 'Special Characters: "quotes" & symbols!',
+        frontmatter: null,
         content: '''# Test 한글 テスト
 
 Content with:
@@ -236,8 +213,7 @@ Content with:
 - Émojis: 😀 🎉 ✨
 
 - 🔴 P3  Text with "quotes" (parentheses) & symbols! 한글''',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Save to Hive
@@ -245,10 +221,7 @@ Content with:
 
       // Step 3: Retrieve and verify special characters are preserved
       final retrievedMap = notesBox.get(note.id);
-      final retrievedNote = Note.fromJson(Map<String, dynamic>.from(retrievedMap!));
-
-      expect(retrievedNote.title, note.title);
-      expect(retrievedNote.content, note.content);
+      final retrievedNote = Note.fromJson(Map<String, dynamic>.from(retrievedMap!));      expect(retrievedNote.content, note.content);
       expect(retrievedNote.content, contains('한글'));
       expect(retrievedNote.content, contains('日本語'));
       expect(retrievedNote.content, contains('"quotes"'));
@@ -258,10 +231,9 @@ Content with:
       // Step 1: Create multiple notes
       final notes = List.generate(10, (i) => Note(
         id: 'note-$i',
-        title: 'Note $i',
+        frontmatter: null,
         content: '# Content $i',
-        createdAt: DateTime(2024, 1, i + 1),
-        updatedAt: DateTime(2024, 1, i + 1),
+        markers: [],
       ));
 
       // Step 2: Save all notes
@@ -276,18 +248,17 @@ Content with:
 
       // Step 4: Verify count and content
       expect(allNotes.length, 10);
-      expect(allNotes.map((n) => n.title).toList(), contains('Note 0'));
-      expect(allNotes.map((n) => n.title).toList(), contains('Note 9'));
+      expect(allNotes.map((n) => n.content).toList(), contains('# Content 0'));
+      expect(allNotes.map((n) => n.content).toList(), contains('# Content 9'));
     });
 
     test('handles concurrent saves to Hive', () async {
       // Step 1: Create multiple notes
       final notes = List.generate(20, (i) => Note(
         id: 'concurrent-note-$i',
-        title: 'Concurrent Note $i',
+        frontmatter: null,
         content: '# Concurrent content $i',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       ));
 
       // Step 2: Save all notes concurrently
@@ -309,10 +280,9 @@ Content with:
       // Step 1: Create note without filePath
       final note = Note(
         id: 'note-no-path',
-        title: 'Note Without Path',
+        frontmatter: null,
         content: '# Content',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Save to Hive
@@ -322,7 +292,7 @@ Content with:
       final retrievedMap = notesBox.get(note.id);
       final retrievedNote = Note.fromJson(Map<String, dynamic>.from(retrievedMap!));
 
-      expect(retrievedNote.filePath, isNull);
+      expect(retrievedNote.frontmatter, isNull);
     });
 
     test('persists and retrieves large note content to Hive', () async {
@@ -332,10 +302,9 @@ Content with:
 
       final note = Note(
         id: 'large-note',
-        title: 'Large Note',
+        frontmatter: null,
         content: '# Large Note\n\n$largeContent',
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Save to Hive
@@ -367,18 +336,17 @@ Content with:
 
     test('saves note to filesystem as markdown file', () async {
       // Step 1: Create a note
+      final filePath = path.join(notesDir.path, 'test-note.md');
       final note = Note(
         id: 'fs-note-1',
-        title: 'Test Note',
+        frontmatter: null,
         content: '# Test Content\n\nThis is a test note.',
-        filePath: path.join(notesDir.path, 'test-note.md'),
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Save to filesystem
-      final file = File(note.filePath!);
-      await file.writeAsString(note.content);
+      final file = File(filePath);
+      await File(filePath).writeAsString(note.content);
 
       // Step 3: Verify file exists
       expect(await file.exists(), true);
@@ -405,11 +373,9 @@ This is an existing note with some content.
 
       final note = Note(
         id: 'loaded-note',
-        title: 'Existing Note',
+        frontmatter: null,
         content: loadedContent,
-        filePath: filePath,
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 3: Verify content
@@ -622,23 +588,21 @@ Content with unicode:
 
     test('saves note to both Hive and filesystem', () async {
       // Step 1: Create note
+      final filePath = path.join(notesDir.path, 'combined-note.md');
       final note = Note(
         id: 'combined-note-1',
-        title: 'Combined Note',
+        frontmatter: null,
         content: '''# Combined Storage Test
 
 - 🔴 P3  Test marker
 ''',
-        filePath: path.join(notesDir.path, 'combined-note.md'),
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
-      );
+        markers: [],      );
 
       // Step 2: Save to Hive
       await notesBox.put(note.id, note.toJson());
 
       // Step 3: Save to filesystem
-      await File(note.filePath!).writeAsString(note.content);
+      await File(filePath).writeAsString(note.content);
 
       // Step 4: Verify Hive storage
       final hiveData = notesBox.get(note.id);
@@ -647,34 +611,33 @@ Content with unicode:
       expect(hiveNote.content, note.content);
 
       // Step 5: Verify filesystem storage
-      final fsContent = await File(note.filePath!).readAsString();
+      final fsContent = await File(filePath).readAsString();
       expect(fsContent, note.content);
     });
 
     test('syncs updates between Hive and filesystem', () async {
       // Step 1: Create initial note
+      final filePath = path.join(notesDir.path, 'sync-note.md');
       final note = Note(
         id: 'sync-note',
-        title: 'Sync Test',
+        frontmatter: null,
         content: '# Original',
-        filePath: path.join(notesDir.path, 'sync-note.md'),
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       // Step 2: Save to both
       await notesBox.put(note.id, note.toJson());
-      await File(note.filePath!).writeAsString(note.content);
+      await File(filePath).writeAsString(note.content);
 
       // Step 3: Update note
       final updatedNote = note.copyWith(
         content: '# Updated\n\n- 🔴 P5  New marker',
-        updatedAt: DateTime(2024, 1, 2),
+        markers: [],
       );
 
       // Step 4: Update both storages
       await notesBox.put(updatedNote.id, updatedNote.toJson());
-      await File(updatedNote.filePath!).writeAsString(updatedNote.content);
+      await File(filePath).writeAsString(updatedNote.content);
 
       // Step 5: Verify both are updated
       final hiveData = notesBox.get(updatedNote.id);
@@ -682,28 +645,27 @@ Content with unicode:
       expect(hiveNote.content, contains('# Updated'));
       expect(hiveNote.content, contains('🔴 P5'));
 
-      final fsContent = await File(updatedNote.filePath!).readAsString();
+      final fsContent = await File(filePath).readAsString();
       expect(fsContent, contains('# Updated'));
       expect(fsContent, contains('🔴 P5'));
     });
 
     test('recovers from filesystem using Hive backup', () async {
       // Step 1: Create note and save to both
+      final filePath = path.join(notesDir.path, 'backup-note.md');
       final note = Note(
         id: 'backup-note',
-        title: 'Backup Test',
+        frontmatter: null,
         content: '# Important Data\n\n- 🔴 P3  Critical information',
-        filePath: path.join(notesDir.path, 'backup-note.md'),
-        createdAt: DateTime(2024, 1, 1),
-        updatedAt: DateTime(2024, 1, 1),
+        markers: [],
       );
 
       await notesBox.put(note.id, note.toJson());
-      await File(note.filePath!).writeAsString(note.content);
+      await File(filePath).writeAsString(note.content);
 
       // Step 2: Simulate filesystem corruption/deletion
-      await File(note.filePath!).delete();
-      expect(await File(note.filePath!).exists(), false);
+      await File(filePath).delete();
+      expect(await File(filePath).exists(), false);
 
       // Step 3: Recover from Hive
       final hiveData = notesBox.get(note.id);
@@ -712,19 +674,20 @@ Content with unicode:
       final recoveredNote = Note.fromJson(Map<String, dynamic>.from(hiveData!));
 
       // Step 4: Restore to filesystem
-      await File(recoveredNote.filePath!).writeAsString(recoveredNote.content);
+      await File(filePath).writeAsString(recoveredNote.content);
 
       // Step 5: Verify recovery
-      final restoredContent = await File(recoveredNote.filePath!).readAsString();
+      final restoredContent = await File(filePath).readAsString();
       expect(restoredContent, note.content);
       expect(restoredContent, contains('Critical information'));
     });
 
     test('persists note with all features to both storages', () async {
       // Step 1: Create comprehensive note
+      final filePath = path.join(notesDir.path, 'comprehensive.md');
       final note = Note(
         id: 'comprehensive-note',
-        title: 'Comprehensive Test 한글',
+        frontmatter: null,
         content: '''---
 file: test.pdf
 file-path: ./assets/test.pdf
@@ -754,28 +717,22 @@ Inline math: \$E = mc^2\$
 
 See [[related-note]] and [[another-note]].
 ''',
-        filePath: path.join(notesDir.path, 'comprehensive.md'),
-        createdAt: DateTime(2024, 1, 1, 10, 30),
-        updatedAt: DateTime(2024, 1, 2, 15, 45),
-      );
+        markers: [],      );
 
       // Step 2: Save to both storages
       await notesBox.put(note.id, note.toJson());
-      await File(note.filePath!).writeAsString(note.content, encoding: utf8);
+      await File(filePath).writeAsString(note.content, encoding: utf8);
 
       // Step 3: Retrieve from Hive and verify
       final hiveData = notesBox.get(note.id);
-      final hiveNote = Note.fromJson(Map<String, dynamic>.from(hiveData!));
-
-      expect(hiveNote.title, note.title);
-      expect(hiveNote.content, note.content);
+      final hiveNote = Note.fromJson(Map<String, dynamic>.from(hiveData!));      expect(hiveNote.content, note.content);
       expect(hiveNote.content, contains('---'));
       expect(hiveNote.content, contains('🔴 P3'));
       expect(hiveNote.content, contains('[[wiki-links]]'));
       expect(hiveNote.content, contains('한글'));
 
       // Step 4: Retrieve from filesystem and verify
-      final fsContent = await File(note.filePath!).readAsString(encoding: utf8);
+      final fsContent = await File(filePath).readAsString(encoding: utf8);
 
       expect(fsContent, note.content);
       expect(fsContent, contains('---'));
