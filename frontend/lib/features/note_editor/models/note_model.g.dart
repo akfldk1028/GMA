@@ -8,19 +8,19 @@ part of 'note_model.dart';
 
 _$NoteImpl _$$NoteImplFromJson(Map<String, dynamic> json) => _$NoteImpl(
   id: json['id'] as String,
-  title: json['title'] as String,
+  frontmatter: json['frontmatter'] == null
+      ? null
+      : Frontmatter.fromJson(json['frontmatter'] as Map<String, dynamic>),
   content: json['content'] as String,
-  filePath: json['filePath'] as String?,
-  createdAt: DateTime.parse(json['createdAt'] as String),
-  updatedAt: DateTime.parse(json['updatedAt'] as String),
+  markers: (json['markers'] as List<dynamic>)
+      .map((e) => Marker.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$$NoteImplToJson(_$NoteImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'title': instance.title,
+      'frontmatter': instance.frontmatter,
       'content': instance.content,
-      'filePath': instance.filePath,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'markers': instance.markers,
     };
