@@ -14,6 +14,9 @@ void main() async {
   }
   await Hive.initFlutter();
 
+  // Open app settings box for theme persistence
+  await Hive.openBox('app_settings');
+
   runApp(
     const ProviderScope(
       child: GmaApp(),
