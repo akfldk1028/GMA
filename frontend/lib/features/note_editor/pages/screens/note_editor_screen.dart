@@ -8,7 +8,7 @@ typedef OnMarkerClickCallback = void Function(String markerId);
 
 /// Markdown editor panel with edit/preview toggle.
 /// Supports frontmatter, wiki-links, marker syntax, LaTeX, and auto-save.
-class NoteEditorScreen extends ConsumerWidget {
+class NoteEditorScreen extends ConsumerStatefulWidget {
   const NoteEditorScreen({
     super.key,
     this.noteId,
@@ -22,7 +22,24 @@ class NoteEditorScreen extends ConsumerWidget {
   final OnMarkerClickCallback? onMarkerClick;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NoteEditorScreen> createState() => _NoteEditorScreenState();
+}
+
+class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize state and listeners here
+  }
+
+  @override
+  void dispose() {
+    // Cleanup resources here
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: Text(
         'Note Editor',
