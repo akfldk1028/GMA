@@ -5,173 +5,163 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../models/frontmatter_model.dart';
 
 /// Widget that displays YAML frontmatter metadata for a note.
-///
-/// Shows the following fields from Frontmatter model:
-/// - file: The note filename
-/// - file-path: The full path to the note file
-/// - tags: List of tags
-/// - created: Creation timestamp
-///
-/// Handles edge cases:
-/// - Null frontmatter: Shows a placeholder message
-/// - Empty fields: Displays "N/A" for missing values
-///
-/// Usage:
-/// ```dart
-/// FrontmatterHeader(frontmatter: note.frontmatter)
-/// ```
-class FrontmatterHeader extends StatelessWidget {
+class FrontmatterHeader extends StatefulWidget {
   const FrontmatterHeader({
     super.key,
     this.frontmatter,
-    this.rawYaml,
-    this.showError = false,
   });
 
-  /// The frontmatter data to display. Null when no frontmatter or corrupted.
   final Frontmatter? frontmatter;
 
-  /// Raw YAML string when frontmatter is corrupted. Used to show error state.
-  final String? rawYaml;
+  @override
+  State<FrontmatterHeader> createState() => _FrontmatterHeaderState();
+}
 
-  /// Whether to show error state for corrupted frontmatter.
-  final bool showError;
+class _FrontmatterHeaderState extends State<FrontmatterHeader> {
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
-    // Handle corrupted frontmatter with error state
-    if (showError && rawYaml != null) {
-      return ShadCard(
-        padding: const EdgeInsets.all(16),
-        backgroundColor: const Color(0xFFFEF2F2), // Light red background
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  color: Theme.of(context).colorScheme.error,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Corrupted Frontmatter',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.error,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Failed to parse YAML frontmatter. Please fix the syntax below:',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
+    if (widget.frontmatter == null) {
+      return const SizedBox.shrink();
+    }
+
+    final fm = widget.frontmatter!;
+    final theme = ShadTheme.of(context);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.colorScheme.border),
+        color: theme.colorScheme.muted.withValues(alpha: 0.3),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header row with title and expand toggle
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.article_outlined,
+                    size: 14,
+                    color: theme.colorScheme.mutedForeground,
                   ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
-                ),
-                borderRadius: BorderRadius.circular(8),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      fm.title.isNotEmpty ? fm.title : 'Untitled',
+                      style: theme.textTheme.small.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.foreground,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (fm.linkedPdfPath != null) ...[
+                    Icon(
+                      Icons.link,
+                      size: 12,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Icon(
+                    _expanded ? Icons.expand_less : Icons.expand_more,
+                    size: 16,
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                ],
               ),
-              child: SelectableText(
-                rawYaml!,
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                ),
+            ),
+          ),
+
+          // Expanded details
+          if (_expanded) ...[
+            Divider(height: 1, color: theme.colorScheme.border),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Linked PDF
+                  if (fm.linkedPdfPath != null) ...[
+                    _buildField(
+                      context,
+                      icon: Icons.picture_as_pdf,
+                      label: 'Linked PDF',
+                      value: fm.linkedPdfPath!.split(RegExp(r'[/\\]')).last,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+
+                  // Tags
+                  if (fm.tags.isNotEmpty) ...[
+                    _buildTagsField(context, fm.tags),
+                    const SizedBox(height: 8),
+                  ],
+
+                  // Dates
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildField(
+                          context,
+                          icon: Icons.calendar_today_outlined,
+                          label: 'Created',
+                          value: _formatDate(fm.createdAt),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildField(
+                          context,
+                          icon: Icons.update,
+                          label: 'Modified',
+                          value: _formatDate(fm.modifiedAt),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
-        ),
-      );
-    }
-
-    // Handle null frontmatter (no frontmatter or corrupted without raw YAML)
-    if (frontmatter == null) {
-      return const SizedBox.shrink(); // Don't show anything if no frontmatter
-    }
-
-    // Display frontmatter fields
-    return ShadCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // File name
-          _buildField(
-            context,
-            icon: Icons.description_outlined,
-            label: 'File',
-            value: frontmatter!.file.isNotEmpty ? frontmatter!.file : 'N/A',
-          ),
-          const SizedBox(height: 12),
-
-          // File path
-          _buildField(
-            context,
-            icon: Icons.folder_outlined,
-            label: 'Path',
-            value: frontmatter!.filePath.isNotEmpty
-                ? frontmatter!.filePath
-                : 'N/A',
-          ),
-          const SizedBox(height: 12),
-
-          // Tags
-          _buildTagsField(context),
-          const SizedBox(height: 12),
-
-          // Created date
-          _buildField(
-            context,
-            icon: Icons.calendar_today_outlined,
-            label: 'Created',
-            value: _formatDate(frontmatter!.created),
-          ),
         ],
       ),
     );
   }
 
-  /// Builds a single field row with icon, label, and value.
   Widget _buildField(
     BuildContext context, {
     required IconData icon,
     required String label,
     required String value,
   }) {
+    final theme = ShadTheme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: Theme.of(context).colorScheme.secondary,
-        ),
-        const SizedBox(width: 8),
+        Icon(icon, size: 12, color: theme.colorScheme.mutedForeground),
+        const SizedBox(width: 6),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.secondary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                style: theme.textTheme.muted.copyWith(fontSize: 10),
               ),
-              const SizedBox(height: 2),
-              SelectableText(
+              Text(
                 value,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: theme.textTheme.small,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -180,77 +170,41 @@ class FrontmatterHeader extends StatelessWidget {
     );
   }
 
-  /// Builds the tags field with tag chips.
-  Widget _buildTagsField(BuildContext context) {
-    final tags = frontmatter!.tags;
-
+  Widget _buildTagsField(BuildContext context, List<String> tags) {
+    final theme = ShadTheme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          Icons.label_outlined,
-          size: 16,
-          color: Theme.of(context).colorScheme.secondary,
-        ),
-        const SizedBox(width: 8),
+        Icon(Icons.label_outlined, size: 12, color: theme.colorScheme.mutedForeground),
+        const SizedBox(width: 6),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tags',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.secondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              tags.isEmpty
-                  ? Text(
-                      'No tags',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .secondary
-                                .withValues(alpha: 0.7),
-                          ),
-                    )
-                  : Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: tags.map((tag) => _buildTagChip(context, tag)).toList(),
-                    ),
-            ],
+          child: Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: tags
+                .map((tag) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        tag,
+                        style: theme.textTheme.muted.copyWith(
+                          fontSize: 10,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ))
+                .toList(),
           ),
         ),
       ],
     );
   }
 
-  /// Builds a single tag chip.
-  Widget _buildTagChip(BuildContext context, String tag) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Text(
-        tag,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
-      ),
-    );
-  }
-
-  /// Formats a DateTime to a readable string.
   String _formatDate(DateTime date) {
-    final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+    final formatter = DateFormat('yyyy-MM-dd HH:mm');
     return formatter.format(date);
   }
 }

@@ -113,8 +113,8 @@ class FileManager extends _$FileManager {
         title = file.uri.pathSegments.last.replaceAll('.md', '');
       }
 
-      // Generate unique ID from file path
-      final id = file.path.hashCode.toString();
+      // Use filename without extension as note ID (matches noteStateProvider lookup)
+      final id = path.basenameWithoutExtension(file.path);
 
       return NoteMetadata(
         id: id,
@@ -148,7 +148,8 @@ class CreateNoteMutation extends _$CreateNoteMutation {
 
       // Generate unique filename using UUID
       const uuid = Uuid();
-      final filename = '${uuid.v4()}.md';
+      final noteUuid = uuid.v4();
+      final filename = '$noteUuid.md';
       final filePath = path.join(notesRoot.path, filename);
       final file = File(filePath);
 
@@ -175,7 +176,7 @@ class CreateNoteMutation extends _$CreateNoteMutation {
 
       // Create NoteMetadata for the new note
       final metadata = NoteMetadata(
-        id: file.path.hashCode.toString(),
+        id: noteUuid,
         title: title,
         filePath: file.path,
         createdAt: now,

@@ -8,16 +8,20 @@ part of 'frontmatter_model.dart';
 
 _$FrontmatterImpl _$$FrontmatterImplFromJson(Map<String, dynamic> json) =>
     _$FrontmatterImpl(
-      file: json['file'] as String,
-      filePath: json['filePath'] as String,
-      tags: (json['tags'] as List<dynamic>).map((e) => e as String).toList(),
-      created: DateTime.parse(json['created'] as String),
+      title: json['title'] as String,
+      linkedPdfPath: json['linkedPdfPath'] as String?,
+      tags:
+          (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+          const [],
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      modifiedAt: DateTime.parse(json['modifiedAt'] as String),
     );
 
 Map<String, dynamic> _$$FrontmatterImplToJson(_$FrontmatterImpl instance) =>
     <String, dynamic>{
-      'file': instance.file,
-      'filePath': instance.filePath,
+      'title': instance.title,
+      'linkedPdfPath': instance.linkedPdfPath,
       'tags': instance.tags,
-      'created': instance.created.toIso8601String(),
+      'createdAt': instance.createdAt.toIso8601String(),
+      'modifiedAt': instance.modifiedAt.toIso8601String(),
     };

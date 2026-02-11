@@ -5,13 +5,14 @@ import 'package:pdfrx/pdfrx.dart';
 import '../providers/pdf_marker_provider.dart';
 
 /// Creates paint callbacks for rendering marker highlights on PDF pages.
-/// Uses pdfrx's pagePaintCallbacks to draw colored rectangles over
-/// selected text regions.
+/// Uses pdfrx's pagePaintCallbacks and built-in coordinate conversion
+/// to draw colored rectangles over selected text regions.
 class PdfPageOverlay {
   PdfPageOverlay._();
 
   /// Static helper to create a list of paint callbacks for PdfViewer.
-  static List<void Function(Canvas, Rect, PdfPage)> createPaintCallbacks(
+  /// Uses pdfrx's PdfRect.toRectInDocument() for proper coordinate conversion.
+  static List<PdfViewerPagePaintCallback> createPaintCallbacks(
     WidgetRef ref,
   ) {
     return [
@@ -22,35 +23,37 @@ class PdfPageOverlay {
         for (final marker in markers) {
           if (marker.textRect == null) continue;
 
-          // Local PdfRect has x, y, width, height
+          // The local model stores: x=left, y=top, width, height
+          // Reconstruct pdfrx PdfRect(left, top, right, bottom)
+          // In PDF coords: top >= bottom, height = top - bottom
+          // So: bottom = top - height = tr.y - tr.height
           final tr = marker.textRect!;
+          final pdfRect = PdfRect(
+            tr.x,
+            tr.y,
+            tr.x + tr.width,
+            tr.y - tr.height,
+          );
 
-          // Scale PDF coordinates to widget page rect
-          final scaleX = pageRect.width / page.width;
-          final scaleY = pageRect.height / page.height;
+          // Use pdfrx built-in conversion (handles Y-flip + rotation + scale)
+          final screenRect = pdfRect.toRectInDocument(
+            page: page,
+            pageRect: pageRect,
+          );
 
-          // Convert: x,y is top-left in PDF space (y increases upward)
-          // Flutter space: origin top-left, Y increases downward
-          final left = pageRect.left + (tr.x * scaleX);
-          final top = pageRect.top + ((page.height - tr.y) * scaleY);
-          final right = pageRect.left + ((tr.x + tr.width) * scaleX);
-          final bottom = pageRect.top + ((page.height - (tr.y - tr.height)) * scaleY);
-
-          final markerRect = Rect.fromLTRB(left, top, right, bottom);
-
-          // Draw semi-transparent fill
+          // Draw semi-transparent highlight fill
           canvas.drawRect(
-            markerRect,
+            screenRect,
             Paint()
               ..color = marker.color.color.withValues(alpha: 0.3)
               ..style = PaintingStyle.fill,
           );
 
-          // Draw border
+          // Draw thin border
           canvas.drawRect(
-            markerRect,
+            screenRect,
             Paint()
-              ..color = marker.color.color
+              ..color = marker.color.color.withValues(alpha: 0.7)
               ..style = PaintingStyle.stroke
               ..strokeWidth = 1.0,
           );

@@ -63,13 +63,13 @@ class NoteState extends _$NoteState {
 
       if (parsed.hasFrontmatter && parsed.frontmatter != null) {
         final fm = parsed.frontmatter!;
+        final now = DateTime.now();
         frontmatter = Frontmatter(
-          file: fm['file']?.toString() ?? '',
-          filePath: fm['file-path']?.toString() ?? '',
+          title: fm['title']?.toString() ?? '',
+          linkedPdfPath: fm['linkedPdfPath']?.toString(),
           tags: (fm['tags'] as List?)?.map((e) => e.toString()).toList() ?? [],
-          created: fm['created'] is DateTime
-              ? fm['created'] as DateTime
-              : DateTime.now(),
+          createdAt: DateTime.tryParse(fm['createdAt']?.toString() ?? '') ?? now,
+          modifiedAt: DateTime.tryParse(fm['modifiedAt']?.toString() ?? '') ?? now,
         );
       }
 
@@ -120,10 +120,11 @@ class NoteState extends _$NoteState {
       if (note.frontmatter != null) {
         final fm = note.frontmatter!;
         final fmMap = <String, dynamic>{
-          'file': fm.file,
-          'file-path': fm.filePath,
-          'tags': fm.tags,
-          'created': fm.created.toIso8601String(),
+          'title': fm.title,
+          if (fm.linkedPdfPath != null) 'linkedPdfPath': fm.linkedPdfPath,
+          if (fm.tags.isNotEmpty) 'tags': fm.tags,
+          'createdAt': fm.createdAt.toIso8601String(),
+          'modifiedAt': DateTime.now().toIso8601String(),
         };
         final frontmatterYaml = FrontmatterParser.serialize(fmMap);
         fullContent = '$frontmatterYaml\n${note.content}';

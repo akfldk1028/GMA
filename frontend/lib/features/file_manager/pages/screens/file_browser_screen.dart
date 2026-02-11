@@ -89,8 +89,9 @@ class _FileBrowserScreenState extends ConsumerState<FileBrowserScreen> {
     final isSearchActive = ref.watch(isSearchActiveProvider);
     final theme = ShadTheme.of(context);
 
-    return Scaffold(
-      body: notesAsync.when(
+    return Container(
+      color: theme.colorScheme.background,
+      child: notesAsync.when(
         data: (notes) {
           if (notes.isEmpty) {
             return Center(

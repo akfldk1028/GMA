@@ -5,7 +5,6 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../constants/marker_colors.dart';
 import '../../../file_manager/pages/screens/file_browser_screen.dart';
-import '../../../note_editor/pages/providers/note_editor_provider.dart';
 import '../../../note_editor/pages/screens/note_editor_screen.dart';
 import '../../../pdf_viewer/pages/screens/pdf_viewer_screen.dart';
 import '../../models/workspace_state.dart';
@@ -115,35 +114,40 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     PdfRect? textRect,
   }) async {
     try {
-      // Create marker in workspace state
-      final marker = await ref.read(workspaceProviderProvider.notifier).createMarker(
+      // Create marker in workspace state (also inserts into note editor if open)
+      // textRect is already pdfrx PdfRect — workspace model uses it directly
+      await ref.read(workspaceProviderProvider.notifier).createMarker(
             pageNumber: pageNumber,
             color: color,
             selectedText: selectedText,
             textRect: textRect,
           );
 
-      // Insert marker line into note editor if a note is open
+      // Check if marker was inserted into a note
       final workspaceState = ref.read(workspaceProviderProvider).valueOrNull;
-      final noteId = workspaceState?.currentNoteId;
-      if (noteId != null) {
-        await ref.read(noteEditorProvider(noteId).notifier).insertMarker(
-              color: color,
-              pageNumber: pageNumber,
-              text: selectedText ?? '',
-            );
-      }
+      final insertedIntoNote = workspaceState?.currentNoteId != null;
 
-      // Show success toast
+      // Show appropriate toast
       if (mounted) {
-        ShadToaster.of(context).show(
-          ShadToast(
-            title: const Text('Marker Added'),
-            description: Text(
-              '${color.emoji} P$pageNumber added to note',
+        if (insertedIntoNote) {
+          ShadToaster.of(context).show(
+            ShadToast(
+              title: const Text('Marker Added'),
+              description: Text(
+                '${color.emoji} P$pageNumber added to note',
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          ShadToaster.of(context).show(
+            ShadToast(
+              title: const Text('Marker Saved'),
+              description: const Text(
+                'Select a note from sidebar to insert markers into markdown',
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
       // Show error notification if marker creation fails
@@ -160,8 +164,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
   /// Handle marker click in note editor and navigate PDF viewer.
   /// This is the core bidirectional linking flow: Note → PDF.
+  /// Supports 'page:N-S' format (page N, sub-number S) from preview.
   Future<void> _handleMarkerClick(String markerId) async {
-    // Check if PDF is loaded before attempting navigation
     final workspaceState = ref.read(workspaceProviderProvider).valueOrNull;
     if (workspaceState?.currentPdfPath == null) {
       if (mounted) {
@@ -176,13 +180,43 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     }
 
     try {
-      // Get marker details from workspace provider
+      // Handle 'page:N-S' format from markdown preview marker clicks
+      if (markerId.startsWith('page:')) {
+        final pagePart = markerId.substring(5); // "3-2"
+        final parts = pagePart.split('-');
+        final pageNumber = int.tryParse(parts[0]);
+        final subNumber =
+            parts.length > 1 ? (int.tryParse(parts[1]) ?? 1) : 1;
+
+        if (pageNumber != null && pageNumber > 0) {
+          // Find the N-th marker on this page (sub-number = 1-indexed sequence)
+          final pageMarkers = workspaceState?.markers
+                  .where((m) => m.pageNumber == pageNumber)
+                  .toList() ??
+              [];
+
+          if (subNumber <= pageMarkers.length) {
+            final marker = pageMarkers[subNumber - 1];
+            if (marker.textRect != null) {
+              _pdfController.goToRectInsidePage(
+                pageNumber: pageNumber,
+                rect: marker.textRect!,
+              );
+              return;
+            }
+          }
+          // Fallback: just navigate to page
+          _pdfController.goToPage(pageNumber: pageNumber);
+          return;
+        }
+      }
+
+      // Handle UUID-based marker ID
       final marker = await ref
           .read(workspaceProviderProvider.notifier)
           .navigateToMarker(markerId);
 
       if (marker == null) {
-        // Marker not found - show error toast
         if (mounted) {
           ShadToaster.of(context).show(
             const ShadToast.destructive(
@@ -194,20 +228,15 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         return;
       }
 
-      // Navigate PDF to marker's page
-      // If textRect is available, navigate to exact coordinates
       if (marker.textRect != null) {
-        // Navigate to specific rectangle on page
         _pdfController.goToRectInsidePage(
           pageNumber: marker.pageNumber,
           rect: marker.textRect!,
         );
       } else {
-        // Navigate to page only
         _pdfController.goToPage(pageNumber: marker.pageNumber);
       }
     } catch (e) {
-      // Show error notification for any navigation failures
       if (mounted) {
         ShadToaster.of(context).show(
           ShadToast.destructive(
@@ -298,6 +327,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                       controller: _pdfController,
                       // Wire up PDF text selection to marker creation flow
                       onTextSelectionChange: _handleTextSelection,
+                      // Pass noteId for per-note drawing persistence
+                      noteId: state.currentNoteId,
                     ),
                   ),
 

@@ -7,7 +7,8 @@ enum MarkerColor {
   yellow(Color(0xFFF59E0B), '🟡'),
   green(Color(0xFF22C55E), '🟢'),
   blue(Color(0xFF3B82F6), '🔵'),
-  purple(Color(0xFF8B5CF6), '🟣');
+  purple(Color(0xFF8B5CF6), '🟣'),
+  pen(Color(0xFF6B7280), '🖊️');
 
   const MarkerColor(this.color, this.emoji);
 

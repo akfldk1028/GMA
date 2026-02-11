@@ -21,10 +21,11 @@ Frontmatter _$FrontmatterFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Frontmatter {
-  String get file => throw _privateConstructorUsedError;
-  String get filePath => throw _privateConstructorUsedError;
+  String get title => throw _privateConstructorUsedError;
+  String? get linkedPdfPath => throw _privateConstructorUsedError;
   List<String> get tags => throw _privateConstructorUsedError;
-  DateTime get created => throw _privateConstructorUsedError;
+  DateTime get createdAt => throw _privateConstructorUsedError;
+  DateTime get modifiedAt => throw _privateConstructorUsedError;
 
   /// Serializes this Frontmatter to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -44,10 +45,11 @@ abstract class $FrontmatterCopyWith<$Res> {
   ) = _$FrontmatterCopyWithImpl<$Res, Frontmatter>;
   @useResult
   $Res call({
-    String file,
-    String filePath,
+    String title,
+    String? linkedPdfPath,
     List<String> tags,
-    DateTime created,
+    DateTime createdAt,
+    DateTime modifiedAt,
   });
 }
 
@@ -66,28 +68,33 @@ class _$FrontmatterCopyWithImpl<$Res, $Val extends Frontmatter>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? file = null,
-    Object? filePath = null,
+    Object? title = null,
+    Object? linkedPdfPath = freezed,
     Object? tags = null,
-    Object? created = null,
+    Object? createdAt = null,
+    Object? modifiedAt = null,
   }) {
     return _then(
       _value.copyWith(
-            file: null == file
-                ? _value.file
-                : file // ignore: cast_nullable_to_non_nullable
+            title: null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
                       as String,
-            filePath: null == filePath
-                ? _value.filePath
-                : filePath // ignore: cast_nullable_to_non_nullable
-                      as String,
+            linkedPdfPath: freezed == linkedPdfPath
+                ? _value.linkedPdfPath
+                : linkedPdfPath // ignore: cast_nullable_to_non_nullable
+                      as String?,
             tags: null == tags
                 ? _value.tags
                 : tags // ignore: cast_nullable_to_non_nullable
                       as List<String>,
-            created: null == created
-                ? _value.created
-                : created // ignore: cast_nullable_to_non_nullable
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            modifiedAt: null == modifiedAt
+                ? _value.modifiedAt
+                : modifiedAt // ignore: cast_nullable_to_non_nullable
                       as DateTime,
           )
           as $Val,
@@ -105,10 +112,11 @@ abstract class _$$FrontmatterImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    String file,
-    String filePath,
+    String title,
+    String? linkedPdfPath,
     List<String> tags,
-    DateTime created,
+    DateTime createdAt,
+    DateTime modifiedAt,
   });
 }
 
@@ -126,28 +134,33 @@ class __$$FrontmatterImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? file = null,
-    Object? filePath = null,
+    Object? title = null,
+    Object? linkedPdfPath = freezed,
     Object? tags = null,
-    Object? created = null,
+    Object? createdAt = null,
+    Object? modifiedAt = null,
   }) {
     return _then(
       _$FrontmatterImpl(
-        file: null == file
-            ? _value.file
-            : file // ignore: cast_nullable_to_non_nullable
+        title: null == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
                   as String,
-        filePath: null == filePath
-            ? _value.filePath
-            : filePath // ignore: cast_nullable_to_non_nullable
-                  as String,
+        linkedPdfPath: freezed == linkedPdfPath
+            ? _value.linkedPdfPath
+            : linkedPdfPath // ignore: cast_nullable_to_non_nullable
+                  as String?,
         tags: null == tags
             ? _value._tags
             : tags // ignore: cast_nullable_to_non_nullable
                   as List<String>,
-        created: null == created
-            ? _value.created
-            : created // ignore: cast_nullable_to_non_nullable
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        modifiedAt: null == modifiedAt
+            ? _value.modifiedAt
+            : modifiedAt // ignore: cast_nullable_to_non_nullable
                   as DateTime,
       ),
     );
@@ -158,21 +171,23 @@ class __$$FrontmatterImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$FrontmatterImpl implements _Frontmatter {
   const _$FrontmatterImpl({
-    required this.file,
-    required this.filePath,
-    required final List<String> tags,
-    required this.created,
+    required this.title,
+    this.linkedPdfPath,
+    final List<String> tags = const [],
+    required this.createdAt,
+    required this.modifiedAt,
   }) : _tags = tags;
 
   factory _$FrontmatterImpl.fromJson(Map<String, dynamic> json) =>
       _$$FrontmatterImplFromJson(json);
 
   @override
-  final String file;
+  final String title;
   @override
-  final String filePath;
+  final String? linkedPdfPath;
   final List<String> _tags;
   @override
+  @JsonKey()
   List<String> get tags {
     if (_tags is EqualUnmodifiableListView) return _tags;
     // ignore: implicit_dynamic_type
@@ -180,11 +195,13 @@ class _$FrontmatterImpl implements _Frontmatter {
   }
 
   @override
-  final DateTime created;
+  final DateTime createdAt;
+  @override
+  final DateTime modifiedAt;
 
   @override
   String toString() {
-    return 'Frontmatter(file: $file, filePath: $filePath, tags: $tags, created: $created)';
+    return 'Frontmatter(title: $title, linkedPdfPath: $linkedPdfPath, tags: $tags, createdAt: $createdAt, modifiedAt: $modifiedAt)';
   }
 
   @override
@@ -192,21 +209,25 @@ class _$FrontmatterImpl implements _Frontmatter {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$FrontmatterImpl &&
-            (identical(other.file, file) || other.file == file) &&
-            (identical(other.filePath, filePath) ||
-                other.filePath == filePath) &&
+            (identical(other.title, title) || other.title == title) &&
+            (identical(other.linkedPdfPath, linkedPdfPath) ||
+                other.linkedPdfPath == linkedPdfPath) &&
             const DeepCollectionEquality().equals(other._tags, _tags) &&
-            (identical(other.created, created) || other.created == created));
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt) &&
+            (identical(other.modifiedAt, modifiedAt) ||
+                other.modifiedAt == modifiedAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
     runtimeType,
-    file,
-    filePath,
+    title,
+    linkedPdfPath,
     const DeepCollectionEquality().hash(_tags),
-    created,
+    createdAt,
+    modifiedAt,
   );
 
   /// Create a copy of Frontmatter
@@ -225,23 +246,26 @@ class _$FrontmatterImpl implements _Frontmatter {
 
 abstract class _Frontmatter implements Frontmatter {
   const factory _Frontmatter({
-    required final String file,
-    required final String filePath,
-    required final List<String> tags,
-    required final DateTime created,
+    required final String title,
+    final String? linkedPdfPath,
+    final List<String> tags,
+    required final DateTime createdAt,
+    required final DateTime modifiedAt,
   }) = _$FrontmatterImpl;
 
   factory _Frontmatter.fromJson(Map<String, dynamic> json) =
       _$FrontmatterImpl.fromJson;
 
   @override
-  String get file;
+  String get title;
   @override
-  String get filePath;
+  String? get linkedPdfPath;
   @override
   List<String> get tags;
   @override
-  DateTime get created;
+  DateTime get createdAt;
+  @override
+  DateTime get modifiedAt;
 
   /// Create a copy of Frontmatter
   /// with the given fields replaced by the non-null parameter values.

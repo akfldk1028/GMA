@@ -54,7 +54,7 @@ class StatusBarWidget extends ConsumerWidget {
     final zoom = isReady ? pdfController.currentZoom : null;
 
     return Container(
-      height: 28,
+      height: 24,
       decoration: BoxDecoration(
         color: ShadTheme.of(context).colorScheme.background,
         border: Border(

@@ -6,10 +6,11 @@ part 'frontmatter_model.g.dart';
 @freezed
 class Frontmatter with _$Frontmatter {
   const factory Frontmatter({
-    required String file,
-    required String filePath,
-    required List<String> tags,
-    required DateTime created,
+    required String title,
+    String? linkedPdfPath,
+    @Default([]) List<String> tags,
+    required DateTime createdAt,
+    required DateTime modifiedAt,
   }) = _Frontmatter;
 
   factory Frontmatter.fromJson(Map<String, dynamic> json) =>

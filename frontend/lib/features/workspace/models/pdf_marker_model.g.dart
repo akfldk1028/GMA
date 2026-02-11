@@ -34,4 +34,5 @@ const _$MarkerColorEnumMap = {
   MarkerColor.green: 'green',
   MarkerColor.blue: 'blue',
   MarkerColor.purple: 'purple',
+  MarkerColor.pen: 'pen',
 };

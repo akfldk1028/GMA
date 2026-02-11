@@ -6,7 +6,7 @@ part of 'file_manager_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$fileManagerHash() => r'd302153275a969d247c91f0baeb555669cfaaf8e';
+String _$fileManagerHash() => r'53063385d3fe6863707115b317c7ad326b216b14';
 
 /// See also [FileManager].
 @ProviderFor(FileManager)
@@ -23,7 +23,7 @@ final fileManagerProvider =
 
 typedef _$FileManager = AutoDisposeAsyncNotifier<List<NoteMetadata>>;
 String _$createNoteMutationHash() =>
-    r'c91c45a678f64b2efdff68fc261b293339d72a83';
+    r'b383608670d3e72f82099e5912b6f3dbd7cebef0';
 
 /// Mutation provider for creating a new note
 ///

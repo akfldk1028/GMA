@@ -25,7 +25,7 @@ final isDarkThemeProvider = AutoDisposeProvider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef IsDarkThemeRef = AutoDisposeProviderRef<bool>;
-String _$themeMode$Hash() => r'5044b932ab5d6e2d76a55fe65525ff0f0e669f31';
+String _$themeMode$Hash() => r'50ff5f7dcf027db162881e02e29e3d126d6090c2';
 
 /// Provider that manages theme mode (light/dark) with Hive persistence.
 ///

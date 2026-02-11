@@ -70,7 +70,7 @@ class WorkspaceHeader extends ConsumerWidget {
     final isDark = themeMode == ThemeMode.dark;
 
     return Container(
-      height: 56,
+      height: 48,
       decoration: BoxDecoration(
         color: ShadTheme.of(context).colorScheme.background,
         border: Border(
@@ -81,7 +81,7 @@ class WorkspaceHeader extends ConsumerWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           children: [
             // Sidebar toggle button
@@ -136,9 +136,9 @@ class WorkspaceHeader extends ConsumerWidget {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.picture_as_pdf, size: 18),
-                  SizedBox(width: 8),
-                  Text('Open PDF'),
+                  Icon(Icons.picture_as_pdf, size: 16),
+                  SizedBox(width: 4),
+                  Text('PDF'),
                 ],
               ),
             ),

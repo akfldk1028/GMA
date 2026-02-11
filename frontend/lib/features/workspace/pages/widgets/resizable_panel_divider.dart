@@ -22,8 +22,8 @@ class ResizablePanelDivider extends StatefulWidget {
     super.key,
     required this.onDrag,
     this.axis = Axis.vertical,
-    this.width = 8.0,
-    this.hoverWidth = 12.0,
+    this.width = 1.0,
+    this.hoverWidth = 4.0,
   });
 
   /// Callback when the divider is dragged.
@@ -59,7 +59,7 @@ class _ResizablePanelDividerState extends State<ResizablePanelDivider> {
     if (_isDragging) {
       backgroundColor = colorScheme.primary;
     } else if (_isHovered) {
-      backgroundColor = colorScheme.mutedForeground.withOpacity(0.5);
+      backgroundColor = colorScheme.mutedForeground.withValues(alpha:0.5);
     } else {
       backgroundColor = colorScheme.border;
     }
@@ -97,13 +97,13 @@ class _ResizablePanelDividerState extends State<ResizablePanelDivider> {
           // Add a subtle visual indicator in the center
           child: Center(
             child: Container(
-              width: widget.axis == Axis.vertical ? 2 : 24,
-              height: widget.axis == Axis.horizontal ? 2 : 24,
+              width: widget.axis == Axis.vertical ? 2 : 16,
+              height: widget.axis == Axis.horizontal ? 2 : 16,
               decoration: BoxDecoration(
                 color: _isDragging || _isHovered
-                    ? colorScheme.background.withOpacity(0.3)
+                    ? colorScheme.mutedForeground.withValues(alpha:0.3)
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(1),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),

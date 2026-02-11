@@ -1,12 +1,16 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path/path.dart' as p;
 import 'package:pdfrx/pdfrx.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../constants/marker_colors.dart';
+import '../../../../utils/file_system_provider.dart';
 import '../../../../utils/note_storage_service.dart';
+import '../../../file_manager/pages/providers/file_manager_provider.dart';
 import '../../../note_editor/pages/providers/note_editor_provider.dart';
 import '../../models/pdf_marker_model.dart';
 import '../../models/workspace_state.dart';
@@ -31,7 +35,8 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     );
   }
 
-  /// Load a PDF file into the workspace
+  /// Load a PDF file into the workspace.
+  /// Auto-creates a linked note if no note is currently open.
   Future<void> loadPdf(String pdfPath) async {
     final currentState = state.valueOrNull;
     if (currentState == null) return;
@@ -45,6 +50,11 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     state = AsyncData(
       currentState.copyWith(currentPdfPath: pdfPath),
     );
+
+    // Auto-create a linked note if none is currently open
+    if (currentState.currentNoteId == null) {
+      await _autoCreateNote(pdfPath);
+    }
   }
 
   /// Load a note into the workspace
@@ -63,6 +73,40 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     final content = await noteStorage.loadNote(noteId: noteId);
 
     return content;
+  }
+
+  /// Auto-create a note linked to the given PDF. Returns the note ID or null.
+  /// Directly creates file instead of using CreateNoteMutation to avoid
+  /// Riverpod "Future already completed" bug.
+  Future<String?> _autoCreateNote(String pdfPath) async {
+    try {
+      final pdfName = p.basenameWithoutExtension(pdfPath);
+      final notesDir = await ref.read(notesRootDirectoryProvider.future);
+      final noteUuid = const Uuid().v4();
+      final noteFile = File('${notesDir.path}/$noteUuid.md');
+
+      // Write frontmatter + initial content
+      final now = DateTime.now();
+      final content = StringBuffer()
+        ..writeln('---')
+        ..writeln('title: $pdfName')
+        ..writeln('linkedPdfPath: $pdfPath')
+        ..writeln('createdAt: ${now.toIso8601String()}')
+        ..writeln('modifiedAt: ${now.toIso8601String()}')
+        ..writeln('---')
+        ..writeln()
+        ..writeln('# $pdfName')
+        ..writeln();
+      await noteFile.writeAsString(content.toString());
+
+      // Load the note into workspace and refresh file manager
+      await loadNote(noteUuid);
+      ref.read(fileManagerProvider.notifier).refresh();
+      return noteUuid;
+    } catch (e) {
+      debugPrint('Auto-create note failed: $e');
+      return null;
+    }
   }
 
   /// Update note content with auto-save (debounced)
@@ -139,19 +183,59 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       currentState.copyWith(markers: updatedMarkers),
     );
 
-    // Insert marker into note editor if a note is currently loaded
-    final currentNoteId = currentState.currentNoteId;
-    if (currentNoteId != null && selectedText != null) {
-      await ref
-          .read(noteEditorProvider(currentNoteId).notifier)
-          .insertMarker(
-            color: color,
-            pageNumber: pageNumber,
-            text: selectedText,
-          );
+    // Insert marker into note editor. Auto-create note if none is open.
+    var currentNoteId = state.valueOrNull?.currentNoteId;
+    if (currentNoteId == null && currentState.currentPdfPath != null) {
+      currentNoteId = await _autoCreateNote(currentState.currentPdfPath!);
+    }
+    if (currentNoteId != null) {
+      if (capturedImagePath != null) {
+        // Area capture → insert image markdown with absolute path + context text
+        final capturesDir = await ref.read(capturesDirectoryProvider.future);
+        await ref
+            .read(noteEditorProvider(currentNoteId).notifier)
+            .insertCapture(
+              pageNumber: pageNumber,
+              filename: capturedImagePath,
+              capturesDir: capturesDir.path,
+              contextText: selectedText,
+            );
+      } else {
+        // Text selection or drawing stroke → insert marker line
+        await ref
+            .read(noteEditorProvider(currentNoteId).notifier)
+            .insertMarker(
+              color: color,
+              pageNumber: pageNumber,
+              text: selectedText ?? '',
+            );
+      }
     }
 
     return marker;
+  }
+
+  /// Create a drawing marker for a pen/highlighter stroke.
+  ///
+  /// Each stroke gets its own marker line — even on the same page,
+  /// because stroke location matters. [extractedText] is the PDF text
+  /// near the stroke's bounding box (auto-extracted).
+  Future<void> createDrawingMarker({
+    required int pageNumber,
+    String? extractedText,
+    PdfRect? textRect,
+  }) async {
+    final currentState = state.valueOrNull;
+    if (currentState == null) return;
+
+    if (currentState.currentNoteId == null) return;
+
+    await createMarker(
+      pageNumber: pageNumber,
+      color: MarkerColor.pen,
+      selectedText: extractedText,
+      textRect: textRect,
+    );
   }
 
   /// Navigate PDF viewer to a specific marker

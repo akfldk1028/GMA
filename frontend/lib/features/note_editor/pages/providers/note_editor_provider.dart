@@ -85,13 +85,20 @@ class NoteEditor extends _$NoteEditor {
   }) async {
     if (_controller == null) return;
 
-    // Handle edge case: truncate text to 150 chars with ellipsis
-    final truncatedText =
-        text.length > 150 ? '${text.substring(0, 150)}...' : text;
+    // Compute sequential sub-number for this page (P1-1, P1-2, ...)
+    final subNumber = _computeSubNumber(_controller!.text, pageNumber);
 
-    // Create marker line in format: - 🔴 P3 [text]
+    // Create marker line in format: - 🔴 P3-2  [text] (double space before text)
     final emoji = color.emoji;
-    final markerLine = '- $emoji P$pageNumber $truncatedText';
+    final String markerLine;
+    if (text.isEmpty) {
+      markerLine = '- $emoji P$pageNumber-$subNumber';
+    } else {
+      // Truncate text to 150 chars with ellipsis
+      final truncatedText =
+          text.length > 150 ? '${text.substring(0, 150)}...' : text;
+      markerLine = '- $emoji P$pageNumber-$subNumber  $truncatedText';
+    }
 
     // Get current text and cursor position
     final currentText = _controller!.text;
@@ -130,6 +137,94 @@ class NoteEditor extends _$NoteEditor {
       text: newText,
       selection: TextSelection.collapsed(offset: newCursorOffset),
     );
+  }
+
+  /// Inserts a captured image reference at the current cursor position.
+  ///
+  /// Format:
+  /// ```
+  /// - 🟡 P5
+  ///   ![P5 capture](file:///path/to/captures/p5_1234567890.png)
+  /// ```
+  Future<void> insertCapture({
+    required int pageNumber,
+    required String filename,
+    String? capturesDir,
+    String? contextText,
+  }) async {
+    if (_controller == null) return;
+
+    // Compute sequential sub-number for this page
+    final subNumber = _computeSubNumber(_controller!.text, pageNumber);
+
+    // Use absolute file URI if capturesDir is provided, else relative path
+    final imgPath = capturesDir != null
+        ? 'file:///${capturesDir.replaceAll('\\', '/')}/$filename'
+        : './captures/$filename';
+    // Include context text if available (truncated to 100 chars)
+    final textPart = contextText != null && contextText.isNotEmpty
+        ? '  ${contextText.length > 100 ? '${contextText.substring(0, 100)}...' : contextText}'
+        : '';
+    final markerLine =
+        '- 🟡 P$pageNumber-$subNumber$textPart\n  ![P$pageNumber-$subNumber capture]($imgPath)';
+
+    final currentText = _controller!.text;
+    final selection = _controller!.selection;
+
+    final insertPosition =
+        selection.isValid && selection.baseOffset >= 0
+            ? selection.baseOffset
+            : currentText.length;
+
+    final beforeCursor = currentText.substring(0, insertPosition);
+    final afterCursor = currentText.substring(insertPosition);
+
+    final needsNewlineBefore =
+        beforeCursor.isNotEmpty && !beforeCursor.endsWith('\n');
+    final needsNewlineAfter =
+        afterCursor.isNotEmpty && !afterCursor.startsWith('\n');
+
+    final newText = beforeCursor +
+        (needsNewlineBefore ? '\n' : '') +
+        markerLine +
+        (needsNewlineAfter ? '\n' : '') +
+        afterCursor;
+
+    final newCursorOffset = insertPosition +
+        (needsNewlineBefore ? 1 : 0) +
+        markerLine.length +
+        (needsNewlineAfter ? 1 : 0);
+
+    _controller!.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newCursorOffset),
+    );
+  }
+
+  /// Compute the next sub-number for a given page.
+  ///
+  /// Scans existing markers in the note content and returns max+1.
+  /// Handles both new format (P3-2) and legacy format (P3, treated as P3-1).
+  int _computeSubNumber(String content, int pageNumber) {
+    // Match markers on this specific page: any emoji + P{pageNumber} or P{pageNumber}-{sub}
+    // Use word boundary after page number to avoid P1 matching P10, P11, etc.
+    final regex = RegExp(
+      r'P' + pageNumber.toString() + r'(?:-(\d+))?(?:\s|$)',
+      multiLine: true,
+    );
+    final matches = regex.allMatches(content);
+
+    int maxSub = 0;
+    for (final match in matches) {
+      if (match.group(1) != null) {
+        final sub = int.tryParse(match.group(1)!) ?? 0;
+        if (sub > maxSub) maxSub = sub;
+      } else {
+        // Legacy P3 format without sub-number, treat as 1
+        if (maxSub < 1) maxSub = 1;
+      }
+    }
+    return maxSub + 1;
   }
 
   /// Saves the current editor content to the note provider.
