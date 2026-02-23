@@ -52,6 +52,7 @@ PDF 문서를 왼쪽에 열고, 오른쪽에 Markdown 노트를 작성하면서
 - 줌 인/아웃
 - **텍스트 선택** → 우클릭/버튼으로 노트에 발췌 추가
 - **영역 캡처** → 드래그로 이미지 영역 선택 → 노트에 임베드
+- **OCR (로컬 LLM)** → 이미지 기반 PDF(스캔본)에서 텍스트 추출 (Ollama LLaVA)
 - 페이지 마커 오버레이 (노트에서 참조 중인 페이지에 색상 점 표시)
 - 텍스트 검색
 
@@ -128,6 +129,7 @@ PDF 문서를 왼쪽에 열고, 오른쪽에 Markdown 노트를 작성하면서
 | 상태관리 | `flutter_riverpod` | 전역 상태 (PDF 상태, 노트 상태, 연동) |
 | 코드생성 | `riverpod_generator` | Provider 자동 생성 |
 | 라우팅 | `go_router` | 화면 전환 |
+| HTTP | `http` | OCR 백엔드 (Ollama REST API) |
 | HTTP | `dio` | 백엔드 API (향후) |
 | 로컬저장 | `hive_flutter` | 설정, 캐시, 마커 메타데이터 |
 | 보안저장 | `flutter_secure_storage` | 인증 토큰 |
@@ -349,6 +351,15 @@ lib/
     │   ├── queries/
     │   └── mutations/
     │
+    ├── ocr/                         # ⭐ 로컬 LLM OCR (플러그인 패턴)
+    │   ├── ocr_backend.dart             # 추상 인터페이스
+    │   ├── ocr_registry.dart            # 백엔드 레지스트리
+    │   ├── ocr_service.dart             # 오케스트레이션 (파일/페이지 → 텍스트)
+    │   ├── backends/
+    │   │   └── ollama_backend.dart      # Ollama LLaVA 구현
+    │   └── pages/providers/
+    │       └── ocr_provider.dart        # Riverpod 설정 + 호출
+    │
     ├── file_manager/                # 파일/폴더 관리
     │   ├── models/
     │   │   └── file_tree_model.dart
@@ -420,6 +431,21 @@ lib/
       "- 🟡 P5"
       "  ![캡처](./captures/p5_capture_001.png)"
    d. frontmatter markers에 captureRect 저장
+```
+
+### Flow 3.5: 이미지 기반 PDF → OCR → 텍스트 추출
+
+```
+1. 영역 캡처 완료 시, 네이티브 텍스트 추출 시도
+2. 텍스트가 없으면 (이미지 PDF) + OCR 활성화 상태:
+   a. 캡처된 이미지를 Ollama LLaVA에 전송
+   b. POST /api/generate {model: "llava", images: [base64], prompt: "..."}
+   c. 응답 텍스트를 마커의 selectedText로 사용
+3. 전체 페이지 OCR도 가능:
+   a. PdfPage.render() → 전체 페이지 이미지 생성 (메모리)
+   b. Ollama LLaVA로 OCR
+   c. 결과를 파란색 마커로 노트에 삽입
+4. 설정: Settings > OCR (Local LLM) 에서 활성화/URL/모델 설정
 ```
 
 ### Flow 4: Wiki-link 네비게이션
@@ -561,7 +587,7 @@ pdfrx가 내부적으로 변환 처리
 
 ### Phase 4: 확장 (향후)
 20. 클라우드 동기화 (백엔드 연동)
-21. OCR (이미지 PDF 텍스트 추출)
+21. ✅ OCR (로컬 LLM — Ollama LLaVA, 플러그인 패턴 스캐폴딩 완료)
 22. AI 요약 (선택 텍스트 자동 요약)
 23. 멀티 PDF 동시 열기
 24. 모바일 대응

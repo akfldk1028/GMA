@@ -60,6 +60,7 @@
 | Markdown | markdown | ^7.2.2 |
 | LaTeX | flutter_math_fork | ^0.7.2 |
 | 파일 | path_provider + file_picker | ^2.1.4 |
+| HTTP | http | ^1.2.0 |
 | UUID | uuid | ^4.5.1 |
 | YAML | yaml | ^3.1.2 |
 
@@ -85,6 +86,7 @@ lib/
     ├── workspace/               # ⭐ 메인 3패널 화면 (사이드바+PDF+에디터)
     ├── pdf_viewer/              # ⭐ PDF 뷰어 + 마커 오버레이
     ├── note_editor/             # ⭐ Markdown 에디터 + Wiki-link + LaTeX
+    ├── ocr/                     # ⭐ 로컬 LLM OCR (Ollama LLaVA, 플러그인 패턴)
     ├── file_manager/            # 파일 트리/검색
     ├── auth/                    # 인증
     ├── home/                    # 홈 (최근 노트)
@@ -209,6 +211,16 @@ class PdfMarker with _$PdfMarker {
 2. `PdfPage.render()` 로 선택 영역 렌더링
 3. `./captures/` 에 이미지 저장
 4. Markdown: `- 🟡 P5\n  ![캡처](./captures/p5_capture.png)`
+
+### OCR 폴백 (이미지 기반 PDF)
+1. 영역 캡처 시 네이티브 텍스트 추출 실패 + OCR 활성화:
+   - 캡처 이미지 → `OcrService.recognizeFile()` → Ollama LLaVA
+   - 추출된 텍스트를 마커의 `selectedText`로 사용
+2. 전체 페이지 OCR: `workspace_provider.ocrCurrentPage()`
+   - `PdfPage.render()` → 메모리 PNG → Ollama → 마커 삽입
+3. 플러그인 패턴: `OcrBackend` 인터페이스 → `ocr_registry.dart`
+   - 새 백엔드 추가 = 1파일 + 레지스트리 1줄
+4. 설정: Hive `ocr_settings` box (isEnabled, ollamaUrl, modelName)
 
 ---
 

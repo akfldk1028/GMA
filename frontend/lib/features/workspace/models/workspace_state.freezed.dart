@@ -226,7 +226,20 @@ mixin _$WorkspaceState {
   String? get currentPdfPath => throw _privateConstructorUsedError;
   String? get currentNoteId => throw _privateConstructorUsedError;
   List<PdfMarker> get markers => throw _privateConstructorUsedError;
-  PanelSizes get panelSizes => throw _privateConstructorUsedError;
+  PanelSizes get panelSizes =>
+      throw _privateConstructorUsedError; // Modal/drawer UI state
+  bool get isEditorModalOpen => throw _privateConstructorUsedError;
+  bool get isFileBrowserOpen => throw _privateConstructorUsedError;
+  bool get isMarkerEditModalOpen => throw _privateConstructorUsedError;
+
+  /// ID of the marker currently being edited in the modal (null = new marker)
+  String? get editingMarkerId => throw _privateConstructorUsedError;
+
+  /// Pending marker data for the marker edit modal (from text selection)
+  int? get pendingMarkerPageNumber => throw _privateConstructorUsedError;
+  String? get pendingMarkerText => throw _privateConstructorUsedError;
+  @PdfRectConverter()
+  PdfRect? get pendingMarkerTextRect => throw _privateConstructorUsedError;
 
   /// Serializes this WorkspaceState to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -250,6 +263,13 @@ abstract class $WorkspaceStateCopyWith<$Res> {
     String? currentNoteId,
     List<PdfMarker> markers,
     PanelSizes panelSizes,
+    bool isEditorModalOpen,
+    bool isFileBrowserOpen,
+    bool isMarkerEditModalOpen,
+    String? editingMarkerId,
+    int? pendingMarkerPageNumber,
+    String? pendingMarkerText,
+    @PdfRectConverter() PdfRect? pendingMarkerTextRect,
   });
 
   $PanelSizesCopyWith<$Res> get panelSizes;
@@ -274,6 +294,13 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
     Object? currentNoteId = freezed,
     Object? markers = null,
     Object? panelSizes = null,
+    Object? isEditorModalOpen = null,
+    Object? isFileBrowserOpen = null,
+    Object? isMarkerEditModalOpen = null,
+    Object? editingMarkerId = freezed,
+    Object? pendingMarkerPageNumber = freezed,
+    Object? pendingMarkerText = freezed,
+    Object? pendingMarkerTextRect = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -293,6 +320,34 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
                 ? _value.panelSizes
                 : panelSizes // ignore: cast_nullable_to_non_nullable
                       as PanelSizes,
+            isEditorModalOpen: null == isEditorModalOpen
+                ? _value.isEditorModalOpen
+                : isEditorModalOpen // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isFileBrowserOpen: null == isFileBrowserOpen
+                ? _value.isFileBrowserOpen
+                : isFileBrowserOpen // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isMarkerEditModalOpen: null == isMarkerEditModalOpen
+                ? _value.isMarkerEditModalOpen
+                : isMarkerEditModalOpen // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            editingMarkerId: freezed == editingMarkerId
+                ? _value.editingMarkerId
+                : editingMarkerId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            pendingMarkerPageNumber: freezed == pendingMarkerPageNumber
+                ? _value.pendingMarkerPageNumber
+                : pendingMarkerPageNumber // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            pendingMarkerText: freezed == pendingMarkerText
+                ? _value.pendingMarkerText
+                : pendingMarkerText // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            pendingMarkerTextRect: freezed == pendingMarkerTextRect
+                ? _value.pendingMarkerTextRect
+                : pendingMarkerTextRect // ignore: cast_nullable_to_non_nullable
+                      as PdfRect?,
           )
           as $Val,
     );
@@ -323,6 +378,13 @@ abstract class _$$WorkspaceStateImplCopyWith<$Res>
     String? currentNoteId,
     List<PdfMarker> markers,
     PanelSizes panelSizes,
+    bool isEditorModalOpen,
+    bool isFileBrowserOpen,
+    bool isMarkerEditModalOpen,
+    String? editingMarkerId,
+    int? pendingMarkerPageNumber,
+    String? pendingMarkerText,
+    @PdfRectConverter() PdfRect? pendingMarkerTextRect,
   });
 
   @override
@@ -347,6 +409,13 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
     Object? currentNoteId = freezed,
     Object? markers = null,
     Object? panelSizes = null,
+    Object? isEditorModalOpen = null,
+    Object? isFileBrowserOpen = null,
+    Object? isMarkerEditModalOpen = null,
+    Object? editingMarkerId = freezed,
+    Object? pendingMarkerPageNumber = freezed,
+    Object? pendingMarkerText = freezed,
+    Object? pendingMarkerTextRect = freezed,
   }) {
     return _then(
       _$WorkspaceStateImpl(
@@ -366,6 +435,34 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
             ? _value.panelSizes
             : panelSizes // ignore: cast_nullable_to_non_nullable
                   as PanelSizes,
+        isEditorModalOpen: null == isEditorModalOpen
+            ? _value.isEditorModalOpen
+            : isEditorModalOpen // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isFileBrowserOpen: null == isFileBrowserOpen
+            ? _value.isFileBrowserOpen
+            : isFileBrowserOpen // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isMarkerEditModalOpen: null == isMarkerEditModalOpen
+            ? _value.isMarkerEditModalOpen
+            : isMarkerEditModalOpen // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        editingMarkerId: freezed == editingMarkerId
+            ? _value.editingMarkerId
+            : editingMarkerId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        pendingMarkerPageNumber: freezed == pendingMarkerPageNumber
+            ? _value.pendingMarkerPageNumber
+            : pendingMarkerPageNumber // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        pendingMarkerText: freezed == pendingMarkerText
+            ? _value.pendingMarkerText
+            : pendingMarkerText // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        pendingMarkerTextRect: freezed == pendingMarkerTextRect
+            ? _value.pendingMarkerTextRect
+            : pendingMarkerTextRect // ignore: cast_nullable_to_non_nullable
+                  as PdfRect?,
       ),
     );
   }
@@ -379,6 +476,13 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     this.currentNoteId,
     final List<PdfMarker> markers = const [],
     this.panelSizes = const PanelSizes(),
+    this.isEditorModalOpen = false,
+    this.isFileBrowserOpen = false,
+    this.isMarkerEditModalOpen = false,
+    this.editingMarkerId,
+    this.pendingMarkerPageNumber,
+    this.pendingMarkerText,
+    @PdfRectConverter() this.pendingMarkerTextRect,
   }) : _markers = markers;
 
   factory _$WorkspaceStateImpl.fromJson(Map<String, dynamic> json) =>
@@ -400,10 +504,33 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
   @override
   @JsonKey()
   final PanelSizes panelSizes;
+  // Modal/drawer UI state
+  @override
+  @JsonKey()
+  final bool isEditorModalOpen;
+  @override
+  @JsonKey()
+  final bool isFileBrowserOpen;
+  @override
+  @JsonKey()
+  final bool isMarkerEditModalOpen;
+
+  /// ID of the marker currently being edited in the modal (null = new marker)
+  @override
+  final String? editingMarkerId;
+
+  /// Pending marker data for the marker edit modal (from text selection)
+  @override
+  final int? pendingMarkerPageNumber;
+  @override
+  final String? pendingMarkerText;
+  @override
+  @PdfRectConverter()
+  final PdfRect? pendingMarkerTextRect;
 
   @override
   String toString() {
-    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, panelSizes: $panelSizes)';
+    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, panelSizes: $panelSizes, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
   }
 
   @override
@@ -417,7 +544,24 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
                 other.currentNoteId == currentNoteId) &&
             const DeepCollectionEquality().equals(other._markers, _markers) &&
             (identical(other.panelSizes, panelSizes) ||
-                other.panelSizes == panelSizes));
+                other.panelSizes == panelSizes) &&
+            (identical(other.isEditorModalOpen, isEditorModalOpen) ||
+                other.isEditorModalOpen == isEditorModalOpen) &&
+            (identical(other.isFileBrowserOpen, isFileBrowserOpen) ||
+                other.isFileBrowserOpen == isFileBrowserOpen) &&
+            (identical(other.isMarkerEditModalOpen, isMarkerEditModalOpen) ||
+                other.isMarkerEditModalOpen == isMarkerEditModalOpen) &&
+            (identical(other.editingMarkerId, editingMarkerId) ||
+                other.editingMarkerId == editingMarkerId) &&
+            (identical(
+                  other.pendingMarkerPageNumber,
+                  pendingMarkerPageNumber,
+                ) ||
+                other.pendingMarkerPageNumber == pendingMarkerPageNumber) &&
+            (identical(other.pendingMarkerText, pendingMarkerText) ||
+                other.pendingMarkerText == pendingMarkerText) &&
+            (identical(other.pendingMarkerTextRect, pendingMarkerTextRect) ||
+                other.pendingMarkerTextRect == pendingMarkerTextRect));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -428,6 +572,13 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     currentNoteId,
     const DeepCollectionEquality().hash(_markers),
     panelSizes,
+    isEditorModalOpen,
+    isFileBrowserOpen,
+    isMarkerEditModalOpen,
+    editingMarkerId,
+    pendingMarkerPageNumber,
+    pendingMarkerText,
+    pendingMarkerTextRect,
   );
 
   /// Create a copy of WorkspaceState
@@ -453,6 +604,13 @@ abstract class _WorkspaceState implements WorkspaceState {
     final String? currentNoteId,
     final List<PdfMarker> markers,
     final PanelSizes panelSizes,
+    final bool isEditorModalOpen,
+    final bool isFileBrowserOpen,
+    final bool isMarkerEditModalOpen,
+    final String? editingMarkerId,
+    final int? pendingMarkerPageNumber,
+    final String? pendingMarkerText,
+    @PdfRectConverter() final PdfRect? pendingMarkerTextRect,
   }) = _$WorkspaceStateImpl;
 
   factory _WorkspaceState.fromJson(Map<String, dynamic> json) =
@@ -465,7 +623,26 @@ abstract class _WorkspaceState implements WorkspaceState {
   @override
   List<PdfMarker> get markers;
   @override
-  PanelSizes get panelSizes;
+  PanelSizes get panelSizes; // Modal/drawer UI state
+  @override
+  bool get isEditorModalOpen;
+  @override
+  bool get isFileBrowserOpen;
+  @override
+  bool get isMarkerEditModalOpen;
+
+  /// ID of the marker currently being edited in the modal (null = new marker)
+  @override
+  String? get editingMarkerId;
+
+  /// Pending marker data for the marker edit modal (from text selection)
+  @override
+  int? get pendingMarkerPageNumber;
+  @override
+  String? get pendingMarkerText;
+  @override
+  @PdfRectConverter()
+  PdfRect? get pendingMarkerTextRect;
 
   /// Create a copy of WorkspaceState
   /// with the given fields replaced by the non-null parameter values.

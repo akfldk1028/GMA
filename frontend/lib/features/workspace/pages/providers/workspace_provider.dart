@@ -10,8 +10,12 @@ import 'package:uuid/uuid.dart';
 import '../../../../constants/marker_colors.dart';
 import '../../../../utils/file_system_provider.dart';
 import '../../../../utils/note_storage_service.dart';
+import '../../../content_bridge/stroke_render_service.dart';
 import '../../../file_manager/pages/providers/file_manager_provider.dart';
 import '../../../note_editor/pages/providers/note_editor_provider.dart';
+import '../../../pdf_viewer/drawing/models/drawing_model.dart';
+import '../../../ocr/ocr_service.dart';
+import '../../../ocr/pages/providers/ocr_provider.dart';
 import '../../models/pdf_marker_model.dart';
 import '../../models/workspace_state.dart';
 
@@ -220,22 +224,77 @@ class WorkspaceProvider extends _$WorkspaceProvider {
   /// Each stroke gets its own marker line — even on the same page,
   /// because stroke location matters. [extractedText] is the PDF text
   /// near the stroke's bounding box (auto-extracted).
+  ///
+  /// When [strokes] is provided, renders them to PNG and inserts as image.
+  /// Falls back to text marker if rendering fails.
   Future<void> createDrawingMarker({
     required int pageNumber,
     String? extractedText,
     PdfRect? textRect,
+    List<DrawingStroke>? strokes,
   }) async {
     final currentState = state.valueOrNull;
     if (currentState == null) return;
 
     if (currentState.currentNoteId == null) return;
 
+    // Render strokes to PNG if provided
+    String? imagePath;
+    if (strokes != null && strokes.isNotEmpty) {
+      try {
+        final capturesDir = await ref.read(capturesDirectoryProvider.future);
+        imagePath = await StrokeRenderService.renderStrokes(
+          strokes: strokes,
+          capturesDir: capturesDir.path,
+          pageNumber: pageNumber,
+        );
+      } catch (e) {
+        debugPrint('Stroke render failed, fallback to text marker: $e');
+      }
+    }
+
     await createMarker(
       pageNumber: pageNumber,
       color: MarkerColor.pen,
       selectedText: extractedText,
       textRect: textRect,
+      capturedImagePath: imagePath,
     );
+  }
+
+  /// Run OCR on a full PDF page and insert result as marker/text.
+  ///
+  /// Requires a [PdfViewerController] to access the document pages.
+  /// The extracted text is inserted as a marker in the current note.
+  Future<void> ocrCurrentPage({
+    required int pageNumber,
+    required PdfViewerController controller,
+  }) async {
+    final currentState = state.valueOrNull;
+    if (currentState == null) return;
+
+    final ocrSettings = await ref.read(ocrSettingsProvider.future);
+    if (!ocrSettings.isEnabled) return;
+
+    final text = await controller.useDocument<String?>((document) async {
+      if (pageNumber < 1 || pageNumber > document.pages.length) return null;
+      final page = document.pages[pageNumber - 1];
+      return OcrService.recognizePage(
+        page,
+        pageNumber,
+        backendId: ocrSettings.backendId,
+        baseUrl: ocrSettings.ollamaUrl,
+        model: ocrSettings.modelName,
+      );
+    });
+
+    if (text != null && text.trim().isNotEmpty) {
+      await createMarker(
+        pageNumber: pageNumber,
+        color: MarkerColor.blue,
+        selectedText: text,
+      );
+    }
   }
 
   /// Navigate PDF viewer to a specific marker
@@ -290,6 +349,76 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     // Persist to Hive
     final box = await Hive.openBox('workspace_settings');
     await box.put('panel_sizes', sizes.toJson());
+  }
+
+  // ─── Modal / Drawer control ──────────────────────────────
+
+  /// Open the markdown editor modal
+  void openEditorModal() {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(isEditorModalOpen: true));
+  }
+
+  /// Close the markdown editor modal
+  void closeEditorModal() {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(isEditorModalOpen: false));
+  }
+
+  /// Toggle the file browser drawer
+  void toggleFileBrowser() {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(isFileBrowserOpen: !s.isFileBrowserOpen));
+  }
+
+  /// Close the file browser drawer
+  void closeFileBrowser() {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(isFileBrowserOpen: false));
+  }
+
+  /// Open the marker edit modal for a new marker from text selection
+  void openMarkerEditModal({
+    required int pageNumber,
+    String? selectedText,
+    PdfRect? textRect,
+  }) {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(
+      isMarkerEditModalOpen: true,
+      editingMarkerId: null,
+      pendingMarkerPageNumber: pageNumber,
+      pendingMarkerText: selectedText,
+      pendingMarkerTextRect: textRect,
+    ));
+  }
+
+  /// Open the marker edit modal for editing an existing marker
+  void editMarker(String markerId) {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(
+      isMarkerEditModalOpen: true,
+      editingMarkerId: markerId,
+    ));
+  }
+
+  /// Close the marker edit modal
+  void closeMarkerEditModal() {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(
+      isMarkerEditModalOpen: false,
+      editingMarkerId: null,
+      pendingMarkerPageNumber: null,
+      pendingMarkerText: null,
+      pendingMarkerTextRect: null,
+    ));
   }
 
   /// Remove a marker by ID

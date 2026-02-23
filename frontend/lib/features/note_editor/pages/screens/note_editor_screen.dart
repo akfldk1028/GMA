@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:markdown_widget/markdown_widget.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../gma_md/gma_md.dart';
+import '../../../gma_md/widgets/block_insert_menu.dart';
 import '../../utils/latex_renderer.dart';
 import '../../utils/markdown_config.dart';
 import '../../utils/markdown_extension.dart';
@@ -50,19 +52,28 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   // Cached extensions — rebuilt only when widget.onMarkerClick changes
   late List<MarkdownExtension> _extensions = _buildExtensions();
 
-  List<MarkdownExtension> _buildExtensions() => [
-        LatexExtension(),
-        MarkerLineExtension(
-          onTap: (pageNumber, subNumber, color) {
-            widget.onMarkerClick?.call('page:$pageNumber-$subNumber');
-          },
-        ),
-        WikiLinkExtension(
-          onTap: (target) {
-            // TODO: Navigate to linked note
-          },
-        ),
-      ];
+  List<MarkdownExtension> _buildExtensions() {
+    // Inner extensions for rendering markdown inside GMA-MD blocks.
+    // Excludes GmaMdExtension itself to prevent recursive ::: parsing.
+    final inner = <MarkdownExtension>[
+      LatexExtension(),
+      MarkerLineExtension(
+        onTap: (pageNumber, subNumber, color) {
+          widget.onMarkerClick?.call('page:$pageNumber-$subNumber');
+        },
+      ),
+      WikiLinkExtension(
+        onTap: (target) {
+          // TODO: Navigate to linked note
+        },
+      ),
+    ];
+
+    return [
+      GmaMdExtension(innerExtensions: inner),
+      ...inner,
+    ];
+  }
 
   @override
   void didUpdateWidget(covariant NoteEditorScreen oldWidget) {
@@ -147,6 +158,20 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
         offset: selection.start + prefix.length + selectedText.length,
       ),
     );
+  }
+
+  void _insertAtCursor(TextEditingController controller, String text) {
+    final selection = controller.selection;
+    final offset = selection.isValid ? selection.baseOffset : controller.text.length;
+    // Ensure we're on a new line
+    final before = controller.text.substring(0, offset);
+    final prefix = before.isNotEmpty && !before.endsWith('\n') ? '\n' : '';
+    final newText = '$prefix$text';
+    controller.value = TextEditingValue(
+      text: controller.text.replaceRange(offset, offset, newText),
+      selection: TextSelection.collapsed(offset: offset + newText.length),
+    );
+    _onTextChanged(widget.noteId!);
   }
 
   void _insertAtLineStart(TextEditingController controller, String prefix) {
@@ -403,6 +428,21 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                 icon: Icons.functions,
                 tooltip: 'LaTeX',
                 onTap: () => _insertMarkdown(controller, r'$', r'$'),
+              ),
+              _divider(theme),
+              Builder(
+                builder: (ctx) => _ToolbarButton(
+                  icon: Icons.dashboard_customize_outlined,
+                  tooltip: 'Insert Block',
+                  onTap: () async {
+                    final box = ctx.findRenderObject() as RenderBox;
+                    final pos = box.localToGlobal(Offset(0, box.size.height));
+                    final template = await showBlockInsertMenu(ctx, pos);
+                    if (template != null) {
+                      _insertAtCursor(controller, template);
+                    }
+                  },
+                ),
               ),
             ],
 

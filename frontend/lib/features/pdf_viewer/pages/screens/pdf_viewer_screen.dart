@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,9 @@ import 'package:pdfrx/pdfrx.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../constants/marker_colors.dart';
+import '../../../../utils/file_system_provider.dart';
+import '../../../ocr/ocr_service.dart';
+import '../../../ocr/pages/providers/ocr_provider.dart';
 import '../../../workspace/pages/providers/workspace_provider.dart';
 import '../../capture/pages/providers/capture_provider.dart';
 import '../../capture/pages/widgets/capture_overlay.dart';
@@ -13,21 +18,9 @@ import '../../drawing/pages/providers/drawing_provider.dart';
 import '../../drawing/pages/widgets/drawing_overlay.dart';
 import '../../utils/pdf_text_extractor.dart';
 import '../../drawing/pages/widgets/drawing_toolbar.dart';
-import '../../models/pdf_marker_model.dart' as local_model;
 import '../providers/pdf_document_provider.dart';
 import '../providers/pdf_marker_provider.dart';
 import '../widgets/pdf_page_overlay.dart';
-import '../widgets/text_selection_toolbar.dart';
-
-/// Callback for PDF text selection events.
-/// Called when user selects text in the PDF viewer.
-typedef OnTextSelectionChangeCallback =
-    void Function({
-      required int pageNumber,
-      required MarkerColor color,
-      String? selectedText,
-      PdfRect? textRect,
-    });
 
 /// PDF Viewer panel using pdfrx.
 /// Supports text selection, page navigation, marker overlay, and area capture.
@@ -35,20 +28,28 @@ class PdfViewerScreen extends ConsumerStatefulWidget {
   const PdfViewerScreen({
     super.key,
     this.controller,
-    this.onTextSelectionChange,
+    this.onAddMarkerPressed,
     this.noteId,
+    this.externalToolbar = false,
   });
 
   /// Controller for programmatic PDF navigation (e.g., goToPage, goToRectInsidePage).
   /// This is used by the workspace to navigate to markers when clicked in the note editor.
   final PdfViewerController? controller;
 
-  /// Callback invoked when text is selected in the PDF viewer.
-  /// This will be wired to the workspace provider to create markers.
-  final OnTextSelectionChangeCallback? onTextSelectionChange;
+  /// Callback for the "Add Marker" button (text selection → modal flow).
+  final void Function({
+    required int pageNumber,
+    String? selectedText,
+    PdfRect? textRect,
+  })? onAddMarkerPressed;
 
   /// Current note ID for per-note drawing stroke storage.
   final String? noteId;
+
+  /// When true, the drawing toolbar is rendered externally (by workspace header).
+  /// The PDF viewer will skip its own internal toolbar.
+  final bool externalToolbar;
 
   @override
   ConsumerState<PdfViewerScreen> createState() => _PdfViewerScreenState();
@@ -95,6 +96,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           docState.documentRef!,
           controller: controller!,
           params: PdfViewerParams(
+            // 2-page facing layout (book-style side-by-side)
+            // Page 1 alone (cover), then pairs: 2-3, 4-5, ...
+            layoutPages: _facingPagesLayout,
             // Disable text selection when drawing or capture mode is active
             textSelectionParams: anyOverlayActive
                 ? const PdfTextSelectionParams()
@@ -109,11 +113,11 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                 : null,
           ),
         ),
-        // Text selection toolbar (appears when text is selected)
+        // Text selection action (appears when text is selected)
         if (_textSelections != null && _textSelections!.isNotEmpty)
-          _buildTextSelectionToolbar(),
-        // Drawing toolbar + capture button (top-center)
-        if (widget.noteId != null)
+          _buildAddMarkerButton(),
+        // Drawing toolbar + capture button (top-center) — only if not external
+        if (widget.noteId != null && !widget.externalToolbar)
           Positioned(
             top: 8,
             left: 0,
@@ -132,6 +136,13 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                 ],
               ),
             ),
+          ),
+        // Capture button only (when toolbar is external but capture is still needed)
+        if (widget.noteId != null && widget.externalToolbar)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: _buildCaptureButton(context),
           ),
         // Page navigation controls
         _buildNavigationControls(controller),
@@ -172,71 +183,40 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     }
   }
 
-  /// Build the text selection toolbar.
-  Widget _buildTextSelectionToolbar() {
+  /// Build a single "Add Marker" button (for modal flow).
+  Widget _buildAddMarkerButton() {
     return Positioned(
       top: 60,
       right: 16,
-      child: PdfTextSelectionToolbar(
-        selectedText: _selectedText,
-        onColorSelected: _handleColorSelected,
+      child: ShadButton(
+        onPressed: () {
+          if (_selectedPageNumber == null) return;
+          widget.onAddMarkerPressed?.call(
+            pageNumber: _selectedPageNumber!,
+            selectedText: _selectedText,
+            textRect: _selectedTextRect,
+          );
+          // Clear selection
+          setState(() {
+            _textSelections = null;
+            _selectedText = null;
+            _selectedPageNumber = null;
+            _selectedTextRect = null;
+          });
+        },
+        size: ShadButtonSize.sm,
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.bookmark_add, size: 16),
+            SizedBox(width: 6),
+            Text('Add Marker'),
+          ],
+        ),
       ),
     );
   }
 
-  /// Handle color selection from the toolbar.
-  Future<void> _handleColorSelected(MarkerColor color) async {
-    if (_selectedPageNumber == null) return;
-
-    // Create marker via provider
-    try {
-      final markerProvider = ref.read(pdfMarkerStateProvider.notifier);
-      final pageNum = _selectedPageNumber!;
-
-      // Convert pdfrx PdfRect to local PdfRect model
-      final localRect = _selectedTextRect != null
-          ? local_model.PdfRect(
-              x: _selectedTextRect!.left,
-              y: _selectedTextRect!.top,
-              width: _selectedTextRect!.width,
-              height: _selectedTextRect!.height,
-            )
-          : null;
-
-      await markerProvider.createMarker(
-        pageNumber: pageNum,
-        color: color,
-        selectedText: _selectedText,
-        textRect: localRect,
-      );
-
-      // Notify parent via callback (workspace will insert marker into note)
-      widget.onTextSelectionChange?.call(
-        pageNumber: pageNum,
-        color: color,
-        selectedText: _selectedText,
-        textRect: _selectedTextRect,
-      );
-
-      // Clear selection
-      setState(() {
-        _textSelections = null;
-        _selectedText = null;
-        _selectedPageNumber = null;
-        _selectedTextRect = null;
-      });
-    } catch (e) {
-      // Show error toast
-      if (mounted) {
-        ShadToaster.of(context).show(
-          ShadToast.destructive(
-            title: const Text('Error'),
-            description: Text('Failed to create marker: $e'),
-          ),
-        );
-      }
-    }
-  }
 
   /// Build combined page overlays (drawing + capture).
   PdfPageOverlaysBuilder _buildCombinedOverlays(WidgetRef ref) {
@@ -258,6 +238,8 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   }
 
   /// Handle completed capture — insert image into note with context text.
+  /// When OCR is enabled and native text extraction yields nothing,
+  /// falls back to local LLM OCR on the captured image.
   Future<void> _handleCaptureCompleted({
     required int pageNumber,
     required String filename,
@@ -265,8 +247,31 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   }) async {
     try {
       // Extract PDF text at the captured area
-      final extractedText =
+      var extractedText =
           await _extractTextFromRect(pageNumber, normalizedRect);
+
+      // OCR fallback: if no text was extracted and OCR is enabled
+      if ((extractedText == null || extractedText.trim().isEmpty)) {
+        final ocrSettings =
+            await ref.read(ocrSettingsProvider.future);
+        if (ocrSettings.isEnabled) {
+          try {
+            final capturesDir =
+                await ref.read(capturesDirectoryProvider.future);
+            final imagePath = '${capturesDir.path}/$filename';
+            extractedText = await OcrService.recognizeFile(
+              imagePath,
+              backendId: ocrSettings.backendId,
+              baseUrl: ocrSettings.ollamaUrl,
+              model: ocrSettings.modelName,
+            );
+          } catch (ocrError) {
+            // OCR failed — continue with no text (image still gets inserted)
+            debugPrint('OCR fallback failed: $ocrError');
+          }
+        }
+      }
+
       // Convert normalized rect to pdfrx PdfRect for navigation
       final pdfRect = await _normalizedToPdfRect(
         pageNumber,
@@ -318,6 +323,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     int pageNumber,
     DrawingStroke stroke,
   ) async {
+    // Eraser strokes don't need a marker
+    if (stroke.toolId == 'eraser') return;
+
     try {
       // Extract text near the stroke location from the PDF
       final extractedText = await _extractTextNearStroke(pageNumber, stroke);
@@ -342,6 +350,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         pageNumber: pageNumber,
         extractedText: extractedText,
         textRect: strokeRect,
+        strokes: [stroke],
       );
     } catch (e) {
       if (mounted) {
@@ -608,6 +617,74 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Custom 2-page facing layout (book-style).
+  /// Page 1 is displayed alone (cover page), then pages are paired: 2-3, 4-5, etc.
+  /// Each row is centered horizontally.
+  static PdfPageLayout _facingPagesLayout(
+    List<PdfPage> pages,
+    PdfViewerParams params,
+  ) {
+    if (pages.isEmpty) {
+      return PdfPageLayout(pageLayouts: [], documentSize: Size.zero);
+    }
+
+    final m = params.margin;
+    final gap = m; // gap between paired pages
+    final pageLayouts = <Rect>[];
+    double y = m;
+
+    // Max width of a single page (used to compute total document width)
+    final maxPageWidth = pages.fold(0.0, (w, p) => max(w, p.width));
+    // Document width = two pages side-by-side + margins + gap
+    final docWidth = maxPageWidth * 2 + gap + m * 2;
+
+    int i = 0;
+
+    // First page alone (cover) — centered
+    if (i < pages.length) {
+      final page = pages[i];
+      pageLayouts.add(Rect.fromLTWH(
+        (docWidth - page.width) / 2,
+        y,
+        page.width,
+        page.height,
+      ));
+      y += page.height + m;
+      i++;
+    }
+
+    // Remaining pages in pairs
+    while (i < pages.length) {
+      final left = pages[i];
+      final hasRight = i + 1 < pages.length;
+      final right = hasRight ? pages[i + 1] : null;
+
+      final rowHeight = hasRight ? max(left.height, right!.height) : left.height;
+
+      // Left page: right-aligned to center gap
+      final leftX = docWidth / 2 - gap / 2 - left.width;
+      final leftY = y + (rowHeight - left.height) / 2;
+      pageLayouts.add(Rect.fromLTWH(leftX, leftY, left.width, left.height));
+
+      if (hasRight) {
+        // Right page: left-aligned from center gap
+        final rightX = docWidth / 2 + gap / 2;
+        final rightY = y + (rowHeight - right!.height) / 2;
+        pageLayouts.add(Rect.fromLTWH(rightX, rightY, right.width, right.height));
+        i += 2;
+      } else {
+        i += 1;
+      }
+
+      y += rowHeight + m;
+    }
+
+    return PdfPageLayout(
+      pageLayouts: pageLayouts,
+      documentSize: Size(docWidth, y),
     );
   }
 }

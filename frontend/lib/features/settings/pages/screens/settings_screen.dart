@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../ocr/pages/providers/ocr_provider.dart';
 import '../../../workspace/pages/providers/theme_provider.dart';
 
 /// Settings screen with theme, about, and keyboard shortcuts.
@@ -134,6 +135,13 @@ class SettingsScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
+
+                      const SizedBox(height: 32),
+
+                      // OCR section
+                      _SectionHeader(title: 'OCR (Local LLM)', theme: theme),
+                      const SizedBox(height: 12),
+                      _OcrSettingsSection(theme: theme),
 
                       const SizedBox(height: 32),
 
@@ -347,5 +355,226 @@ class _ShortcutRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// OCR settings section — Ollama URL, model, enable toggle, connection test.
+class _OcrSettingsSection extends ConsumerStatefulWidget {
+  const _OcrSettingsSection({required this.theme});
+  final ShadThemeData theme;
+
+  @override
+  ConsumerState<_OcrSettingsSection> createState() =>
+      _OcrSettingsSectionState();
+}
+
+class _OcrSettingsSectionState extends ConsumerState<_OcrSettingsSection> {
+  late TextEditingController _urlController;
+  late TextEditingController _modelController;
+  bool _controllersInitialized = false;
+  bool _testing = false;
+  bool? _testResult;
+
+  @override
+  void initState() {
+    super.initState();
+    _urlController = TextEditingController();
+    _modelController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    _modelController.dispose();
+    super.dispose();
+  }
+
+  void _initControllers(OcrSettingsData settings) {
+    if (_controllersInitialized) return;
+    _controllersInitialized = true;
+    _urlController.text = settings.ollamaUrl;
+    _modelController.text = settings.modelName;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = widget.theme;
+    final ocrAsync = ref.watch(ocrSettingsProvider);
+
+    return ocrAsync.when(
+      loading: () => _SettingsCard(
+        theme: theme,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: theme.colorScheme.mutedForeground,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      error: (e, _) => _SettingsCard(
+        theme: theme,
+        children: [
+          _SettingsRow(
+            theme: theme,
+            icon: Icons.error_outline,
+            title: 'OCR Settings Error',
+            subtitle: e.toString(),
+          ),
+        ],
+      ),
+      data: (settings) {
+        _initControllers(settings);
+        return _SettingsCard(
+          theme: theme,
+          children: [
+            _SettingsRow(
+              theme: theme,
+              icon: Icons.document_scanner_outlined,
+              title: 'Enable OCR',
+              subtitle: 'Use local LLM for image-based PDF text extraction',
+              trailing: ShadSwitch(
+                value: settings.isEnabled,
+                onChanged: (v) =>
+                    ref.read(ocrSettingsProvider.notifier).setEnabled(v),
+              ),
+            ),
+            SettingsScreen._divider(theme),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.dns_outlined,
+                      size: 20, color: theme.colorScheme.mutedForeground),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Ollama Server URL',
+                            style: theme.textTheme.small
+                                .copyWith(fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 6),
+                        ShadInput(
+                          controller: _urlController,
+                          placeholder: const Text('http://localhost:11434'),
+                          onChanged: (v) => ref
+                              .read(ocrSettingsProvider.notifier)
+                              .setOllamaUrl(v),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SettingsScreen._divider(theme),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.smart_toy_outlined,
+                      size: 20, color: theme.colorScheme.mutedForeground),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Model Name',
+                            style: theme.textTheme.small
+                                .copyWith(fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 6),
+                        ShadInput(
+                          controller: _modelController,
+                          placeholder: const Text('llava'),
+                          onChanged: (v) => ref
+                              .read(ocrSettingsProvider.notifier)
+                              .setModelName(v),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SettingsScreen._divider(theme),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.wifi_tethering,
+                      size: 20, color: theme.colorScheme.mutedForeground),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Connection Test',
+                            style: theme.textTheme.small
+                                .copyWith(fontWeight: FontWeight.w500)),
+                        Text(
+                          _testResult == null
+                              ? 'Check if Ollama server is reachable'
+                              : _testResult!
+                                  ? 'Connected successfully'
+                                  : 'Connection failed',
+                          style: theme.textTheme.muted.copyWith(fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ShadButton.outline(
+                    onPressed: _testing ? null : _testConnection,
+                    size: ShadButtonSize.sm,
+                    child: _testing
+                        ? SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: theme.colorScheme.mutedForeground,
+                            ),
+                          )
+                        : const Text('Test'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _testConnection() async {
+    setState(() {
+      _testing = true;
+      _testResult = null;
+    });
+    try {
+      final result =
+          await ref.read(ocrSettingsProvider.notifier).testConnection();
+      if (mounted) {
+        setState(() {
+          _testing = false;
+          _testResult = result;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _testing = false;
+          _testResult = false;
+        });
+      }
+    }
   }
 }
