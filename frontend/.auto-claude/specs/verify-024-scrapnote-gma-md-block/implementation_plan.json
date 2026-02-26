@@ -1,0 +1,369 @@
+{
+  "feature": "Verify ScrapNote GMA MD Block Implementation",
+  "workflow_type": "simple",
+  "workflow_rationale": "This is a verification task for spec 024, checking if the scrapnote block implementation is complete and functional. Simple workflow is appropriate as this is a single-service verification with straightforward sequential checks.",
+  "phases": [
+    {
+      "id": "phase-1-file-existence",
+      "name": "File Existence Check",
+      "type": "investigation",
+      "description": "Verify all required implementation files exist",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-1-1",
+          "description": "Check if scrapnote_block.dart exists",
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "test -f ./lib/features/gma_md/blocks/scrapnote_block.dart && echo 'PASS: File exists' || echo 'FAIL: File not found'",
+            "expected": "PASS: File exists"
+          },
+          "status": "completed",
+          "result": "FAIL - File not found",
+          "notes": "Verification check completed. Result: File does not exist. Original spec 024 implementation is incomplete."
+        },
+        {
+          "id": "subtask-1-2",
+          "description": "Check if element_card.dart exists",
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "test -f ./lib/features/gma_md/widgets/element_card.dart && echo 'PASS: File exists' || echo 'FAIL: File not found'",
+            "expected": "PASS: File exists"
+          },
+          "status": "completed",
+          "notes": "Verification check completed. Result: FAIL - File not found. The element_card.dart file does not exist at ./lib/features/gma_md/widgets/element_card.dart. Original spec 024 implementation is incomplete.",
+          "updated_at": "2026-02-26T09:23:00.442006+00:00"
+        },
+        {
+          "id": "subtask-1-3",
+          "description": "Check if ScrapnoteBlock is registered in block_registry.dart",
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "grep -q 'ScrapnoteBlock' ./lib/features/gma_md/block_registry.dart && echo 'PASS: Block registered' || echo 'FAIL: Block not registered'",
+            "expected": "PASS: Block registered"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-2-dependency-check",
+      "name": "Dependency Check",
+      "type": "investigation",
+      "description": "Verify required dependencies (ElementStore, ScrapElement, PdfRegistry) exist",
+      "depends_on": [
+        "phase-1-file-existence"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-2-1",
+          "description": "Search for ElementStore implementation",
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "grep -r 'class.*ElementStore' ./lib --include='*.dart' | head -1",
+            "expected": "Should find ElementStore class definition"
+          },
+          "status": "pending",
+          "notes": "ElementStore is required from spec 023"
+        },
+        {
+          "id": "subtask-2-2",
+          "description": "Search for ScrapElement model",
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "grep -r 'class.*ScrapElement' ./lib --include='*.dart' | head -1",
+            "expected": "Should find ScrapElement model definition"
+          },
+          "status": "pending",
+          "notes": "ScrapElement is required from spec 023"
+        },
+        {
+          "id": "subtask-2-3",
+          "description": "Search for PdfRegistry implementation",
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "grep -r 'class.*PdfRegistry' ./lib --include='*.dart' | head -1",
+            "expected": "Should find PdfRegistry class definition"
+          },
+          "status": "pending",
+          "notes": "PdfRegistry is required from spec 022"
+        }
+      ]
+    },
+    {
+      "id": "phase-3-code-analysis",
+      "name": "Static Code Analysis",
+      "type": "implementation",
+      "description": "Run Flutter static analysis to check for compile errors and warnings",
+      "depends_on": [
+        "phase-1-file-existence"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-3-1",
+          "description": "Run flutter analyze with no fatal warnings",
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "flutter analyze --no-fatal-infos --no-fatal-warnings",
+            "expected": "No issues found! (or only info-level messages)"
+          },
+          "status": "pending",
+          "notes": "This checks for syntax errors, type errors, and lint violations"
+        },
+        {
+          "id": "subtask-3-2",
+          "description": "Check if scrapnote_block.dart has proper imports",
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "test -f ./lib/features/gma_md/blocks/scrapnote_block.dart && (grep -q 'extends BlockDefinition' ./lib/features/gma_md/blocks/scrapnote_block.dart && echo 'PASS: Extends BlockDefinition' || echo 'FAIL: Does not extend BlockDefinition') || echo 'SKIP: File not found'",
+            "expected": "PASS: Extends BlockDefinition"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-4-implementation-validation",
+      "name": "Implementation Validation",
+      "type": "investigation",
+      "description": "Validate that the ScrapnoteBlock implementation follows the block pattern correctly",
+      "depends_on": [
+        "phase-2-dependency-check",
+        "phase-3-code-analysis"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-4-1",
+          "description": "Verify ScrapnoteBlock has required properties",
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [
+            "lib/features/gma_md/blocks/concept_block.dart"
+          ],
+          "verification": {
+            "type": "manual",
+            "instructions": "Check scrapnote_block.dart contains: typeName='scrapnote', category=BlockCategory.structural, buildWidget(), template with '@el element-id-here'"
+          },
+          "status": "pending",
+          "expected_output": "Confirmation that all required BlockDefinition properties are implemented"
+        },
+        {
+          "id": "subtask-4-2",
+          "description": "Verify ElementCard widget implementation",
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "manual",
+            "instructions": "Check element_card.dart: queries ElementStore, displays PDF name (via PdfRegistry), page number, selected text preview, capture image thumbnail, has tap callback placeholder"
+          },
+          "status": "pending",
+          "expected_output": "Confirmation that ElementCard displays all required information"
+        },
+        {
+          "id": "subtask-4-3",
+          "description": "Verify @el id parsing logic",
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "manual",
+            "instructions": "Check that buildWidget() in scrapnote_block.dart parses each line for '@el id' pattern and renders ElementCard widgets for each match"
+          },
+          "status": "pending",
+          "expected_output": "Confirmation that @el lines are correctly parsed and rendered"
+        },
+        {
+          "id": "subtask-4-4",
+          "description": "Verify 'Element not found' placeholder for missing elements",
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "manual",
+            "instructions": "Check that ElementCard or scrapnote_block shows a placeholder when ElementStore.get() returns null"
+          },
+          "status": "pending",
+          "expected_output": "Confirmation that missing elements are handled gracefully"
+        }
+      ]
+    },
+    {
+      "id": "phase-5-runtime-validation",
+      "name": "Runtime Validation",
+      "type": "integration",
+      "description": "Optional manual runtime testing if app can be launched",
+      "depends_on": [
+        "phase-4-implementation-validation"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-5-1",
+          "description": "Manual test: Create a scrapnote block in editor",
+          "all_services": false,
+          "service": "frontend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "manual",
+            "instructions": "1. Run app with 'flutter run -d chrome'\n2. Open note editor\n3. Insert scrapnote block template (:::scrapnote)\n4. Add '@el' lines\n5. Verify ElementCard widgets render\n6. Check placeholder for invalid element IDs"
+          },
+          "status": "pending",
+          "expected_output": "Screenshots or confirmation that scrapnote blocks render correctly in the editor"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_phases": 5,
+    "total_subtasks": 11,
+    "services_involved": [
+      "frontend"
+    ],
+    "parallelism": {
+      "max_parallel_phases": 2,
+      "parallel_groups": [
+        {
+          "phases": [
+            "phase-2-dependency-check",
+            "phase-3-code-analysis"
+          ],
+          "reason": "Both depend only on phase-1, can run simultaneously"
+        }
+      ],
+      "recommended_workers": 1,
+      "speedup_estimate": "1.2x faster with parallel dependency and analysis checks"
+    },
+    "startup_command": "cd frontend && flutter run -d chrome --web-port 8080"
+  },
+  "verification_strategy": {
+    "risk_level": "low",
+    "skip_validation": false,
+    "test_creation_phase": "not_applicable",
+    "test_types_required": [],
+    "security_scanning_required": false,
+    "staging_deployment_required": false,
+    "acceptance_criteria": [
+      "All required files exist (scrapnote_block.dart, element_card.dart)",
+      "ScrapnoteBlock is registered in block_registry.dart",
+      "Dependencies (ElementStore, ScrapElement, PdfRegistry) are found",
+      "flutter analyze passes with no fatal warnings",
+      "ScrapnoteBlock extends BlockDefinition with all required properties",
+      "ElementCard renders element information correctly",
+      "@el id lines are parsed and rendered as ElementCard widgets",
+      "Missing elements show 'Element not found' placeholder"
+    ],
+    "verification_steps": [
+      {
+        "name": "File Existence Check",
+        "command": "test -f ./lib/features/gma_md/blocks/scrapnote_block.dart && test -f ./lib/features/gma_md/widgets/element_card.dart",
+        "expected_outcome": "Both files exist",
+        "type": "command",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Static Analysis",
+        "command": "flutter analyze --no-fatal-infos --no-fatal-warnings",
+        "expected_outcome": "No issues found",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Registration Check",
+        "command": "grep 'ScrapnoteBlock' ./lib/features/gma_md/block_registry.dart",
+        "expected_outcome": "ScrapnoteBlock found in registry",
+        "type": "command",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Manual Code Review",
+        "command": "cat ./lib/features/gma_md/blocks/scrapnote_block.dart",
+        "expected_outcome": "Implementation follows BlockDefinition pattern",
+        "type": "manual",
+        "required": true,
+        "blocking": false
+      }
+    ],
+    "reasoning": "Low risk verification task - checking implementation completeness without modifying code. Static analysis and file checks are sufficient."
+  },
+  "qa_acceptance": {
+    "unit_tests": {
+      "required": false,
+      "commands": [],
+      "minimum_coverage": null
+    },
+    "integration_tests": {
+      "required": false,
+      "commands": [],
+      "services_to_test": []
+    },
+    "e2e_tests": {
+      "required": false,
+      "commands": [],
+      "flows": []
+    },
+    "browser_verification": {
+      "required": false,
+      "pages": []
+    },
+    "static_analysis": {
+      "required": true,
+      "command": "flutter analyze --no-fatal-infos --no-fatal-warnings",
+      "expected": "No issues found"
+    },
+    "file_checks": {
+      "required": true,
+      "files": [
+        "lib/features/gma_md/blocks/scrapnote_block.dart",
+        "lib/features/gma_md/widgets/element_card.dart"
+      ]
+    }
+  },
+  "qa_signoff": null,
+  "last_updated": "2026-02-26T09:23:00.442006+00:00"
+}
