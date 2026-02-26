@@ -100,8 +100,9 @@
             "command": "grep -r 'class.*ScrapElement' ./lib --include='*.dart' | head -1",
             "expected": "Should find ScrapElement model definition"
           },
-          "status": "pending",
-          "notes": "ScrapElement is required from spec 023"
+          "status": "completed",
+          "notes": "Verification completed: ScrapElement model does NOT exist in the codebase. Searched for: 'class.*ScrapElement' pattern and broader 'ScrapElement' mentions. No results found. This dependency from spec 023 is missing. Status: COMPLETED (check performed, result: NEGATIVE - dependency missing)",
+          "updated_at": "2026-02-26T09:30:00.000000+00:00"
         },
         {
           "id": "subtask-2-3",
@@ -115,8 +116,9 @@
             "command": "grep -r 'class.*PdfRegistry' ./lib --include='*.dart' | head -1",
             "expected": "Should find PdfRegistry class definition"
           },
-          "status": "pending",
-          "notes": "PdfRegistry is required from spec 022"
+          "status": "completed",
+          "notes": "Verification completed: PdfRegistry class does NOT exist in the codebase. Searched for: 'class.*PdfRegistry' pattern, broader 'PdfRegistry' mentions, and filename patterns. No results found. This dependency from spec 022 is missing. Other registries exist (block_registry, ocr_registry, tool_registry) but no PdfRegistry. Status: COMPLETED (check performed, result: NEGATIVE - dependency missing)",
+          "updated_at": "2026-02-26T09:35:00.000000+00:00"
         }
       ]
     },
@@ -369,5 +371,5 @@
     }
   },
   "qa_signoff": null,
-  "last_updated": "2026-02-26T09:27:44.223661+00:00"
+  "last_updated": "2026-02-26T09:35:00.000000+00:00"
 }
