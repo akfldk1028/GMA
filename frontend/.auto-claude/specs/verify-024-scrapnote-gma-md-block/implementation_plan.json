@@ -190,8 +190,10 @@
             "type": "manual",
             "instructions": "Check scrapnote_block.dart contains: typeName='scrapnote', category=BlockCategory.structural, buildWidget(), template with '@el element-id-here'"
           },
-          "status": "pending",
-          "expected_output": "Confirmation that all required BlockDefinition properties are implemented"
+          "status": "completed",
+          "expected_output": "Confirmation that all required BlockDefinition properties are implemented",
+          "notes": "Verification completed: SKIP - File not found. The scrapnote_block.dart file does not exist at ./lib/features/gma_md/blocks/scrapnote_block.dart. Cannot verify required properties (typeName, category, buildWidget, template) when file is missing. Analyzed reference pattern from concept_block.dart to understand expected structure. This is consistent with subtask-1-1 findings (file existence check FAILED). Since this is a verification task, we document the finding without creating the file.",
+          "updated_at": "2026-02-26T09:40:39.078580+00:00"
         },
         {
           "id": "subtask-4-2",
@@ -374,5 +376,5 @@
     }
   },
   "qa_signoff": null,
-  "last_updated": "2026-02-26T09:38:25.556556+00:00"
+  "last_updated": "2026-02-26T09:40:39.078580+00:00"
 }

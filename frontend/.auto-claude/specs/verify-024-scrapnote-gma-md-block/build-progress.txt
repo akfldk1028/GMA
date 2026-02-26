@@ -376,3 +376,40 @@ Phase 3 (Static Code Analysis): COMPLETED
 - subtask-3-1: PASSED (flutter analyze clean)
 - subtask-3-2: SKIP (file not found)
 
+[2026-02-26 09:50 UTC] COMPLETED: subtask-4-1 - Verify ScrapnoteBlock has required properties
+---
+STATUS: SKIP (File not found)
+
+Verification Type: Manual check
+Expected to verify:
+1. typeName = scrapnote
+2. category = BlockCategory.structural
+3. buildWidget() method exists
+4. template contains @el element-id-here
+
+Actual Result: CANNOT VERIFY - FILE MISSING
+
+Findings:
+- lib/features/gma_md/blocks/scrapnote_block.dart does NOT exist
+- Cannot check typeName property
+- Cannot check category property
+- Cannot check buildWidget() implementation
+- Cannot check template content
+
+Pattern File Analysis (concept_block.dart):
+- Analyzed reference pattern from lib/features/gma_md/blocks/concept_block.dart
+- Pattern shows correct BlockDefinition structure with required properties
+- Template uses ::: block syntax with block type and title
+- buildWidget() returns BlockBase widget with InnerMarkdownContent
+
+Conclusion:
+Since the scrapnote_block.dart file does not exist, the required properties
+cannot be verified. This is consistent with all previous findings that spec 024
+implementation was never completed.
+
+The verification task is COMPLETE (check performed).
+The result is NEGATIVE (cannot verify properties - file missing).
+
+Status: COMPLETED (check performed, result: SKIP - file missing)
+Next: Proceed to subtask-4-2 (verify ElementCard widget)
+
