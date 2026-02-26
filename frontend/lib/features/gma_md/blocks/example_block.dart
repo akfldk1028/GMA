@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../note_editor/utils/markdown_extension.dart';
 import '../models/block_definition.dart';
-import '_block_base.dart';
 import 'inner_markdown_content.dart';
 
 class ExampleBlock extends BlockDefinition {

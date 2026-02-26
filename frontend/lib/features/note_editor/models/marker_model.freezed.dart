@@ -22,11 +22,11 @@ Marker _$MarkerFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Marker {
   String get id => throw _privateConstructorUsedError;
-  @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
+  @MarkerColorConverter()
   MarkerColor get color => throw _privateConstructorUsedError;
   int get pageNumber => throw _privateConstructorUsedError;
   String? get selectedText => throw _privateConstructorUsedError;
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @_PdfRectConverter()
   PdfRect? get rect => throw _privateConstructorUsedError;
 
   /// Serializes this Marker to a JSON map.
@@ -45,11 +45,10 @@ abstract class $MarkerCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
-    MarkerColor color,
+    @MarkerColorConverter() MarkerColor color,
     int pageNumber,
     String? selectedText,
-    @JsonKey(includeFromJson: false, includeToJson: false) PdfRect? rect,
+    @_PdfRectConverter() PdfRect? rect,
   });
 }
 
@@ -112,11 +111,10 @@ abstract class _$$MarkerImplCopyWith<$Res> implements $MarkerCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
-    MarkerColor color,
+    @MarkerColorConverter() MarkerColor color,
     int pageNumber,
     String? selectedText,
-    @JsonKey(includeFromJson: false, includeToJson: false) PdfRect? rect,
+    @_PdfRectConverter() PdfRect? rect,
   });
 }
 
@@ -172,11 +170,10 @@ class __$$MarkerImplCopyWithImpl<$Res>
 class _$MarkerImpl implements _Marker {
   const _$MarkerImpl({
     required this.id,
-    @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
-    required this.color,
+    @MarkerColorConverter() required this.color,
     required this.pageNumber,
     this.selectedText,
-    @JsonKey(includeFromJson: false, includeToJson: false) this.rect,
+    @_PdfRectConverter() this.rect = null,
   });
 
   factory _$MarkerImpl.fromJson(Map<String, dynamic> json) =>
@@ -185,14 +182,15 @@ class _$MarkerImpl implements _Marker {
   @override
   final String id;
   @override
-  @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
+  @MarkerColorConverter()
   final MarkerColor color;
   @override
   final int pageNumber;
   @override
   final String? selectedText;
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey()
+  @_PdfRectConverter()
   final PdfRect? rect;
 
   @override
@@ -236,11 +234,10 @@ class _$MarkerImpl implements _Marker {
 abstract class _Marker implements Marker {
   const factory _Marker({
     required final String id,
-    @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
-    required final MarkerColor color,
+    @MarkerColorConverter() required final MarkerColor color,
     required final int pageNumber,
     final String? selectedText,
-    @JsonKey(includeFromJson: false, includeToJson: false) final PdfRect? rect,
+    @_PdfRectConverter() final PdfRect? rect,
   }) = _$MarkerImpl;
 
   factory _Marker.fromJson(Map<String, dynamic> json) = _$MarkerImpl.fromJson;
@@ -248,14 +245,14 @@ abstract class _Marker implements Marker {
   @override
   String get id;
   @override
-  @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
+  @MarkerColorConverter()
   MarkerColor get color;
   @override
   int get pageNumber;
   @override
   String? get selectedText;
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @_PdfRectConverter()
   PdfRect? get rect;
 
   /// Create a copy of Marker
