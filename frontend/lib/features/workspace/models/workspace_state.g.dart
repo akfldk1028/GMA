@@ -32,6 +32,9 @@ _$WorkspaceStateImpl _$$WorkspaceStateImplFromJson(Map<String, dynamic> json) =>
       panelSizes: json['panelSizes'] == null
           ? const PanelSizes()
           : PanelSizes.fromJson(json['panelSizes'] as Map<String, dynamic>),
+      sidebarMode:
+          $enumDecodeNullable(_$SidebarModeEnumMap, json['sidebarMode']) ??
+          SidebarMode.fileBrowser,
       isEditorModalOpen: json['isEditorModalOpen'] as bool? ?? false,
       isFileBrowserOpen: json['isFileBrowserOpen'] as bool? ?? false,
       isMarkerEditModalOpen: json['isMarkerEditModalOpen'] as bool? ?? false,
@@ -51,6 +54,7 @@ Map<String, dynamic> _$$WorkspaceStateImplToJson(
   'currentNoteId': instance.currentNoteId,
   'markers': instance.markers,
   'panelSizes': instance.panelSizes,
+  'sidebarMode': _$SidebarModeEnumMap[instance.sidebarMode]!,
   'isEditorModalOpen': instance.isEditorModalOpen,
   'isFileBrowserOpen': instance.isFileBrowserOpen,
   'isMarkerEditModalOpen': instance.isMarkerEditModalOpen,
@@ -60,4 +64,9 @@ Map<String, dynamic> _$$WorkspaceStateImplToJson(
   'pendingMarkerTextRect': const PdfRectConverter().toJson(
     instance.pendingMarkerTextRect,
   ),
+};
+
+const _$SidebarModeEnumMap = {
+  SidebarMode.fileBrowser: 'fileBrowser',
+  SidebarMode.elementNavigator: 'elementNavigator',
 };
