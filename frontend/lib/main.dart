@@ -23,6 +23,9 @@ void main() async {
   // Open app settings box for theme persistence
   await Hive.openBox('app_settings');
 
+  // Open pdf_registry box for PDF ID tracking
+  await Hive.openBox('pdf_registry');
+
   runApp(
     const ProviderScope(
       child: GmaApp(),
