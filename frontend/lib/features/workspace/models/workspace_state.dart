@@ -5,6 +5,12 @@ import 'pdf_marker_model.dart';
 part 'workspace_state.freezed.dart';
 part 'workspace_state.g.dart';
 
+/// Sidebar display mode for workspace left panel
+enum SidebarMode {
+  fileBrowser,
+  elementNavigator,
+}
+
 /// Panel size configuration (legacy, kept for test compatibility)
 @freezed
 class PanelSizes with _$PanelSizes {
@@ -26,6 +32,7 @@ class WorkspaceState with _$WorkspaceState {
     String? currentNoteId,
     @Default([]) List<PdfMarker> markers,
     @Default(PanelSizes()) PanelSizes panelSizes,
+    @Default(SidebarMode.fileBrowser) SidebarMode sidebarMode,
     // Modal/drawer UI state
     @Default(false) bool isEditorModalOpen,
     @Default(false) bool isFileBrowserOpen,
