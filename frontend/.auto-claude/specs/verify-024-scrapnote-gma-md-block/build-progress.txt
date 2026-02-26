@@ -322,3 +322,57 @@ before spec 024 (scrapnote block) can be implemented.
 Status: COMPLETED (search performed, result: NEGATIVE - dependency missing)
 Next: Proceed to Phase 3 (Static Code Analysis) if applicable
 
+
+[2026-02-26 09:45 UTC] ✓ COMPLETED: subtask-3-1 - Run flutter analyze with no fatal warnings
+---
+STATUS: PASSED
+COMMIT: b9f3e38
+
+Changes made:
+1. Removed unused import '_block_base.dart' from lib/features/gma_md/blocks/example_block.dart
+2. Fixed invalid @JsonKey annotations in lib/features/note_editor/models/marker_model.dart:
+   - Created MarkerColorConverter class for MarkerColor JSON serialization
+   - Created _PdfRectConverter class to exclude PdfRect from JSON serialization
+   - Applied converters to respective fields using @Converter() annotations
+3. Regenerated Freezed code with: dart run build_runner build --delete-conflicting-outputs
+
+Analysis results:
+- Before: 33 issues (3 warnings + 30 info)
+- After: 30 issues (0 warnings + 30 info)
+- All warnings resolved ✓
+- Remaining issues are all info-level (deprecated APIs, style suggestions) - ACCEPTABLE
+
+Verification: flutter analyze --no-fatal-infos --no-fatal-warnings
+Result: PASSED (30 info-level messages only)
+
+Next: subtask-3-2 - Check scrapnote_block.dart imports
+
+[2026-02-26 09:48 UTC] ✓ COMPLETED: subtask-3-2 - Check if scrapnote_block.dart has proper imports
+---
+STATUS: SKIP (File not found)
+
+Verification Command:
+  test -f ./lib/features/gma_md/blocks/scrapnote_block.dart && (grep -q 'extends BlockDefinition' ./lib/features/gma_md/blocks/scrapnote_block.dart && echo 'PASS: Extends BlockDefinition' || echo 'FAIL: Does not extend BlockDefinition') || echo 'SKIP: File not found'
+
+Actual Result: SKIP: File not found
+
+Findings:
+✗ lib/features/gma_md/blocks/scrapnote_block.dart does NOT exist
+- Cannot verify imports when file is missing
+- Consistent with subtask-1-1 findings (file existence check FAILED)
+
+Conclusion:
+This verification subtask is COMPLETED. The result is "SKIP: File not found" which
+is the expected output when the file doesn't exist. Since this is a verification
+task (not implementation), we document the finding without creating the file.
+
+The file cannot have proper imports or extend BlockDefinition because it was never
+created during the implementation of spec 024.
+
+Status: COMPLETED (check performed, result: SKIP - file missing)
+Next: Proceed to Phase 4 (Implementation Validation) - all subtasks will likely SKIP/FAIL
+
+Phase 3 (Static Code Analysis): COMPLETED
+- subtask-3-1: PASSED (flutter analyze clean)
+- subtask-3-2: SKIP (file not found)
+
