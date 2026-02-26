@@ -21,11 +21,13 @@ Marker _$MarkerFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Marker {
-  String get id => throw _privateConstructorUsedError;
+  String get id =>
+      throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
   MarkerColor get color => throw _privateConstructorUsedError;
   int get pageNumber => throw _privateConstructorUsedError;
-  String? get selectedText => throw _privateConstructorUsedError;
+  String? get selectedText =>
+      throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(includeFromJson: false, includeToJson: false)
   PdfRect? get rect => throw _privateConstructorUsedError;
 
@@ -184,6 +186,7 @@ class _$MarkerImpl implements _Marker {
 
   @override
   final String id;
+  // ignore: invalid_annotation_target
   @override
   @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
   final MarkerColor color;
@@ -191,6 +194,7 @@ class _$MarkerImpl implements _Marker {
   final int pageNumber;
   @override
   final String? selectedText;
+  // ignore: invalid_annotation_target
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   final PdfRect? rect;
@@ -246,14 +250,14 @@ abstract class _Marker implements Marker {
   factory _Marker.fromJson(Map<String, dynamic> json) = _$MarkerImpl.fromJson;
 
   @override
-  String get id;
+  String get id; // ignore: invalid_annotation_target
   @override
   @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson)
   MarkerColor get color;
   @override
   int get pageNumber;
   @override
-  String? get selectedText;
+  String? get selectedText; // ignore: invalid_annotation_target
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   PdfRect? get rect;
