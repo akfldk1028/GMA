@@ -9,9 +9,11 @@ part 'marker_model.g.dart';
 class Marker with _$Marker {
   const factory Marker({
     required String id,
+    // ignore: invalid_annotation_target
     @JsonKey(fromJson: _markerColorFromJson, toJson: _markerColorToJson) required MarkerColor color,
     required int pageNumber,
     String? selectedText,
+    // ignore: invalid_annotation_target
     @JsonKey(includeFromJson: false, includeToJson: false) PdfRect? rect,
   }) = _Marker;
 
