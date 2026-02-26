@@ -649,10 +649,19 @@ pdf: ./papers/ml_survey.pdf
       expect(markerWithImage.pageNumber, 3);
       expect(markerWithImage.imagePath, './captures/p3_methods.png');
 
-      // Step 6: Verify all colors were used
+      // Step 6: Verify all primary colors were used (excluding pen)
       final colors = markers.map((m) => m.color).toSet();
-      expect(colors.length, 5); // All 5 colors used
-      expect(colors, containsAll(MarkerColor.values));
+      expect(colors.length, 5); // All 5 primary colors used
+      expect(
+        colors,
+        containsAll([
+          MarkerColor.red,
+          MarkerColor.yellow,
+          MarkerColor.green,
+          MarkerColor.blue,
+          MarkerColor.purple,
+        ]),
+      );
     });
   });
 }
