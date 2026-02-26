@@ -226,7 +226,8 @@ mixin _$WorkspaceState {
   String? get currentPdfPath => throw _privateConstructorUsedError;
   String? get currentNoteId => throw _privateConstructorUsedError;
   List<PdfMarker> get markers => throw _privateConstructorUsedError;
-  PanelSizes get panelSizes =>
+  PanelSizes get panelSizes => throw _privateConstructorUsedError;
+  SidebarMode get sidebarMode =>
       throw _privateConstructorUsedError; // Modal/drawer UI state
   bool get isEditorModalOpen => throw _privateConstructorUsedError;
   bool get isFileBrowserOpen => throw _privateConstructorUsedError;
@@ -263,6 +264,7 @@ abstract class $WorkspaceStateCopyWith<$Res> {
     String? currentNoteId,
     List<PdfMarker> markers,
     PanelSizes panelSizes,
+    SidebarMode sidebarMode,
     bool isEditorModalOpen,
     bool isFileBrowserOpen,
     bool isMarkerEditModalOpen,
@@ -294,6 +296,7 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
     Object? currentNoteId = freezed,
     Object? markers = null,
     Object? panelSizes = null,
+    Object? sidebarMode = null,
     Object? isEditorModalOpen = null,
     Object? isFileBrowserOpen = null,
     Object? isMarkerEditModalOpen = null,
@@ -320,6 +323,10 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
                 ? _value.panelSizes
                 : panelSizes // ignore: cast_nullable_to_non_nullable
                       as PanelSizes,
+            sidebarMode: null == sidebarMode
+                ? _value.sidebarMode
+                : sidebarMode // ignore: cast_nullable_to_non_nullable
+                      as SidebarMode,
             isEditorModalOpen: null == isEditorModalOpen
                 ? _value.isEditorModalOpen
                 : isEditorModalOpen // ignore: cast_nullable_to_non_nullable
@@ -378,6 +385,7 @@ abstract class _$$WorkspaceStateImplCopyWith<$Res>
     String? currentNoteId,
     List<PdfMarker> markers,
     PanelSizes panelSizes,
+    SidebarMode sidebarMode,
     bool isEditorModalOpen,
     bool isFileBrowserOpen,
     bool isMarkerEditModalOpen,
@@ -409,6 +417,7 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
     Object? currentNoteId = freezed,
     Object? markers = null,
     Object? panelSizes = null,
+    Object? sidebarMode = null,
     Object? isEditorModalOpen = null,
     Object? isFileBrowserOpen = null,
     Object? isMarkerEditModalOpen = null,
@@ -435,6 +444,10 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
             ? _value.panelSizes
             : panelSizes // ignore: cast_nullable_to_non_nullable
                   as PanelSizes,
+        sidebarMode: null == sidebarMode
+            ? _value.sidebarMode
+            : sidebarMode // ignore: cast_nullable_to_non_nullable
+                  as SidebarMode,
         isEditorModalOpen: null == isEditorModalOpen
             ? _value.isEditorModalOpen
             : isEditorModalOpen // ignore: cast_nullable_to_non_nullable
@@ -476,6 +489,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     this.currentNoteId,
     final List<PdfMarker> markers = const [],
     this.panelSizes = const PanelSizes(),
+    this.sidebarMode = SidebarMode.fileBrowser,
     this.isEditorModalOpen = false,
     this.isFileBrowserOpen = false,
     this.isMarkerEditModalOpen = false,
@@ -504,6 +518,9 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
   @override
   @JsonKey()
   final PanelSizes panelSizes;
+  @override
+  @JsonKey()
+  final SidebarMode sidebarMode;
   // Modal/drawer UI state
   @override
   @JsonKey()
@@ -530,7 +547,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
 
   @override
   String toString() {
-    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, panelSizes: $panelSizes, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
+    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
   }
 
   @override
@@ -545,6 +562,8 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
             const DeepCollectionEquality().equals(other._markers, _markers) &&
             (identical(other.panelSizes, panelSizes) ||
                 other.panelSizes == panelSizes) &&
+            (identical(other.sidebarMode, sidebarMode) ||
+                other.sidebarMode == sidebarMode) &&
             (identical(other.isEditorModalOpen, isEditorModalOpen) ||
                 other.isEditorModalOpen == isEditorModalOpen) &&
             (identical(other.isFileBrowserOpen, isFileBrowserOpen) ||
@@ -572,6 +591,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     currentNoteId,
     const DeepCollectionEquality().hash(_markers),
     panelSizes,
+    sidebarMode,
     isEditorModalOpen,
     isFileBrowserOpen,
     isMarkerEditModalOpen,
@@ -604,6 +624,7 @@ abstract class _WorkspaceState implements WorkspaceState {
     final String? currentNoteId,
     final List<PdfMarker> markers,
     final PanelSizes panelSizes,
+    final SidebarMode sidebarMode,
     final bool isEditorModalOpen,
     final bool isFileBrowserOpen,
     final bool isMarkerEditModalOpen,
@@ -623,7 +644,9 @@ abstract class _WorkspaceState implements WorkspaceState {
   @override
   List<PdfMarker> get markers;
   @override
-  PanelSizes get panelSizes; // Modal/drawer UI state
+  PanelSizes get panelSizes;
+  @override
+  SidebarMode get sidebarMode; // Modal/drawer UI state
   @override
   bool get isEditorModalOpen;
   @override
