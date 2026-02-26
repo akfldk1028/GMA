@@ -151,6 +151,61 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     );
   }
 
+  /// Toggle sidebar mode between fileBrowser and elementNavigator
+  void toggleSidebarMode() {
+    final currentState = state.valueOrNull;
+    if (currentState == null) return;
+
+    final newMode = currentState.sidebarMode == SidebarMode.fileBrowser
+        ? SidebarMode.elementNavigator
+        : SidebarMode.fileBrowser;
+
+    state = AsyncData(
+      currentState.copyWith(sidebarMode: newMode),
+    );
+  }
+
+  /// Navigate to an element by ID.
+  /// Looks up the element from ElementStore, gets the PDF path from PdfRegistry,
+  /// loads the PDF if it's different from the current one, and returns the page number
+  /// for the caller to navigate to using goToPage().
+  ///
+  /// Returns the page number to navigate to, or null if element not found.
+  Future<int?> navigateToElement(String elementId) async {
+    try {
+      // TODO: Once ElementStore and PdfRegistry are implemented (specs 022-023), use:
+      // final elementStore = ref.read(elementStoreProvider);
+      // final element = elementStore.getElementById(elementId);
+      // if (element == null) {
+      //   debugPrint('Element not found: $elementId');
+      //   return null;
+      // }
+      //
+      // final pdfRegistry = ref.read(pdfRegistryProvider);
+      // final pdfPath = pdfRegistry.getPathById(element.pdfId);
+      // if (pdfPath == null) {
+      //   debugPrint('PDF path not found for pdfId: ${element.pdfId}');
+      //   return null;
+      // }
+      //
+      // final currentState = state.valueOrNull;
+      // if (currentState == null) return null;
+      //
+      // // Load PDF if it's different from the current one
+      // if (currentState.currentPdfPath != pdfPath) {
+      //   await loadPdf(pdfPath);
+      // }
+      //
+      // return element.pageNumber;
+
+      debugPrint('WorkspaceProvider.navigateToElement($elementId) - stub implementation');
+      return null;
+    } catch (e) {
+      debugPrint('Failed to navigate to element $elementId: $e');
+      return null;
+    }
+  }
+
   /// Create a marker from PDF text selection
   /// This is called when user selects text in PDF viewer
   Future<PdfMarker> createMarker({
