@@ -222,8 +222,10 @@
             "type": "manual",
             "instructions": "Check that buildWidget() in scrapnote_block.dart parses each line for '@el id' pattern and renders ElementCard widgets for each match"
           },
-          "status": "pending",
-          "expected_output": "Confirmation that @el lines are correctly parsed and rendered"
+          "status": "completed",
+          "expected_output": "Confirmation that @el lines are correctly parsed and rendered",
+          "notes": "Verification completed: SKIP - File not found. The scrapnote_block.dart file does not exist at ./lib/features/gma_md/blocks/scrapnote_block.dart. Cannot verify @el id parsing logic in buildWidget() method when the file is missing. Searched with glob pattern **/scrapnote*.dart - no results. This is consistent with all previous findings from subtask-1-1 (file existence check FAILED), subtask-4-1 (required properties check SKIPPED), and subtask-4-2 (ElementCard check SKIPPED). Spec 024 implementation is incomplete - neither scrapnote_block.dart nor element_card.dart exist, and dependencies (ElementStore, ScrapElement, PdfRegistry) are also missing. Since this is a verification task, we document the finding without creating the file.",
+          "updated_at": "2026-02-26T09:44:14.760311+00:00"
         },
         {
           "id": "subtask-4-4",
@@ -378,5 +380,5 @@
     }
   },
   "qa_signoff": null,
-  "last_updated": "2026-02-26T09:42:27.400104+00:00"
+  "last_updated": "2026-02-26T09:44:14.760311+00:00"
 }
