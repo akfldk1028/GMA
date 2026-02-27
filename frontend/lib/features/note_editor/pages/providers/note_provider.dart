@@ -35,7 +35,7 @@ class NoteState extends _$NoteState {
   /// Loads a note from the file system.
   Future<Note> _loadNote(String noteId) async {
     try {
-      final notesDir = await ref.watch(notesRootDirectoryProvider.future);
+      final notesDir = await ref.read(notesRootDirectoryProvider.future);
       final noteFile = File('${notesDir.path}/$noteId.md');
 
       // Handle case: note file doesn't exist, create empty note
@@ -115,7 +115,7 @@ class NoteState extends _$NoteState {
   /// Saves the note to the file system.
   Future<void> saveNote(Note note) async {
     try {
-      final notesDir = await ref.watch(notesRootDirectoryProvider.future);
+      final notesDir = await ref.read(notesRootDirectoryProvider.future);
       final noteFile = File('${notesDir.path}/${note.id}.md');
 
       // Generate frontmatter if present
