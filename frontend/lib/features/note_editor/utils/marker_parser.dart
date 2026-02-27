@@ -9,6 +9,7 @@ class MarkerLineParseResult {
     this.subNumber,
     this.text,
     this.imagePath,
+    this.id,
   });
 
   /// Whether the line is a valid marker line.
@@ -28,6 +29,9 @@ class MarkerLineParseResult {
 
   /// The captured image path (optional).
   final String? imagePath;
+
+  /// The marker ID (extracted from <!-- id:uuid --> comment). Optional.
+  final String? id;
 }
 
 /// Parser for PDF marker lines in markdown notes.
@@ -35,12 +39,14 @@ class MarkerLineParseResult {
 /// Marker line format: `- 🔴 P3  Selected text...`
 /// With optional sub-number: `- 🔴 P1-2  Selected text...`
 /// With optional image: `  ![caption](./captures/p5.png)`
+/// With optional ID: `- 🔴 P3  Text <!-- id:uuid -->`
 ///
 /// Examples:
 /// - `- 🔴 P3  Dictionary-based sentiment analysis is...`
 /// - `- 🟡 P5`
 /// - `- 🟡 P1-2  Multiple markers on same page`
 /// - `- 🟢 P10  Some text\n  ![capture](./captures/p10.png)`
+/// - `- 🔴 P3  Text with ID <!-- id:abc-123-def -->`
 class MarkerParser {
   MarkerParser._();
 
@@ -60,6 +66,12 @@ class MarkerParser {
     r'^\s{2}!\[.*?\]\((.*?)\)$',
   );
 
+  /// Regex pattern for marker ID comment:
+  /// `<!-- id:uuid -->`
+  static final _idCommentRegex = RegExp(
+    r'<!--\s*id:(\S+)\s*-->',
+  );
+
   /// Parses a single marker line.
   ///
   /// Returns [MarkerLineParseResult] with extracted fields or
@@ -77,9 +89,26 @@ class MarkerParser {
   /// // With sub-number
   /// final result2 = MarkerParser.parse('- 🟡 P1-2  Second marker on page 1');
   /// print('Sub-number: ${result2.subNumber}'); // 2
+  ///
+  /// // With ID
+  /// final result3 = MarkerParser.parse('- 🔴 P3  Text <!-- id:abc-123 -->');
+  /// print('ID: ${result3.id}'); // abc-123
   /// ```
   static MarkerLineParseResult parse(String line) {
-    final match = _markerLineRegex.firstMatch(line.trim());
+    final trimmedLine = line.trim();
+
+    // First, check for and extract ID comment if present
+    String? id;
+    String lineWithoutId = trimmedLine;
+
+    final idMatch = _idCommentRegex.firstMatch(trimmedLine);
+    if (idMatch != null) {
+      id = idMatch.group(1);
+      // Remove the ID comment from the line for further parsing
+      lineWithoutId = trimmedLine.replaceFirst(_idCommentRegex, '').trim();
+    }
+
+    final match = _markerLineRegex.firstMatch(lineWithoutId);
 
     if (match == null) {
       return const MarkerLineParseResult(isMarkerLine: false);
@@ -106,6 +135,7 @@ class MarkerParser {
       pageNumber: pageNumber,
       subNumber: subNumber,
       text: text,
+      id: id,
     );
   }
 
@@ -145,6 +175,7 @@ class MarkerParser {
           subNumber: markerResult.subNumber,
           text: markerResult.text,
           imagePath: imagePath,
+          id: markerResult.id,
         );
       }
     }
