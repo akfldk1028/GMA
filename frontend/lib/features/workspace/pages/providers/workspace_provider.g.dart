@@ -6,7 +6,7 @@ part of 'workspace_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$isPdfLoadedHash() => r'1c2b864b5d890c1a00627fac5404cc57e8069442';
+String _$isPdfLoadedHash() => r'2609e5e88c6bdc6bfc119f91b6712db436a1e654';
 
 /// Helper provider to check if a PDF is currently loaded
 ///
@@ -25,7 +25,7 @@ final isPdfLoadedProvider = AutoDisposeProvider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef IsPdfLoadedRef = AutoDisposeProviderRef<bool>;
-String _$isNoteLoadedHash() => r'de56a863896207c185a6b8cc8f0ee476dcf290a2';
+String _$isNoteLoadedHash() => r'6ee0edb7f406fadfdf6355d9505bbd8424b45629';
 
 /// Helper provider to check if a note is currently loaded
 ///
@@ -44,7 +44,7 @@ final isNoteLoadedProvider = AutoDisposeProvider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef IsNoteLoadedRef = AutoDisposeProviderRef<bool>;
-String _$currentMarkersHash() => r'089ea39309a225d5d64c6439c00aa272d95e02bc';
+String _$currentMarkersHash() => r'e975d6afdaccc5fbccb21e45d0285aeb7a6393a9';
 
 /// Helper provider to get current markers
 ///
@@ -63,7 +63,7 @@ final currentMarkersProvider = AutoDisposeProvider<List<PdfMarker>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CurrentMarkersRef = AutoDisposeProviderRef<List<PdfMarker>>;
-String _$workspaceProviderHash() => r'bb68427e64a37b5d07d72dba1b5fa93c66ff179f';
+String _$workspaceProviderHash() => r'45494df887836bc258fecc9a267c23a67176daf9';
 
 /// Main workspace provider managing PDF-Note bidirectional linking
 ///

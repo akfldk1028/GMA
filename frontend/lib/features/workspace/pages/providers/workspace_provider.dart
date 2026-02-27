@@ -17,6 +17,7 @@ import '../../../note_editor/pages/providers/note_editor_provider.dart';
 import '../../../pdf_viewer/drawing/models/drawing_model.dart';
 import '../../../ocr/ocr_service.dart';
 import '../../../ocr/pages/providers/ocr_provider.dart';
+import '../../../scrapnote/providers/pdf_registry_provider.dart';
 import '../../models/pdf_marker_model.dart';
 import '../../models/workspace_state.dart';
 
@@ -55,6 +56,9 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     state = AsyncData(
       currentState.copyWith(currentPdfPath: pdfPath),
     );
+
+    // Register PDF in PdfRegistry for ScrapNote UUID tracking
+    await ref.read(pdfRegistryProvProvider.notifier).register(pdfPath);
 
     // Auto-create a linked note if none is currently open
     if (currentState.currentNoteId == null) {
