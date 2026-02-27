@@ -69,7 +69,8 @@ Future<List<NoteMetadata>> noteList(NoteListRef ref) async {
 
   return notesAsync.when(
     data: (notes) {
-      var filteredNotes = notes;
+      // Create a new list to avoid mutating the original
+      List<NoteMetadata> filteredNotes;
 
       // Apply search filter
       if (filterState.searchQuery.isNotEmpty) {
@@ -82,6 +83,9 @@ Future<List<NoteMetadata>> noteList(NoteListRef ref) async {
           final pathMatch = note.filePath.toLowerCase().contains(query);
           return titleMatch || previewMatch || pathMatch;
         }).toList();
+      } else {
+        // Create a copy of the list to avoid mutation
+        filteredNotes = notes.toList();
       }
 
       // Apply sorting
