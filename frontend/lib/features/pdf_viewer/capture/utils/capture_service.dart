@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/painting.dart' show Rect;
@@ -49,13 +50,21 @@ class CaptureService {
     }
 
     // Convert PdfImage → dart:ui Image → PNG bytes
-    final uiImage = await pdfImage.createImage();
-    pdfImage.dispose();
+    ui.Image? uiImage;
+    try {
+      uiImage = await pdfImage.createImage();
+    } finally {
+      pdfImage.dispose();
+    }
 
-    final byteData = await uiImage.toByteData(
-      format: ui.ImageByteFormat.png,
-    );
-    uiImage.dispose();
+    ByteData? byteData;
+    try {
+      byteData = await uiImage.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+    } finally {
+      uiImage.dispose();
+    }
 
     if (byteData == null) {
       throw Exception('Failed to encode image as PNG');
