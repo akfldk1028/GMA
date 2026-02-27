@@ -24,7 +24,7 @@ void main() async {
   await Hive.openBox('app_settings');
 
   // Open pdf_registry box for PDF ID tracking
-  await Hive.openBox('pdf_registry');
+  await Hive.openBox<String>('pdf_registry');
 
   // Open element_store box for ScrapElement persistence
   await Hive.openBox<String>('element_store');

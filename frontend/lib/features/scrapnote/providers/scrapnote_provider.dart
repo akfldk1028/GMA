@@ -7,11 +7,11 @@ part 'scrapnote_provider.g.dart';
 
 /// ScrapNote provider managing element navigation and sidebar mode.
 /// Delegates to WorkspaceProvider for actual state changes.
-@riverpod
+@Riverpod(keepAlive: true)
 class ScrapnoteProvider extends _$ScrapnoteProvider {
   @override
-  FutureOr<void> build() async {
-    return;
+  void build() {
+    // Stateless helper — no state to initialize
   }
 
   /// Navigate to an element by looking it up in ElementStore,

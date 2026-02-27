@@ -64,7 +64,9 @@ class _ScrapnoteContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final store = ref.watch(elementStoreProvider.notifier);
+    // Watch revision counter so we rebuild when elements change
+    ref.watch(elementStoreProvider);
+    final store = ref.read(elementStoreProvider.notifier);
     final lines = content.split('\n');
     final widgets = <Widget>[];
 

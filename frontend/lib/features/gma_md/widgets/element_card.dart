@@ -38,6 +38,15 @@ class ElementCard extends ConsumerWidget {
     }
   }
 
+  String _resolvePdfName(String pdfId, WidgetRef ref) {
+    final pdfPath =
+        ref.read(pdfRegistryProvProvider.notifier).getPathById(pdfId);
+    if (pdfPath == null || pdfPath.isEmpty) {
+      return 'Unknown PDF';
+    }
+    return path.basename(pdfPath);
+  }
+
   Color _getColorForType(ElementType type) {
     switch (type) {
       case ElementType.highlight:
@@ -49,16 +58,10 @@ class ElementCard extends ConsumerWidget {
     }
   }
 
-  String _getPdfName(String pdfId, WidgetRef ref) {
-    final pdfPath = ref.read(pdfRegistryProvProvider.notifier).getPathById(pdfId);
-    if (pdfPath == null || pdfPath.isEmpty) {
-      return 'Unknown PDF';
-    }
-    return path.basename(pdfPath);
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch provider to pick up changes
+    ref.watch(pdfRegistryProvProvider);
     final theme = ShadTheme.of(context);
     final iconColor = _getColorForType(element.type);
     final hasImage = element.imagePath != null && element.imagePath!.isNotEmpty;
@@ -94,7 +97,7 @@ class ElementCard extends ConsumerWidget {
                 children: [
                   // PDF name
                   Text(
-                    _getPdfName(element.pdfId, ref),
+                    _resolvePdfName(element.pdfId, ref),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,

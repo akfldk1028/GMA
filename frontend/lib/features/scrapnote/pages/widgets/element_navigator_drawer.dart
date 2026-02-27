@@ -60,6 +60,7 @@ class _ElementNavigatorDrawerState
 
   Future<void> _close() async {
     await _animController.reverse();
+    if (!mounted) return;
     widget.onClose();
   }
 
@@ -75,7 +76,9 @@ class _ElementNavigatorDrawerState
       final controller = ref.watch(noteEditorProvider(noteId));
       final content = controller?.text ?? '';
       final ids = ElementRefParser.extractElementIds(content);
-      final store = ref.watch(elementStoreProvider.notifier);
+      // Watch revision counter so we rebuild when elements change
+      ref.watch(elementStoreProvider);
+      final store = ref.read(elementStoreProvider.notifier);
       for (final id in ids) {
         final el = store.getById(id);
         if (el != null) elements.add(el);

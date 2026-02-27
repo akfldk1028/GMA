@@ -10,6 +10,9 @@ part 'element_store.g.dart';
 
 /// Persistent store for ScrapElements using Hive.
 /// Follows the same JSON-in-Box pattern as PdfRegistry.
+///
+/// State is an int revision counter that increments on every mutation,
+/// so widgets using `ref.watch(elementStoreProvider)` rebuild on changes.
 @Riverpod(keepAlive: true)
 class ElementStore extends _$ElementStore {
   static const String _boxName = 'element_store';
@@ -17,14 +20,15 @@ class ElementStore extends _$ElementStore {
   Box<String> get _box => Hive.box<String>(_boxName);
 
   @override
-  void build() {
-    // No async init needed — box is opened in main.dart
-  }
+  int build() => 0;
+
+  void _bump() => state = state + 1;
 
   /// Add (or overwrite) an element.
   void add(ScrapElement element) {
     _box.put(element.id, jsonEncode(element.toJson()));
     debugPrint('ElementStore.add: ${element.id} (${element.type.name})');
+    _bump();
   }
 
   /// Look up a single element by ID.
@@ -60,6 +64,7 @@ class ElementStore extends _$ElementStore {
   void delete(String id) {
     _box.delete(id);
     debugPrint('ElementStore.delete: $id');
+    _bump();
   }
 
   /// Return every stored element.
