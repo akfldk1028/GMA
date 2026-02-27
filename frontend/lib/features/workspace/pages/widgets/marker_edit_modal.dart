@@ -238,36 +238,59 @@ class _MarkerEditModalState extends ConsumerState<MarkerEditModal>
     final workspaceState = ref.read(workspaceProviderProvider).valueOrNull;
     if (workspaceState == null) return;
 
-    final pageNumber = workspaceState.pendingMarkerPageNumber;
-    if (pageNumber == null) {
-      _close();
-      return;
-    }
-
     try {
-      await notifier.createMarker(
-        pageNumber: pageNumber,
-        color: _selectedColor,
-        selectedText: workspaceState.pendingMarkerText,
-        textRect: workspaceState.pendingMarkerTextRect,
-      );
+      // Check if we're editing an existing marker
+      final editingMarkerId = workspaceState.editingMarkerId;
 
-      if (mounted) {
-        ShadToaster.of(context).show(
-          ShadToast(
-            title: const Text('Marker Added'),
-            description: Text(
-              '${_selectedColor.emoji} P$pageNumber added to note',
-            ),
-          ),
+      if (editingMarkerId != null) {
+        // Update existing marker
+        await notifier.updateMarker(
+          markerId: editingMarkerId,
+          color: _selectedColor,
         );
+
+        if (mounted) {
+          ShadToaster.of(context).show(
+            ShadToast(
+              title: const Text('Marker Updated'),
+              description: Text(
+                '${_selectedColor.emoji} Marker color updated',
+              ),
+            ),
+          );
+        }
+      } else {
+        // Create new marker
+        final pageNumber = workspaceState.pendingMarkerPageNumber;
+        if (pageNumber == null) {
+          _close();
+          return;
+        }
+
+        await notifier.createMarker(
+          pageNumber: pageNumber,
+          color: _selectedColor,
+          selectedText: workspaceState.pendingMarkerText,
+          textRect: workspaceState.pendingMarkerTextRect,
+        );
+
+        if (mounted) {
+          ShadToaster.of(context).show(
+            ShadToast(
+              title: const Text('Marker Added'),
+              description: Text(
+                '${_selectedColor.emoji} P$pageNumber added to note',
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         ShadToaster.of(context).show(
           ShadToast.destructive(
             title: const Text('Error'),
-            description: Text('Failed to create marker: $e'),
+            description: Text('Failed to save marker: $e'),
           ),
         );
       }
