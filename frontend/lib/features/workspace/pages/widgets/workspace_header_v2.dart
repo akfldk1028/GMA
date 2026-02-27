@@ -150,10 +150,12 @@ class WorkspaceHeaderV2 extends ConsumerWidget {
       if (value == null) return;
       switch (value) {
         case 'open_pdf':
+          // ignore: use_build_context_synchronously
           _handleOpenPdf(context, ref);
         case 'toggle_theme':
           ref.read(themeMode$Provider.notifier).toggleTheme();
         case 'settings':
+          // ignore: use_build_context_synchronously
           context.push('/settings');
       }
     });

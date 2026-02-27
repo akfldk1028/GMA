@@ -1,12 +1,13 @@
 import 'dart:io';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'file_system_provider.g.dart';
 
 @riverpod
-Future<Directory> notesRootDirectory(NotesRootDirectoryRef ref) async {
+Future<Directory> notesRootDirectory(Ref ref) async {
   final appDir = await getApplicationDocumentsDirectory();
   final notesDir = Directory('${appDir.path}/GMA_Notes');
   if (!await notesDir.exists()) {
@@ -16,7 +17,7 @@ Future<Directory> notesRootDirectory(NotesRootDirectoryRef ref) async {
 }
 
 @riverpod
-Future<Directory> assetsDirectory(AssetsDirectoryRef ref) async {
+Future<Directory> assetsDirectory(Ref ref) async {
   final root = await ref.watch(notesRootDirectoryProvider.future);
   final dir = Directory('${root.path}/assets');
   if (!await dir.exists()) {
@@ -26,7 +27,7 @@ Future<Directory> assetsDirectory(AssetsDirectoryRef ref) async {
 }
 
 @riverpod
-Future<Directory> capturesDirectory(CapturesDirectoryRef ref) async {
+Future<Directory> capturesDirectory(Ref ref) async {
   final root = await ref.watch(notesRootDirectoryProvider.future);
   final dir = Directory('${root.path}/captures');
   if (!await dir.exists()) {

@@ -452,7 +452,7 @@ Content''';
 
       final parsed = FrontmatterParser.parse(original);
       final serialized = FrontmatterParser.serialize(parsed.frontmatter!);
-      final reparsed = FrontmatterParser.parse(serialized + '\nContent');
+      final reparsed = FrontmatterParser.parse('$serialized\nContent');
 
       expect(reparsed.hasFrontmatter, true);
       expect(reparsed.frontmatter!['file'], 'test.pdf');

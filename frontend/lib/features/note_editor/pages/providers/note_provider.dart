@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -182,7 +183,7 @@ class NoteState extends _$NoteState {
 
 /// Helper provider to check if a note exists.
 @riverpod
-Future<bool> noteExists(NoteExistsRef ref, String noteId) async {
+Future<bool> noteExists(Ref ref, String noteId) async {
   final notesDir = await ref.watch(notesRootDirectoryProvider.future);
   final noteFile = File('${notesDir.path}/$noteId.md');
   return await noteFile.exists();

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'file_system_provider.dart';
@@ -11,7 +12,7 @@ part 'note_storage_service.g.dart';
 /// Service for saving note content to filesystem with debouncing.
 /// Prevents excessive file I/O by delaying writes until user stops typing.
 @riverpod
-NoteStorageService noteStorageService(NoteStorageServiceRef ref) {
+NoteStorageService noteStorageService(Ref ref) {
   final service = NoteStorageService(ref);
   ref.onDispose(() => service.dispose());
   return service;
@@ -22,7 +23,7 @@ NoteStorageService noteStorageService(NoteStorageServiceRef ref) {
 class NoteStorageService {
   NoteStorageService(this.ref);
 
-  final NoteStorageServiceRef ref;
+  final Ref ref;
   Timer? _debounceTimer;
 
   /// Default debounce duration (500ms)

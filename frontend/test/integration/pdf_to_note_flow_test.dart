@@ -13,7 +13,7 @@ class MockNoteStorageService implements NoteStorageService {
   final Map<String, String> _notes = {};
 
   @override
-  NoteStorageServiceRef get ref => throw UnimplementedError();
+  Ref get ref => throw UnimplementedError();
 
   @override
   Future<void> saveNote({

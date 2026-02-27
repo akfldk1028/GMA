@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -93,7 +94,7 @@ class OcrSettingsData {
 /// One-shot OCR recognition on an image file.
 @riverpod
 Future<String> ocrRecognize(
-  OcrRecognizeRef ref, {
+  Ref ref, {
   required String imagePath,
 }) async {
   final settings = await ref.read(ocrSettingsProvider.future);
