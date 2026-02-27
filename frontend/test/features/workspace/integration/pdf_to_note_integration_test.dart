@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gma_frontend/constants/marker_colors.dart';
 import 'package:gma_frontend/features/note_editor/models/note_model.dart';
 import 'package:gma_frontend/features/note_editor/utils/marker_parser.dart';
-import 'package:gma_frontend/features/pdf_viewer/models/pdf_marker_model.dart';
+import 'package:gma_frontend/features/workspace/models/pdf_marker_model.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 void main() {
   group('PDF to Note Marker Creation Flow', () {
@@ -13,7 +14,7 @@ void main() {
         pageNumber: 3,
         color: MarkerColor.red,
         selectedText: 'Dictionary-based sentiment analysis is...',
-        textRect: const PdfRect(x: 72.0, y: 144.0, width: 300.0, height: 24.0),
+        textRect: PdfRect(72.0, 144.0, 372.0, 120.0),
       );
 
       // Step 2: Format marker as markdown line
@@ -48,7 +49,7 @@ void main() {
         pageNumber: 5,
         color: MarkerColor.yellow,
         capturedImagePath: './captures/p5_capture.png',
-        textRect: const PdfRect(x: 100.0, y: 200.0, width: 400.0, height: 300.0),
+        textRect: PdfRect(100.0, 200.0, 500.0, -100.0),
       );
 
       // Step 2: Format marker as markdown with image embed
@@ -130,7 +131,7 @@ void main() {
         pageNumber: 7,
         color: MarkerColor.blue,
         selectedText: 'Figure 2.1: Network Architecture',
-        textRect: const PdfRect(x: 100.0, y: 200.0, width: 400.0, height: 300.0),
+        textRect: PdfRect(100.0, 200.0, 500.0, -100.0),
         capturedImagePath: './captures/p7_figure_2_1.png',
       );
 
@@ -302,7 +303,7 @@ tags: [research, machine-learning]
           pageNumber: 3,
           color: MarkerColor.red,
           selectedText: 'First important text',
-          textRect: const PdfRect(x: 10.0, y: 20.0, width: 100.0, height: 50.0),
+          textRect: PdfRect(10.0, 20.0, 110.0, -30.0),
         ),
         PdfMarker(
           id: 'm2',

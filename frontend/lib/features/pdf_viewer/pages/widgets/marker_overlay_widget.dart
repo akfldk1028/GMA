@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../models/pdf_marker_model.dart';
+import '../../../workspace/models/pdf_marker_model.dart';
 
 /// Widget for rendering an individual PDF marker.
 ///

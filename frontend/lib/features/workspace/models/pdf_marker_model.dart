@@ -13,10 +13,10 @@ class PdfRectConverter implements JsonConverter<PdfRect?, Map<String, dynamic>?>
   PdfRect? fromJson(Map<String, dynamic>? json) {
     if (json == null) return null;
     return PdfRect(
-      json['left'] as double,
-      json['top'] as double,
-      json['right'] as double,
-      json['bottom'] as double,
+      (json['left'] as num).toDouble(),
+      (json['top'] as num).toDouble(),
+      (json['right'] as num).toDouble(),
+      (json['bottom'] as num).toDouble(),
     );
   }
 
