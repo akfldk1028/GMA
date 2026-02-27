@@ -100,7 +100,7 @@ class NoteState extends _$NoteState {
 
     return parseResults.map((result) {
       return Marker(
-        id: const Uuid().v4(),
+        id: result.id ?? const Uuid().v4(),
         color: result.color ?? MarkerColor.red,
         pageNumber: result.pageNumber ?? 0,
         selectedText: result.text,
