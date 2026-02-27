@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -85,8 +86,10 @@ class NoteState extends _$NoteState {
         frontmatter: frontmatter,
         markers: markers,
       );
-    } catch (e) {
-      // If any error occurs, return empty note
+    } catch (e, stackTrace) {
+      // If any error occurs, log it and return empty note
+      debugPrint('Error loading note $noteId: $e');
+      debugPrint('Stack trace: $stackTrace');
       return Note(
         id: noteId,
         content: '',
@@ -138,6 +141,8 @@ class NoteState extends _$NoteState {
       // Update state
       state = AsyncData(note);
     } catch (e, stackTrace) {
+      debugPrint('Error saving note ${note.id}: $e');
+      debugPrint('Stack trace: $stackTrace');
       state = AsyncError(e, stackTrace);
     }
   }
