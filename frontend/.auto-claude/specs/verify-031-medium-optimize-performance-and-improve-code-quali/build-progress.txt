@@ -260,3 +260,58 @@ The acceptance criterion "Auto-save debounced 500ms" is NOT satisfied.
 The auto-save implementation needs Timer-based debouncing with 500ms delay and proper timer cancellation.
 
 Next Action: Continue with remaining subtasks in Phase 1 to complete full verification.
+
+Subtask 1-4: Verify dispose() calls use try-finally
+Status: VERIFICATION COMPLETE - FAILED
+
+Findings:
+dispose() calls in multiple files are NOT wrapped in try-finally blocks, which could lead to resource leaks if exceptions occur during disposal:
+
+1. capture_service.dart (lines 53, 58):
+   - Line 53: pdfImage.dispose(); - NOT wrapped in try-finally
+   - Line 58: uiImage.dispose(); - NOT wrapped in try-finally
+   - Issue: If dispose() throws an exception, resources may not be properly cleaned up
+
+2. note_editor_provider.dart (line 55):
+   - Line 55: _controller?.dispose(); inside ref.onDispose() - NOT wrapped in try-finally
+   - Issue: If TextEditingController disposal fails, the error is not caught
+
+3. scrapnote_provider.dart:
+   - No dispose() calls found in this file (stateless Riverpod provider)
+
+Expected Implementation Pattern:
+For capture_service.dart:
+  final uiImage = await pdfImage.createImage();
+  try {
+    pdfImage.dispose();
+  } finally {
+    // Continue with uiImage processing
+  }
+
+  final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
+  try {
+    uiImage.dispose();
+  } finally {
+    // Continue with byteData processing
+  }
+
+For note_editor_provider.dart:
+  ref.onDispose(() {
+    try {
+      _controller?.dispose();
+    } finally {
+      _controller = null;
+    }
+  });
+
+Technical Details:
+- Without try-finally, if dispose() throws an exception, the exception propagates
+- This can prevent subsequent cleanup code from running
+- In capture_service.dart, if pdfImage.dispose() fails, the rest of the method won't execute
+- In providers, failed dispose can leave resources in an inconsistent state
+
+RESULT: ACCEPTANCE CRITERIA NOT MET
+The acceptance criterion "dispose() in try-finally" is NOT satisfied.
+All dispose() calls need to be wrapped in try-finally blocks to ensure robust cleanup.
+
+Next Action: Continue with remaining subtasks in Phase 1 to complete full verification.

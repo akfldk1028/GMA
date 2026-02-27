@@ -67,7 +67,9 @@
             "instructions": "Read drawing_provider.dart and verify _autoSave() is debounced using Timer with 500ms delay. Check that Timer is properly canceled/reset on subsequent calls."
           },
           "expected_output": "Document confirming: (1) Timer field exists for debouncing, (2) Timer set to 500ms, (3) Timer canceled before creating new one",
-          "status": "pending"
+          "status": "completed",
+          "notes": "Verification complete. Found that drawing_provider.dart does NOT have Timer-based debouncing for auto-save. The _autoSave() method executes immediately without any delay. Missing: (1) Timer? field, (2) 500ms delay, (3) Timer cancellation/reset. Every stroke triggers immediate disk write causing performance issues. Acceptance criteria NOT met.",
+          "updated_at": "2026-02-27T06:55:33.611301+00:00"
         },
         {
           "id": "subtask-1-4",
@@ -81,7 +83,9 @@
             "instructions": "Read capture_service.dart (lines 53, 58), note_editor_provider.dart (line 55), and scrapnote_provider.dart. Verify all dispose() calls are wrapped in try-finally blocks to prevent exceptions from leaving resources undisposed."
           },
           "expected_output": "Document confirming: All dispose() calls in all files are wrapped in try-finally",
-          "status": "pending"
+          "status": "completed",
+          "notes": "Verification complete. Found that dispose() calls in capture_service.dart (lines 53, 58) and note_editor_provider.dart (line 55) are NOT wrapped in try-finally blocks. This could lead to resource leaks if exceptions occur during disposal. scrapnote_provider.dart has no dispose() calls. Acceptance criteria NOT met.",
+          "updated_at": "2026-02-27T06:57:43.542660+00:00"
         },
         {
           "id": "subtask-1-5",
@@ -334,5 +338,5 @@
     }
   },
   "qa_signoff": null,
-  "last_updated": "2026-02-27T06:53:30.178059+00:00"
+  "last_updated": "2026-02-27T06:57:43.542660+00:00"
 }
