@@ -37,16 +37,15 @@ class NoteStorageService {
   /// - [noteId]: Unique identifier for the note (used as filename)
   /// - [content]: Markdown content to save
   ///
-  /// Throws:
-  /// - [FileSystemException] if file write fails
-  /// - [Exception] if noteId is empty or content is null
+  /// Errors are logged via debugPrint and handled gracefully.
   Future<void> saveNote({
     required String noteId,
     required String content,
   }) async {
     // Validate parameters
     if (noteId.isEmpty) {
-      throw Exception('Note ID cannot be empty');
+      debugPrint('Note ID cannot be empty');
+      return;
     }
 
     // Cancel any pending save operation
@@ -59,7 +58,6 @@ class NoteStorageService {
       } catch (e, stackTrace) {
         debugPrint('Error saving note $noteId: $e');
         debugPrint('Stack trace: $stackTrace');
-        rethrow;
       }
     });
   }
@@ -134,7 +132,6 @@ class NoteStorageService {
     } catch (e, stackTrace) {
       debugPrint('Error deleting note $noteId: $e');
       debugPrint('Stack trace: $stackTrace');
-      rethrow;
     }
   }
 
