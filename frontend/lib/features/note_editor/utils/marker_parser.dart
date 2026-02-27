@@ -6,6 +6,7 @@ class MarkerLineParseResult {
     required this.isMarkerLine,
     this.color,
     this.pageNumber,
+    this.subNumber,
     this.text,
     this.imagePath,
   });
@@ -16,8 +17,11 @@ class MarkerLineParseResult {
   /// The marker color (extracted from emoji).
   final MarkerColor? color;
 
-  /// The page number (e.g., 3 from "P3").
+  /// The page number (e.g., 3 from "P3" or 1 from "P1-2").
   final int? pageNumber;
+
+  /// The sub-number (e.g., 2 from "P1-2"). Optional.
+  final int? subNumber;
 
   /// The selected text content (optional).
   final String? text;
@@ -29,11 +33,13 @@ class MarkerLineParseResult {
 /// Parser for PDF marker lines in markdown notes.
 ///
 /// Marker line format: `- 🔴 P3  Selected text...`
+/// With optional sub-number: `- 🔴 P1-2  Selected text...`
 /// With optional image: `  ![caption](./captures/p5.png)`
 ///
 /// Examples:
 /// - `- 🔴 P3  Dictionary-based sentiment analysis is...`
 /// - `- 🟡 P5`
+/// - `- 🟡 P1-2  Multiple markers on same page`
 /// - `- 🟢 P10  Some text\n  ![capture](./captures/p10.png)`
 class MarkerParser {
   MarkerParser._();
@@ -41,11 +47,11 @@ class MarkerParser {
   /// Regex pattern for marker lines:
   /// - Starts with `- ` (list item)
   /// - Followed by emoji (🔴🟡🟢🔵🟣🖊️) using alternation (not character class)
-  /// - Space and page number `P{number}`
+  /// - Space and page number `P{number}` with optional sub-number `-{number}`
   /// - Optional: two spaces and text content
   /// Note: Using alternation instead of character class because emojis are multi-byte unicode
   static final _markerLineRegex = RegExp(
-    r'^-\s+(🔴|🟡|🟢|🔵|🟣|🖊️)\s+P(\d+)(?:\s{2}(.+))?$',
+    r'^-\s+(🔴|🟡|🟢|🔵|🟣|🖊️)\s+P(\d+)(?:-(\d+))?(?:\s{2}(.+))?$',
   );
 
   /// Regex pattern for image embed:
@@ -67,6 +73,10 @@ class MarkerParser {
   ///   print('Page: ${result.pageNumber}');
   ///   print('Text: ${result.text}');
   /// }
+  ///
+  /// // With sub-number
+  /// final result2 = MarkerParser.parse('- 🟡 P1-2  Second marker on page 1');
+  /// print('Sub-number: ${result2.subNumber}'); // 2
   /// ```
   static MarkerLineParseResult parse(String line) {
     final match = _markerLineRegex.firstMatch(line.trim());
@@ -77,7 +87,8 @@ class MarkerParser {
 
     final emoji = match.group(1)!;
     final pageStr = match.group(2)!;
-    final text = match.group(3); // Optional
+    final subNumStr = match.group(3); // Optional sub-number
+    final text = match.group(4); // Optional text (was group 3, now group 4)
 
     final color = MarkerColor.fromEmoji(emoji);
     final pageNumber = int.tryParse(pageStr);
@@ -86,10 +97,14 @@ class MarkerParser {
       return const MarkerLineParseResult(isMarkerLine: false);
     }
 
+    // Parse optional sub-number
+    final subNumber = subNumStr != null ? int.tryParse(subNumStr) : null;
+
     return MarkerLineParseResult(
       isMarkerLine: true,
       color: color,
       pageNumber: pageNumber,
+      subNumber: subNumber,
       text: text,
     );
   }
@@ -127,6 +142,7 @@ class MarkerParser {
           isMarkerLine: true,
           color: markerResult.color,
           pageNumber: markerResult.pageNumber,
+          subNumber: markerResult.subNumber,
           text: markerResult.text,
           imagePath: imagePath,
         );
