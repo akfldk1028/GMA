@@ -147,7 +147,7 @@ class WorkspaceHeaderV2 extends ConsumerWidget {
         const PopupMenuItem(value: 'settings', child: Text('Settings')),
       ],
     ).then((value) {
-      if (value == null) return;
+      if (value == null || !context.mounted) return;
       switch (value) {
         case 'open_pdf':
           // ignore: use_build_context_synchronously

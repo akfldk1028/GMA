@@ -19,8 +19,13 @@ class StrokePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Use saveLayer for proper eraser BlendMode.clear support
-    canvas.saveLayer(Offset.zero & size, Paint());
+    // Only use saveLayer if there are eraser strokes (BlendMode.clear)
+    final hasEraserStroke = strokes.any((s) => s.toolId == 'eraser') ||
+        (currentStroke?.toolId == 'eraser');
+
+    if (hasEraserStroke) {
+      canvas.saveLayer(Offset.zero & size, Paint());
+    }
 
     for (final stroke in strokes) {
       _drawStroke(canvas, size, stroke);
@@ -29,7 +34,9 @@ class StrokePainter extends CustomPainter {
       _drawStroke(canvas, size, currentStroke!);
     }
 
-    canvas.restore();
+    if (hasEraserStroke) {
+      canvas.restore();
+    }
   }
 
   void _drawStroke(Canvas canvas, Size size, DrawingStroke stroke) {

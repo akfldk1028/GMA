@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../../utils/file_system_provider.dart';
@@ -36,8 +38,16 @@ class DrawingMode extends _$DrawingMode {
 /// Per-note drawing strokes with undo/redo and persistence.
 @riverpod
 class DrawingStrokes extends _$DrawingStrokes {
+  Timer? _saveTimer;
+
   @override
   Future<DrawingData> build(String noteId) async {
+    // Clean up timer on dispose
+    ref.onDispose(() {
+      _saveTimer?.cancel();
+      _saveTimer = null;
+    });
+
     final capturesDir = await ref.watch(capturesDirectoryProvider.future);
     final filePath =
         DrawingSerializer.buildFilePath(capturesDir.path, noteId);
@@ -103,16 +113,22 @@ class DrawingStrokes extends _$DrawingStrokes {
     _autoSave();
   }
 
-  Future<void> _autoSave() async {
-    final current = state.valueOrNull;
-    if (current == null) return;
+  void _autoSave() {
+    // Cancel any pending save operation
+    _saveTimer?.cancel();
 
-    final capturesDir = await ref.read(capturesDirectoryProvider.future);
-    final filePath =
-        DrawingSerializer.buildFilePath(capturesDir.path, noteId);
-    await DrawingSerializer.save(
-      filePath: filePath,
-      pageStrokes: current.pageStrokes,
-    );
+    // Schedule new save operation after 500ms debounce delay
+    _saveTimer = Timer(const Duration(milliseconds: 500), () async {
+      final current = state.valueOrNull;
+      if (current == null) return;
+
+      final capturesDir = await ref.read(capturesDirectoryProvider.future);
+      final filePath =
+          DrawingSerializer.buildFilePath(capturesDir.path, noteId);
+      await DrawingSerializer.save(
+        filePath: filePath,
+        pageStrokes: current.pageStrokes,
+      );
+    });
   }
 }

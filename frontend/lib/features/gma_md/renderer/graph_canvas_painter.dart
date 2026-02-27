@@ -167,5 +167,6 @@ class GraphCanvasPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(GraphCanvasPainter oldDelegate) => true;
+  bool shouldRepaint(covariant GraphCanvasPainter oldDelegate) =>
+      oldDelegate.graph != graph;
 }

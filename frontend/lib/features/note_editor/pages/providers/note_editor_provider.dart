@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../constants/marker_colors.dart';
@@ -159,8 +160,8 @@ class NoteEditor extends _$NoteEditor {
 
     // Use absolute file URI if capturesDir is provided, else relative path
     final imgPath = capturesDir != null
-        ? 'file:///${capturesDir.replaceAll('\\', '/')}/$filename'
-        : './captures/$filename';
+        ? 'file:///${path.join(capturesDir, filename).replaceAll('\\', '/')}'
+        : path.join('captures', filename);
     // Include context text if available (truncated to 100 chars)
     final textPart = contextText != null && contextText.isNotEmpty
         ? '  ${contextText.length > 100 ? '${contextText.substring(0, 100)}...' : contextText}'

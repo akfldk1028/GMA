@@ -254,5 +254,6 @@ class FlowCanvasPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(FlowCanvasPainter oldDelegate) => true;
+  bool shouldRepaint(covariant FlowCanvasPainter oldDelegate) =>
+      oldDelegate.graph != graph;
 }

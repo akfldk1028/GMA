@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/painting.dart' show Rect;
+import 'package:path/path.dart' as path;
 import 'package:pdfrx/pdfrx.dart';
 
 /// Service for capturing a rectangular area of a PDF page as a PNG image.
@@ -49,13 +51,21 @@ class CaptureService {
     }
 
     // Convert PdfImage → dart:ui Image → PNG bytes
-    final uiImage = await pdfImage.createImage();
-    pdfImage.dispose();
+    ui.Image? uiImage;
+    try {
+      uiImage = await pdfImage.createImage();
+    } finally {
+      pdfImage.dispose();
+    }
 
-    final byteData = await uiImage.toByteData(
-      format: ui.ImageByteFormat.png,
-    );
-    uiImage.dispose();
+    ByteData? byteData;
+    try {
+      byteData = await uiImage.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+    } finally {
+      uiImage.dispose();
+    }
 
     if (byteData == null) {
       throw Exception('Failed to encode image as PNG');
@@ -64,7 +74,7 @@ class CaptureService {
     // Save to file
     final filename =
         'p${pageNumber}_${DateTime.now().millisecondsSinceEpoch}.png';
-    final filePath = '$capturesDir/$filename';
+    final filePath = path.join(capturesDir, filename);
     await File(filePath).writeAsBytes(byteData.buffer.asUint8List());
 
     return filename;

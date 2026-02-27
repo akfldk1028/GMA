@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path/path.dart' as path;
+
 import '../models/drawing_model.dart';
 
 /// JSON serialization for drawing data.
@@ -50,5 +52,5 @@ class DrawingSerializer {
 
   /// Build file path for a note's drawing data.
   static String buildFilePath(String capturesDir, String noteId) =>
-      '$capturesDir/${noteId}_drawings.json';
+      path.join(capturesDir, '${noteId}_drawings.json');
 }
