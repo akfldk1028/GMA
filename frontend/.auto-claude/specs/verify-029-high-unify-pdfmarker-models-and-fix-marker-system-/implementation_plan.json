@@ -301,7 +301,7 @@
           },
           "status": "completed",
           "notes": "VERIFICATION COMPLETE: Spec 029 implementation FAILED verification with 50% pass rate (4/8 criteria met). Status set to 'failed'. QA signoff updated with detailed verification results, critical issues, and recommendations. See VERIFICATION_REPORT_029.md for comprehensive analysis.",
-          "updated_at": "2026-02-27T06:42:00.000000+00:00"
+          "updated_at": "2026-02-27T06:42:00.864330+00:00"
         }
       ]
     }
@@ -446,7 +446,10 @@
         "category": "functionality",
         "description": "Marker edit flow always calls createMarker instead of updateMarker",
         "impact": "Core functionality broken - users cannot edit markers without creating duplicates",
-        "affected_criteria": ["Edit flow calls updateMarker not createMarker", "No duplicate markers created"],
+        "affected_criteria": [
+          "Edit flow calls updateMarker not createMarker",
+          "No duplicate markers created"
+        ],
         "location": "lib/features/workspace/pages/widgets/marker_edit_modal.dart lines 236-277",
         "recommendation": "Add conditional logic to check editingMarkerId and call updateMarker for edits",
         "effort_estimate": "1-2 hours"
@@ -456,7 +459,9 @@
         "category": "type-safety",
         "description": "PdfRectConverter uses direct casting instead of (json as num).toDouble()",
         "impact": "Potential runtime crashes with integer JSON values",
-        "affected_criteria": ["PdfRectConverter uses (json as num).toDouble()"],
+        "affected_criteria": [
+          "PdfRectConverter uses (json as num).toDouble()"
+        ],
         "location": "lib/features/workspace/models/pdf_marker_model.dart lines 16-19",
         "recommendation": "Update to use type-safe (json as num).toDouble() pattern",
         "effort_estimate": "15 minutes"
@@ -466,7 +471,9 @@
         "category": "code-quality",
         "description": "pdf_viewer PdfMarker model not deleted",
         "impact": "Model duplication persists, potential confusion for developers",
-        "affected_criteria": ["pdf_viewer PdfMarker model deleted"],
+        "affected_criteria": [
+          "pdf_viewer PdfMarker model deleted"
+        ],
         "location": "lib/features/pdf_viewer/models/pdf_marker_model.dart",
         "recommendation": "Delete lib/features/pdf_viewer/models/pdf_marker_model.dart to complete model consolidation",
         "effort_estimate": "5 minutes"
@@ -476,7 +483,9 @@
         "category": "feature-gap",
         "description": "Marker parser does not support P1-2 sub-number format",
         "impact": "Cannot parse markers with sub-number page references",
-        "affected_criteria": ["Marker parser supports P1-2 and pen emoji"],
+        "affected_criteria": [
+          "Marker parser supports P1-2 and pen emoji"
+        ],
         "location": "lib/features/note_editor/utils/marker_parser.dart line 47-49",
         "recommendation": "Update regex to P(\\d+(?:-\\d+)?) and modify data model to support page ranges",
         "effort_estimate": "2-3 hours"
@@ -541,5 +550,5 @@
     ],
     "notes": "Comprehensive verification completed using static analysis, test execution (144 tests), and runtime code flow analysis. While tests pass and code is stable, 4 of 8 acceptance criteria were not met, including 2 critical functionality bugs that prevent proper marker editing."
   },
-  "last_updated": "2026-02-27T06:42:00.000000+00:00"
+  "last_updated": "2026-02-27T06:42:00.864330+00:00"
 }
