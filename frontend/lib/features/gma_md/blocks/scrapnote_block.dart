@@ -2,19 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../note_editor/utils/markdown_extension.dart';
-import '../../scrapnote/models/element_model.dart';
+import '../../scrapnote/providers/element_store.dart';
 import '../../scrapnote/utils/element_ref_parser.dart';
 import '../models/block_definition.dart';
 import '../widgets/element_card.dart';
 import '_block_base.dart';
-
-// TODO: Replace with actual ElementStore from spec 023
-// Temporary stub provider until ElementStore is implemented
-class _ElementStore {
-  ScrapElement? getElementById(String id) => null;
-}
-
-final elementStoreProvider = Provider<_ElementStore>((_) => _ElementStore());
 
 /// ScrapNote block definition.
 /// Parses @el lines and renders ElementCard widgets for each element reference.
@@ -71,12 +63,7 @@ class _ScrapnoteContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // TODO: Implement once elementStoreProvider is available
-    // This requires ElementStore to be fully implemented with:
-    // - Provider definition for elementStoreProvider
-    // - ElementStore.getElementById() method
-    // See: lib/features/scrapnote/providers/scrapnote_provider.dart
-
+    final store = ref.watch(elementStoreProvider.notifier);
     final lines = content.split('\n');
     final widgets = <Widget>[];
 
@@ -84,10 +71,19 @@ class _ScrapnoteContent extends ConsumerWidget {
       final elementId = ElementRefParser.parse(line);
 
       if (elementId != null) {
-        // This is an @el reference - show placeholder until ElementStore is implemented
-        widgets.add(
-          _ElementNotFoundPlaceholder(elementId: elementId),
-        );
+        final element = store.getById(elementId);
+        if (element != null) {
+          widgets.add(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: ElementCard(element: element),
+            ),
+          );
+        } else {
+          widgets.add(
+            _ElementNotFoundPlaceholder(elementId: elementId),
+          );
+        }
       } else if (line.trim().isNotEmpty) {
         // Regular text line
         widgets.add(

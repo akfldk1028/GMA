@@ -8,6 +8,7 @@ import 'blocks/flow_block.dart';
 import 'blocks/graph_block.dart';
 import 'blocks/mindmap_block.dart';
 import 'blocks/proof_block.dart';
+import 'blocks/scrapnote_block.dart';
 import 'blocks/summary_block.dart';
 import 'blocks/theorem_block.dart';
 import 'blocks/timeline_block.dart';
@@ -24,6 +25,7 @@ final blockRegistry = <BlockDefinition>[
   ProofBlock(),
   ExampleBlock(),
   SummaryBlock(),
+  ScrapnoteBlock(),
   // Visual
   FlowBlock(),
   GraphBlock(),

@@ -6,14 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../scrapnote/models/element_model.dart';
-
-/// Stub PdfRegistry - TODO: Replace with actual from spec 022
-class _PdfRegistry {
-  static String? getPathById(String pdfId) {
-    // Stub implementation - returns null for now
-    return null;
-  }
-}
+import '../../scrapnote/providers/pdf_registry_provider.dart';
 
 /// A compact card widget that displays a ScrapElement.
 ///
@@ -21,16 +14,6 @@ class _PdfRegistry {
 /// - Left: Icon based on element type (highlight/capture/drawing)
 /// - Center: PDF name, page number, selected text preview (max 2 lines)
 /// - Right: Optional thumbnail if imagePath is present
-///
-/// Example:
-/// ```dart
-/// ElementCard(
-///   element: scrapElement,
-///   onTap: () {
-///     // Navigate to PDF page
-///   },
-/// )
-/// ```
 class ElementCard extends ConsumerWidget {
   const ElementCard({
     super.key,
@@ -66,8 +49,8 @@ class ElementCard extends ConsumerWidget {
     }
   }
 
-  String _getPdfName(String pdfId) {
-    final pdfPath = _PdfRegistry.getPathById(pdfId);
+  String _getPdfName(String pdfId, WidgetRef ref) {
+    final pdfPath = ref.read(pdfRegistryProvProvider.notifier).getPathById(pdfId);
     if (pdfPath == null || pdfPath.isEmpty) {
       return 'Unknown PDF';
     }
@@ -111,7 +94,7 @@ class ElementCard extends ConsumerWidget {
                 children: [
                   // PDF name
                   Text(
-                    _getPdfName(element.pdfId),
+                    _getPdfName(element.pdfId, ref),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
