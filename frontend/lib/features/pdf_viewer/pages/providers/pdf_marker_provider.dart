@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../constants/marker_colors.dart';
-import '../../models/pdf_marker_model.dart';
+import '../../../workspace/models/pdf_marker_model.dart';
 
 part 'pdf_marker_provider.g.dart';
 

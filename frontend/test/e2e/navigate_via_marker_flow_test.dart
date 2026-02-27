@@ -5,7 +5,8 @@ import 'package:gma_frontend/constants/marker_colors.dart';
 import 'package:gma_frontend/features/note_editor/models/note_model.dart';
 import 'package:gma_frontend/features/note_editor/utils/marker_parser.dart';
 import 'package:gma_frontend/features/note_editor/pages/widgets/marker_line_widget.dart';
-import 'package:gma_frontend/features/pdf_viewer/models/pdf_marker_model.dart';
+import 'package:gma_frontend/features/workspace/models/pdf_marker_model.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 /// E2E test for complete marker navigation flow:
 /// Open note with markers -> Click marker -> PDF navigates to page
@@ -266,7 +267,7 @@ Quick access to important pages:
         pageNumber: 5,
         color: MarkerColor.yellow,
         selectedText: 'Important formula: E = mc²',
-        textRect: const PdfRect(x: 120.0, y: 250.0, width: 180.0, height: 24.0),
+        textRect: PdfRect(120, 274, 300, 250),
       );
 
       // Step 2: Format marker for note
@@ -296,10 +297,10 @@ Quick access to important pages:
 
       // Step 5: Verify navigation with exact coordinates
       expect(navigatedToPage, 5);
-      expect(highlightRect?.x, 120.0);
-      expect(highlightRect?.y, 250.0);
-      expect(highlightRect?.width, 180.0);
-      expect(highlightRect?.height, 24.0);
+      expect(highlightRect?.left, 120.0);
+      expect(highlightRect?.top, 250.0);
+      expect(highlightRect?.right, 300.0); // 120 + 180
+      expect(highlightRect?.bottom, 274.0); // 250 + 24
     });
 
     test('Mixed content: Only marker lines trigger navigation', () {
@@ -455,7 +456,7 @@ PDF References:
         pageNumber: 42,
         color: MarkerColor.purple,
         selectedText: 'The answer to life, the universe, and everything',
-        textRect: const PdfRect(x: 100.0, y: 200.0, width: 300.0, height: 20.0),
+        textRect: PdfRect(100, 220, 400, 200),
       );
 
       // Step 2: Format marker for note storage

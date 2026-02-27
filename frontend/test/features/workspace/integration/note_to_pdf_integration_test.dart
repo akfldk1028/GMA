@@ -5,7 +5,8 @@ import 'package:gma_frontend/constants/marker_colors.dart';
 import 'package:gma_frontend/features/note_editor/models/note_model.dart';
 import 'package:gma_frontend/features/note_editor/pages/widgets/marker_line_widget.dart';
 import 'package:gma_frontend/features/note_editor/utils/marker_parser.dart';
-import 'package:gma_frontend/features/pdf_viewer/models/pdf_marker_model.dart';
+import 'package:gma_frontend/features/workspace/models/pdf_marker_model.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 void main() {
   group('Note to PDF Navigation Flow', () {
@@ -262,7 +263,7 @@ void main() {
         pageNumber: 3,
         color: MarkerColor.red,
         selectedText: 'Important text',
-        textRect: const PdfRect(x: 72.0, y: 144.0, width: 300.0, height: 24.0),
+        textRect: PdfRect(72, 168, 372, 144),
       );
 
       // Step 2: Format marker as markdown
@@ -506,7 +507,7 @@ More text here.
         pageNumber: 42,
         color: MarkerColor.yellow,
         selectedText: 'Critical finding from the research',
-        textRect: const PdfRect(x: 100.0, y: 200.0, width: 400.0, height: 50.0),
+        textRect: PdfRect(100, 250, 500, 200),
       );
 
       // Step 2: Format and store in note

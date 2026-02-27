@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gma_frontend/constants/marker_colors.dart';
 import 'package:gma_frontend/features/note_editor/models/note_model.dart';
 import 'package:gma_frontend/features/note_editor/utils/marker_parser.dart';
-import 'package:gma_frontend/features/pdf_viewer/models/pdf_marker_model.dart';
+import 'package:gma_frontend/features/workspace/models/pdf_marker_model.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 /// E2E test for complete marker creation flow:
 /// Load PDF -> Select text -> Choose color -> Marker appears in note
@@ -85,7 +86,7 @@ void main() {
       // Step 1: Simulate PDF text selection
       const selectedText = 'Machine learning is a subset of AI';
       const pageNumber = 5;
-      final textRect = const PdfRect(x: 50.0, y: 100.0, width: 250.0, height: 20.0);
+      final textRect = PdfRect(50, 120, 300, 100);
 
       // Step 2: User chooses yellow color
       final selectedColor = MarkerColor.yellow;
@@ -139,7 +140,7 @@ void main() {
         () {
       // Step 1: Simulate PDF region selection
       const pageNumber = 8;
-      final captureRect = const PdfRect(x: 100.0, y: 200.0, width: 400.0, height: 300.0);
+      final captureRect = PdfRect(100, 500, 500, 200);
 
       // Step 2: User chooses green color
       final selectedColor = MarkerColor.green;
@@ -355,7 +356,7 @@ void main() {
         pageNumber: 7,
         color: MarkerColor.green,
         selectedText: 'Convolutional neural networks for image recognition',
-        textRect: const PdfRect(x: 80.0, y: 150.0, width: 320.0, height: 18.0),
+        textRect: PdfRect(80, 168, 400, 150),
       );
 
       // Step 2: Format and store in note

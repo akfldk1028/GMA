@@ -1,127 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gma_frontend/constants/marker_colors.dart';
-import 'package:gma_frontend/features/pdf_viewer/models/pdf_marker_model.dart';
+import 'package:gma_frontend/features/workspace/models/pdf_marker_model.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 void main() {
-  group('PdfRect', () {
-    group('serialization', () {
-      test('toJson creates valid JSON with all fields', () {
-        const rect = PdfRect(x: 10.5, y: 20.3, width: 100.0, height: 50.0);
-        final json = rect.toJson();
-
-        expect(json, {
-          'x': 10.5,
-          'y': 20.3,
-          'width': 100.0,
-          'height': 50.0,
-        });
-      });
-
-      test('fromJson creates valid PdfRect from JSON', () {
-        final json = {
-          'x': 15.7,
-          'y': 25.9,
-          'width': 120.5,
-          'height': 60.2,
-        };
-        final rect = PdfRect.fromJson(json);
-
-        expect(rect.x, 15.7);
-        expect(rect.y, 25.9);
-        expect(rect.width, 120.5);
-        expect(rect.height, 60.2);
-      });
-
-      test('roundtrip serialization maintains data integrity', () {
-        const original = PdfRect(x: 5.5, y: 10.5, width: 200.0, height: 100.0);
-        final json = original.toJson();
-        final deserialized = PdfRect.fromJson(json);
-
-        expect(deserialized, original);
-      });
-
-      test('handles zero values correctly', () {
-        const rect = PdfRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0);
-        final json = rect.toJson();
-        final deserialized = PdfRect.fromJson(json);
-
-        expect(deserialized, rect);
-        expect(deserialized.x, 0.0);
-        expect(deserialized.y, 0.0);
-        expect(deserialized.width, 0.0);
-        expect(deserialized.height, 0.0);
-      });
-
-      test('handles negative values correctly', () {
-        const rect = PdfRect(x: -10.5, y: -20.3, width: 100.0, height: 50.0);
-        final json = rect.toJson();
-        final deserialized = PdfRect.fromJson(json);
-
-        expect(deserialized, rect);
-        expect(deserialized.x, -10.5);
-        expect(deserialized.y, -20.3);
-      });
-
-      test('handles very large values correctly', () {
-        const rect = PdfRect(
-          x: 999999.999,
-          y: 888888.888,
-          width: 777777.777,
-          height: 666666.666,
-        );
-        final json = rect.toJson();
-        final deserialized = PdfRect.fromJson(json);
-
-        expect(deserialized, rect);
-      });
-    });
-
-    group('equality', () {
-      test('two PdfRects with same values are equal', () {
-        const rect1 = PdfRect(x: 10.0, y: 20.0, width: 100.0, height: 50.0);
-        const rect2 = PdfRect(x: 10.0, y: 20.0, width: 100.0, height: 50.0);
-
-        expect(rect1, equals(rect2));
-        expect(rect1.hashCode, equals(rect2.hashCode));
-      });
-
-      test('two PdfRects with different values are not equal', () {
-        const rect1 = PdfRect(x: 10.0, y: 20.0, width: 100.0, height: 50.0);
-        const rect2 = PdfRect(x: 11.0, y: 20.0, width: 100.0, height: 50.0);
-
-        expect(rect1, isNot(equals(rect2)));
-      });
-    });
-
-    group('copyWith', () {
-      test('copyWith updates specified fields', () {
-        const original = PdfRect(x: 10.0, y: 20.0, width: 100.0, height: 50.0);
-        final updated = original.copyWith(x: 15.0, height: 60.0);
-
-        expect(updated.x, 15.0);
-        expect(updated.y, 20.0);
-        expect(updated.width, 100.0);
-        expect(updated.height, 60.0);
-      });
-
-      test('copyWith with no arguments returns equal object', () {
-        const original = PdfRect(x: 10.0, y: 20.0, width: 100.0, height: 50.0);
-        final copy = original.copyWith();
-
-        expect(copy, equals(original));
-      });
-    });
-  });
+  // PdfRect tests removed - PdfRect is from pdfrx package, not our code
+  // PdfRectConverter is tested via PdfMarker serialization tests
 
   group('PdfMarker', () {
     group('serialization with all fields', () {
       test('toJson creates valid JSON with all fields including optionals', () {
-        const marker = PdfMarker(
+        final marker = PdfMarker(
           id: 'marker-123',
           pageNumber: 5,
           color: MarkerColor.red,
           selectedText: 'Selected text content',
-          textRect: PdfRect(x: 10.0, y: 20.0, width: 100.0, height: 50.0),
+          textRect: PdfRect(10, 70, 110, 20),
           capturedImagePath: './captures/p5_capture.png',
         );
         final json = marker.toJson();
@@ -131,7 +25,7 @@ void main() {
         expect(json['color'], 'red');
         expect(json['selectedText'], 'Selected text content');
         expect(json['textRect'], isA<Map<String, dynamic>>());
-        expect(json['textRect']['x'], 10.0);
+        expect(json['textRect']['left'], 10.0);
         expect(json['capturedImagePath'], './captures/p5_capture.png');
       });
 
@@ -142,10 +36,10 @@ void main() {
           'color': 'yellow',
           'selectedText': 'Important note',
           'textRect': {
-            'x': 15.0,
-            'y': 25.0,
-            'width': 120.0,
-            'height': 60.0,
+            'left': 15.0,
+            'top': 25.0,
+            'right': 120.0,
+            'bottom': 60.0,
           },
           'capturedImagePath': './captures/p10_capture.png',
         };
@@ -156,18 +50,18 @@ void main() {
         expect(marker.color, MarkerColor.yellow);
         expect(marker.selectedText, 'Important note');
         expect(marker.textRect, isNotNull);
-        expect(marker.textRect!.x, 15.0);
+        expect(marker.textRect!.left, 15.0);
         expect(marker.capturedImagePath, './captures/p10_capture.png');
       });
 
       test('roundtrip serialization with all fields maintains data integrity',
           () {
-        const original = PdfMarker(
+        final original = PdfMarker(
           id: 'marker-789',
           pageNumber: 15,
           color: MarkerColor.green,
           selectedText: 'Key insight',
-          textRect: PdfRect(x: 20.0, y: 30.0, width: 150.0, height: 75.0),
+          textRect: PdfRect(20, 105, 170, 30),
           capturedImagePath: './captures/p15_capture.png',
         );
         final json = original.toJson();
@@ -179,7 +73,7 @@ void main() {
 
     group('serialization with minimal required fields', () {
       test('toJson creates valid JSON with only required fields', () {
-        const marker = PdfMarker(
+        final marker = PdfMarker(
           id: 'marker-minimal',
           pageNumber: 1,
           color: MarkerColor.blue,
@@ -229,15 +123,15 @@ void main() {
     group('MarkerColor enum serialization', () {
       test('serializes all MarkerColor values correctly', () {
         final markers = [
-          const PdfMarker(
+          PdfMarker(
               id: 'red-marker', pageNumber: 1, color: MarkerColor.red),
-          const PdfMarker(
+          PdfMarker(
               id: 'yellow-marker', pageNumber: 2, color: MarkerColor.yellow),
-          const PdfMarker(
+          PdfMarker(
               id: 'green-marker', pageNumber: 3, color: MarkerColor.green),
-          const PdfMarker(
+          PdfMarker(
               id: 'blue-marker', pageNumber: 4, color: MarkerColor.blue),
-          const PdfMarker(
+          PdfMarker(
               id: 'purple-marker', pageNumber: 5, color: MarkerColor.purple),
         ];
 
@@ -271,7 +165,7 @@ void main() {
 
     group('edge cases', () {
       test('handles empty string selectedText', () {
-        const marker = PdfMarker(
+        final marker = PdfMarker(
           id: 'marker-empty-text',
           pageNumber: 1,
           color: MarkerColor.red,
@@ -285,7 +179,7 @@ void main() {
       });
 
       test('handles empty string capturedImagePath', () {
-        const marker = PdfMarker(
+        final marker = PdfMarker(
           id: 'marker-empty-path',
           pageNumber: 1,
           color: MarkerColor.red,
@@ -315,7 +209,7 @@ void main() {
 
       test('handles special characters in selectedText', () {
         const specialText = '특수문자 テスト 😀 \n\t\r';
-        const marker = PdfMarker(
+        final marker = PdfMarker(
           id: 'marker-special-chars',
           pageNumber: 1,
           color: MarkerColor.red,
@@ -329,7 +223,7 @@ void main() {
       });
 
       test('handles page number 0', () {
-        const marker = PdfMarker(
+        final marker = PdfMarker(
           id: 'marker-page-0',
           pageNumber: 0,
           color: MarkerColor.red,
@@ -342,7 +236,7 @@ void main() {
       });
 
       test('handles very large page numbers', () {
-        const marker = PdfMarker(
+        final marker = PdfMarker(
           id: 'marker-large-page',
           pageNumber: 999999,
           color: MarkerColor.red,
@@ -355,7 +249,7 @@ void main() {
       });
 
       test('handles UUID-style IDs', () {
-        const marker = PdfMarker(
+        final marker = PdfMarker(
           id: '550e8400-e29b-41d4-a716-446655440000',
           pageNumber: 1,
           color: MarkerColor.red,
@@ -502,18 +396,18 @@ void main() {
           pageNumber: 5,
           color: MarkerColor.red,
         );
-        const newRect = PdfRect(x: 10.0, y: 20.0, width: 100.0, height: 50.0);
+        final newRect = PdfRect(10, 70, 110, 20);
         final updated = original.copyWith(textRect: newRect);
 
         expect(updated.textRect, newRect);
       });
 
       test('copyWith removes textRect by setting to null', () {
-        const original = PdfMarker(
+        final original = PdfMarker(
           id: 'marker-id',
           pageNumber: 5,
           color: MarkerColor.red,
-          textRect: PdfRect(x: 10.0, y: 20.0, width: 100.0, height: 50.0),
+          textRect: PdfRect(10, 70, 110, 20),
         );
         final updated = original.copyWith(textRect: null);
 
@@ -553,12 +447,12 @@ void main() {
 
     group('real-world scenarios', () {
       test('text selection marker (P3 with red color)', () {
-        const marker = PdfMarker(
+        final marker = PdfMarker(
           id: 'text-selection-1',
           pageNumber: 3,
           color: MarkerColor.red,
           selectedText: 'This is an important passage that needs highlighting.',
-          textRect: PdfRect(x: 72.0, y: 144.0, width: 300.0, height: 24.0),
+          textRect: PdfRect(72, 168, 372, 144),
         );
         final json = marker.toJson();
         final deserialized = PdfMarker.fromJson(json);
@@ -572,7 +466,7 @@ void main() {
       });
 
       test('image capture marker (P5 with yellow color)', () {
-        const marker = PdfMarker(
+        final marker = PdfMarker(
           id: 'image-capture-1',
           pageNumber: 5,
           color: MarkerColor.yellow,
@@ -590,12 +484,12 @@ void main() {
       });
 
       test('combined text and image marker', () {
-        const marker = PdfMarker(
+        final marker = PdfMarker(
           id: 'combined-marker-1',
           pageNumber: 10,
           color: MarkerColor.green,
           selectedText: 'Figure 2.1: Network Architecture',
-          textRect: PdfRect(x: 100.0, y: 200.0, width: 400.0, height: 300.0),
+          textRect: PdfRect(100, 500, 500, 200),
           capturedImagePath: './captures/p10_figure_2_1.png',
         );
         final json = marker.toJson();
@@ -608,7 +502,7 @@ void main() {
       });
 
       test('list of markers from different pages', () {
-        const markers = [
+        final markers = [
           PdfMarker(
             id: 'm1',
             pageNumber: 1,
