@@ -165,10 +165,10 @@ class NoteState extends _$NoteState {
     final currentNote = state.valueOrNull;
     if (currentNote == null) return;
 
-    // Create marker line in markdown format
+    // Create marker line in markdown format with ID
     final emoji = marker.color.emoji;
     final text = marker.selectedText ?? '';
-    final markerLine = '- $emoji P${marker.pageNumber}  $text';
+    final markerLine = '- $emoji P${marker.pageNumber}  $text <!-- id:${marker.id} -->';
 
     // Append marker line to content
     final newContent = currentNote.content.isEmpty
