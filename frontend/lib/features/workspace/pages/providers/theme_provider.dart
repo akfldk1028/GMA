@@ -24,10 +24,15 @@ class ThemeMode$ extends _$ThemeMode$ {
   @override
   ThemeMode build() {
     // Load theme mode from Hive synchronously
-    final box = Hive.box(_boxName);
-    final savedMode = box.get(_themeModeKey, defaultValue: 'light');
+    try {
+      final box = Hive.box(_boxName);
+      final savedMode = box.get(_themeModeKey, defaultValue: 'light');
 
-    return _parseThemeMode(savedMode as String);
+      return _parseThemeMode(savedMode as String);
+    } catch (e) {
+      debugPrint('Error loading theme mode from Hive: $e');
+      return ThemeMode.light;
+    }
   }
 
   /// Parse string to ThemeMode enum
@@ -61,8 +66,12 @@ class ThemeMode$ extends _$ThemeMode$ {
     state = mode;
 
     // Persist to Hive
-    final box = Hive.box(_boxName);
-    await box.put(_themeModeKey, _themeModeToString(mode));
+    try {
+      final box = Hive.box(_boxName);
+      await box.put(_themeModeKey, _themeModeToString(mode));
+    } catch (e) {
+      debugPrint('Error persisting theme mode to Hive: $e');
+    }
   }
 
   /// Toggle between light and dark theme
