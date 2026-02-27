@@ -247,14 +247,19 @@ class _MarkerEditModalState extends ConsumerState<MarkerEditModal>
     try {
       // Check if editing vs creating
       if (workspaceState.editingMarkerId != null) {
-        // EDIT MODE: Update existing marker by removing old and creating new
-        await notifier.removeMarker(workspaceState.editingMarkerId!);
-        await notifier.createMarker(
+        // EDIT MODE: Update existing marker using updateMarker
+        final existingMarker = workspaceState.markers.firstWhere(
+          (m) => m.id == workspaceState.editingMarkerId,
+        );
+
+        final updatedMarker = existingMarker.copyWith(
           pageNumber: pageNumber,
           color: _selectedColor,
           selectedText: workspaceState.pendingMarkerText,
           textRect: workspaceState.pendingMarkerTextRect,
         );
+
+        await notifier.updateMarker(updatedMarker);
 
         if (mounted) {
           ShadToaster.of(context).show(

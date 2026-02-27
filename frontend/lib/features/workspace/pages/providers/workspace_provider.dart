@@ -476,6 +476,29 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     ));
   }
 
+  /// Update an existing marker
+  /// Preserves the marker ID while updating other properties
+  Future<void> updateMarker(PdfMarker updatedMarker) async {
+    final currentState = state.valueOrNull;
+    if (currentState == null) {
+      throw Exception('Workspace state not initialized');
+    }
+
+    // Find and replace the marker with the same ID
+    final updatedMarkers = currentState.markers.map((m) {
+      return m.id == updatedMarker.id ? updatedMarker : m;
+    }).toList();
+
+    // Verify the marker was actually found and updated
+    if (!updatedMarkers.any((m) => m.id == updatedMarker.id)) {
+      throw ArgumentError('Marker not found: ${updatedMarker.id}');
+    }
+
+    state = AsyncData(
+      currentState.copyWith(markers: updatedMarkers),
+    );
+  }
+
   /// Remove a marker by ID
   Future<void> removeMarker(String markerId) async {
     final currentState = state.valueOrNull;

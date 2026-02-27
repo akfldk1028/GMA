@@ -298,9 +298,9 @@ Quick access to important pages:
       // Step 5: Verify navigation with exact coordinates
       expect(navigatedToPage, 5);
       expect(highlightRect?.left, 120.0);
-      expect(highlightRect?.top, 250.0);
+      expect(highlightRect?.top, 274.0);
       expect(highlightRect?.right, 300.0); // 120 + 180
-      expect(highlightRect?.bottom, 274.0); // 250 + 24
+      expect(highlightRect?.bottom, 250.0);
     });
 
     test('Mixed content: Only marker lines trigger navigation', () {

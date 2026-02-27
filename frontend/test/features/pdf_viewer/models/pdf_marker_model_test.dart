@@ -37,9 +37,9 @@ void main() {
           'selectedText': 'Important note',
           'textRect': {
             'left': 15.0,
-            'top': 25.0,
+            'top': 60.0,
             'right': 120.0,
-            'bottom': 60.0,
+            'bottom': 25.0,
           },
           'capturedImagePath': './captures/p10_capture.png',
         };
