@@ -17,6 +17,8 @@ import '../../../note_editor/pages/providers/note_editor_provider.dart';
 import '../../../pdf_viewer/drawing/models/drawing_model.dart';
 import '../../../ocr/ocr_service.dart';
 import '../../../ocr/pages/providers/ocr_provider.dart';
+import '../../../scrapnote/models/element_model.dart';
+import '../../../scrapnote/providers/element_store.dart';
 import '../../../scrapnote/providers/pdf_registry_provider.dart';
 import '../../models/pdf_marker_model.dart';
 import '../../models/workspace_state.dart';
@@ -273,6 +275,39 @@ class WorkspaceProvider extends _$WorkspaceProvider {
               pageNumber: pageNumber,
               text: selectedText ?? '',
             );
+      }
+    }
+
+    // Create ScrapElement alongside the marker for ScrapNote system
+    if (currentState.currentPdfPath != null) {
+      try {
+        final pdfId = await ref
+            .read(pdfRegistryProvProvider.notifier)
+            .register(currentState.currentPdfPath!);
+
+        final ElementType elementType;
+        if (capturedImagePath != null) {
+          elementType = ElementType.capture;
+        } else if (color == MarkerColor.pen) {
+          elementType = ElementType.drawing;
+        } else {
+          elementType = ElementType.highlight;
+        }
+
+        final element = ScrapElement(
+          id: marker.id,
+          pdfId: pdfId,
+          pageNumber: pageNumber,
+          type: elementType,
+          rect: textRect,
+          selectedText: selectedText,
+          imagePath: capturedImagePath,
+          createdAt: DateTime.now(),
+        );
+
+        ref.read(elementStoreProvider.notifier).add(element);
+      } catch (e) {
+        debugPrint('Failed to create ScrapElement: $e');
       }
     }
 
