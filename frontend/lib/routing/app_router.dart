@@ -10,7 +10,7 @@ import '../features/workspace/pages/screens/workspace_screen.dart';
 
 part 'app_router.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
   return GoRouter(
     initialLocation: '/workspace',

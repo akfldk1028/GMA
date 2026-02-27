@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
@@ -35,7 +36,7 @@ class NoteState extends _$NoteState {
   /// Loads a note from the file system.
   Future<Note> _loadNote(String noteId) async {
     try {
-      final notesDir = await ref.watch(notesRootDirectoryProvider.future);
+      final notesDir = await ref.read(notesRootDirectoryProvider.future);
       final noteFile = File('${notesDir.path}/$noteId.md');
 
       // Handle case: note file doesn't exist, create empty note
@@ -86,7 +87,9 @@ class NoteState extends _$NoteState {
         frontmatter: frontmatter,
         markers: markers,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Error loading note $noteId: $e');
+      debugPrint('Stack trace: $stackTrace');
       // If any error occurs, return empty note
       return Note(
         id: noteId,
@@ -113,7 +116,7 @@ class NoteState extends _$NoteState {
   /// Saves the note to the file system.
   Future<void> saveNote(Note note) async {
     try {
-      final notesDir = await ref.watch(notesRootDirectoryProvider.future);
+      final notesDir = await ref.read(notesRootDirectoryProvider.future);
       final noteFile = File('${notesDir.path}/${note.id}.md');
 
       // Generate frontmatter if present
@@ -139,6 +142,8 @@ class NoteState extends _$NoteState {
       // Update state
       state = AsyncData(note);
     } catch (e, stackTrace) {
+      debugPrint('Error saving note ${note.id}: $e');
+      debugPrint('Stack trace: $stackTrace');
       state = AsyncError(e, stackTrace);
     }
   }
@@ -184,7 +189,13 @@ class NoteState extends _$NoteState {
 /// Helper provider to check if a note exists.
 @riverpod
 Future<bool> noteExists(Ref ref, String noteId) async {
-  final notesDir = await ref.watch(notesRootDirectoryProvider.future);
-  final noteFile = File('${notesDir.path}/$noteId.md');
-  return await noteFile.exists();
+  try {
+    final notesDir = await ref.watch(notesRootDirectoryProvider.future);
+    final noteFile = File('${notesDir.path}/$noteId.md');
+    return await noteFile.exists();
+  } catch (e, stackTrace) {
+    debugPrint('Error checking if note exists $noteId: $e');
+    debugPrint('Stack trace: $stackTrace');
+    return false;
+  }
 }

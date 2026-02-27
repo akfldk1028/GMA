@@ -54,6 +54,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     _pdfController = PdfViewerController();
   }
 
+  @override
+  void dispose() {
+    // PdfViewerController doesn't have a dispose() method - managed by pdfrx
+    super.dispose();
+  }
+
   // ─── Text selection → modal flow ─────────────────────────
 
   /// New modal flow: text selection → open marker edit modal.
@@ -153,6 +159,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         }
         return;
       }
+
+      // Check mounted before updating PDF controller after async operation
+      if (!mounted) return;
 
       if (marker.textRect != null) {
         _pdfController.goToRectInsidePage(
