@@ -167,5 +167,6 @@ class MindmapCanvasPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(MindmapCanvasPainter oldDelegate) => true;
+  bool shouldRepaint(covariant MindmapCanvasPainter oldDelegate) =>
+      oldDelegate.root != root || oldDelegate.accentColor != accentColor;
 }

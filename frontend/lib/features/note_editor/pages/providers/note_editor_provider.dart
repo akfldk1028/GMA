@@ -52,8 +52,13 @@ class NoteEditor extends _$NoteEditor {
 
     // Cleanup when provider is disposed
     ref.onDispose(() {
-      _controller?.dispose();
-      _controller = null;
+      try {
+        _controller?.dispose();
+      } catch (e) {
+        debugPrint('Failed to dispose TextEditingController: $e');
+      } finally {
+        _controller = null;
+      }
     });
 
     return _controller;

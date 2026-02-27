@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart' show Rect;
 import 'package:path/path.dart' as path;
 import 'package:pdfrx/pdfrx.dart';
@@ -51,12 +52,21 @@ class CaptureService {
 
     // Convert PdfImage → dart:ui Image → PNG bytes
     final uiImage = await pdfImage.createImage();
-    pdfImage.dispose();
+    try {
+      pdfImage.dispose();
+    } catch (e) {
+      // Log but don't block processing
+      debugPrint('Failed to dispose pdfImage: $e');
+    }
 
     final byteData = await uiImage.toByteData(
       format: ui.ImageByteFormat.png,
     );
-    uiImage.dispose();
+    try {
+      uiImage.dispose();
+    } catch (e) {
+      debugPrint('Failed to dispose uiImage: $e');
+    }
 
     if (byteData == null) {
       throw Exception('Failed to encode image as PNG');
