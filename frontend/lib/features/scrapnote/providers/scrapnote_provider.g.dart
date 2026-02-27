@@ -6,10 +6,10 @@ part of 'scrapnote_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$scrapnoteProviderHash() => r'97231adf089b0f800a688e072088bf242e18f01c';
+String _$scrapnoteProviderHash() => r'3554b24a2b65766465e058b1883d7d7d9a96855c';
 
-/// ScrapNote provider managing element navigation and sidebar mode
-/// This is a stateless helper that delegates to workspace_provider
+/// ScrapNote provider managing element navigation and sidebar mode.
+/// Delegates to WorkspaceProvider for actual state changes.
 ///
 /// Copied from [ScrapnoteProvider].
 @ProviderFor(ScrapnoteProvider)

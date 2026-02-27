@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../note_editor/utils/markdown_extension.dart';
 import '../../scrapnote/providers/element_store.dart';
+import '../../scrapnote/providers/scrapnote_provider.dart';
 import '../../scrapnote/utils/element_ref_parser.dart';
 import '../models/block_definition.dart';
 import '../widgets/element_card.dart';
@@ -76,7 +77,14 @@ class _ScrapnoteContent extends ConsumerWidget {
           widgets.add(
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: ElementCard(element: element),
+              child: ElementCard(
+                element: element,
+                onTap: () {
+                  ref
+                      .read(scrapnoteProviderProvider.notifier)
+                      .navigateToElement(elementId);
+                },
+              ),
             ),
           );
         } else {

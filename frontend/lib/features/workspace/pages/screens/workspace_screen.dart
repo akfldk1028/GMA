@@ -143,6 +143,16 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         }
       }
 
+      // Try element navigation first (ScrapNote element ID)
+      final elementPage = await ref
+          .read(workspaceProviderProvider.notifier)
+          .navigateToElement(markerId);
+      if (elementPage != null) {
+        if (!mounted) return;
+        _pdfController.goToPage(pageNumber: elementPage);
+        return;
+      }
+
       // Handle UUID-based marker ID
       final marker = await ref
           .read(workspaceProviderProvider.notifier)
