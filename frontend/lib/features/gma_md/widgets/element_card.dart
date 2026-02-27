@@ -5,35 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 import 'package:shadcn_ui/shadcn_ui.dart';
 
-// TODO: Replace with actual imports from spec 023 when merged
-// ignore_for_file: unused_element, unused_element_parameter, library_private_types_in_public_api
-
-/// Temporary stub types - will be replaced by actual implementations from spec 023
-/// Element type enum
-enum _ElementType {
-  highlight,
-  capture,
-  drawing,
-}
-
-/// Stub ScrapElement model
-class _ScrapElement {
-  final String id;
-  final _ElementType type;
-  final String pdfId;
-  final int pageNumber;
-  final String? selectedText;
-  final String? imagePath;
-
-  const _ScrapElement({
-    required this.id,
-    required this.type,
-    required this.pdfId,
-    required this.pageNumber,
-    this.selectedText,
-    this.imagePath,
-  });
-}
+import '../../scrapnote/models/element_model.dart';
 
 /// Stub PdfRegistry - TODO: Replace with actual from spec 022
 class _PdfRegistry {
@@ -67,29 +39,29 @@ class ElementCard extends ConsumerWidget {
   });
 
   /// The scrap element to display
-  final _ScrapElement element;
+  final ScrapElement element;
 
   /// Callback when the card is tapped
   final VoidCallback? onTap;
 
-  IconData _getIconForType(_ElementType type) {
+  IconData _getIconForType(ElementType type) {
     switch (type) {
-      case _ElementType.highlight:
+      case ElementType.highlight:
         return Icons.highlight;
-      case _ElementType.capture:
+      case ElementType.capture:
         return Icons.image;
-      case _ElementType.drawing:
+      case ElementType.drawing:
         return Icons.draw;
     }
   }
 
-  Color _getColorForType(_ElementType type) {
+  Color _getColorForType(ElementType type) {
     switch (type) {
-      case _ElementType.highlight:
+      case ElementType.highlight:
         return const Color(0xFFF59E0B); // yellow
-      case _ElementType.capture:
+      case ElementType.capture:
         return const Color(0xFF3B82F6); // blue
-      case _ElementType.drawing:
+      case ElementType.drawing:
         return const Color(0xFF8B5CF6); // purple
     }
   }

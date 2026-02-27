@@ -2,10 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../note_editor/utils/markdown_extension.dart';
+import '../../scrapnote/models/element_model.dart';
+import '../../scrapnote/utils/element_ref_parser.dart';
 import '../models/block_definition.dart';
-import '../stubs/element_stubs.dart';
 import '../widgets/element_card.dart';
 import '_block_base.dart';
+
+// TODO: Replace with actual ElementStore from spec 023
+// Temporary stub provider until ElementStore is implemented
+class _ElementStore {
+  ScrapElement? getElementById(String id) => null;
+}
+
+final elementStoreProvider = Provider<_ElementStore>((_) => _ElementStore());
 
 /// ScrapNote block definition.
 /// Parses @el lines and renders ElementCard widgets for each element reference.
@@ -67,7 +76,7 @@ class _ScrapnoteContent extends ConsumerWidget {
     final widgets = <Widget>[];
 
     for (final line in lines) {
-      final elementId = parseElementRef(line);
+      final elementId = ElementRefParser.parse(line);
 
       if (elementId != null) {
         // This is an @el reference
