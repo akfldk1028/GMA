@@ -10,10 +10,15 @@ import 'markdown_extension.dart';
 ///
 /// Merges shadcn_ui theme styles with any [themeConfigs] from registered
 /// [MarkdownExtension] instances.
+///
+/// [baseDir] - Optional base directory for resolving relative image paths.
+/// If provided, relative paths (e.g., `./images/photo.png`) will be resolved
+/// against this directory.
 MarkdownConfig buildMarkdownConfig(
   BuildContext context, {
   List<MarkdownExtension> extensions = const [],
   Color? textColor,
+  String? baseDir,
 }) {
   final theme = ShadTheme.of(context);
   final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -58,7 +63,7 @@ MarkdownConfig buildMarkdownConfig(
     ),
     // Extension-provided theme configs (e.g., WikiLinkConfig styling)
     ...extensionConfigs,
-    // Custom image handler: resolve file:// URIs to Image.file()
+    // Custom image handler: resolve file:// URIs and relative paths to Image.file()
     ImgConfig(builder: (url, attributes) {
       final alt = attributes['alt'] ?? '';
       Widget errorWidget(Object error) => Padding(
@@ -74,6 +79,7 @@ MarkdownConfig buildMarkdownConfig(
             ),
           );
 
+      // Handle absolute file:// URIs
       if (url.startsWith('file:///')) {
         final filePath = Uri.parse(url).toFilePath();
         return Image.file(
@@ -82,6 +88,8 @@ MarkdownConfig buildMarkdownConfig(
           errorBuilder: (ctx, error, stack) => errorWidget(error),
         );
       }
+
+      // Handle HTTP(S) URLs
       if (url.startsWith('http')) {
         return Image.network(
           url,
@@ -89,7 +97,21 @@ MarkdownConfig buildMarkdownConfig(
           errorBuilder: (ctx, error, stack) => errorWidget(error),
         );
       }
-      // Fallback for other paths (asset or broken)
+
+      // Handle relative paths if baseDir is provided
+      // Relative paths don't start with '/', 'http', or 'file://'
+      if (baseDir != null && !url.startsWith('/')) {
+        // Normalize path: remove leading './' if present
+        final normalizedUrl = url.startsWith('./') ? url.substring(2) : url;
+        final absolutePath = '$baseDir/$normalizedUrl';
+        return Image.file(
+          File(absolutePath),
+          fit: BoxFit.contain,
+          errorBuilder: (ctx, error, stack) => errorWidget(error),
+        );
+      }
+
+      // Fallback: try as asset or show error
       return Image.asset(
         url,
         fit: BoxFit.contain,
