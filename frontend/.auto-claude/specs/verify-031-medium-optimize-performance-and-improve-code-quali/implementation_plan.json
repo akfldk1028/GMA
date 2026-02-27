@@ -117,7 +117,9 @@
             "instructions": "Read app_theme.dart and verify textTheme is extracted to avoid duplication between light and dark themes. Check that lines 10-16 and 22-28 no longer have identical textTheme definitions."
           },
           "expected_output": "Document confirming: textTheme is defined once and reused, no duplication",
-          "status": "pending"
+          "status": "completed",
+          "notes": "Verified and fixed duplicate textTheme in app_theme.dart. Extracted textTheme to a private getter _textTheme that is now reused in both light and dark themes, eliminating duplication between lines 10-16 and 22-28.",
+          "updated_at": "2026-02-27T07:00:58.243168+00:00"
         },
         {
           "id": "subtask-1-7",
@@ -340,5 +342,5 @@
     }
   },
   "qa_signoff": null,
-  "last_updated": "2026-02-27T06:59:47.904051+00:00"
+  "last_updated": "2026-02-27T07:00:58.243168+00:00"
 }
