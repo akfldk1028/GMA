@@ -105,7 +105,7 @@ Future<List<NoteMetadata>> noteList(NoteListRef ref) async {
       return filteredNotes;
     },
     loading: () => <NoteMetadata>[],
-    error: (_, __) => <NoteMetadata>[],
+    error: (error, stackTrace) => <NoteMetadata>[],
   );
 }
 

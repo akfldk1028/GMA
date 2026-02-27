@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../note_editor/utils/markdown_extension.dart';
 import '../models/block_definition.dart';
-import '../stubs/element_stubs.dart';
-import '../widgets/element_card.dart';
+// TODO: Implement element store and element card functionality
+// import '../stubs/element_stubs.dart';
+// import '../widgets/element_card.dart';
 import '_block_base.dart';
 
 /// ScrapNote block definition.
@@ -62,37 +63,18 @@ class _ScrapnoteContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final store = ref.watch(elementStoreProvider);
+    // TODO: Implement element store provider and element parsing
+    // final store = ref.watch(elementStoreProvider);
     final lines = content.split('\n');
     final widgets = <Widget>[];
 
     for (final line in lines) {
-      final elementId = parseElementRef(line);
+      // TODO: Implement parseElementRef function
+      // final elementId = parseElementRef(line);
 
-      if (elementId != null) {
-        // This is an @el reference
-        final element = store.getElementById(elementId);
-
-        if (element != null) {
-          // Element found - render ElementCard
-          widgets.add(
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: ElementCard(
-                element: element,
-                onTap: () {
-                  // TODO: Navigation to PDF page (spec 025)
-                },
-              ),
-            ),
-          );
-        } else {
-          // Element not found - show placeholder
-          widgets.add(
-            _ElementNotFoundPlaceholder(elementId: elementId),
-          );
-        }
-      } else if (line.trim().isNotEmpty) {
+      // TODO: Implement element reference parsing and ElementCard rendering
+      // For now, just render text lines
+      if (line.trim().isNotEmpty) {
         // Regular text line
         widgets.add(
           Padding(
@@ -124,46 +106,5 @@ class _ScrapnoteContent extends ConsumerWidget {
   }
 }
 
-/// Placeholder widget shown when an element is not found.
-class _ElementNotFoundPlaceholder extends StatelessWidget {
-  const _ElementNotFoundPlaceholder({required this.elementId});
-
-  final String elementId;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.05),
-        border: Border.all(
-          color: Colors.red.withValues(alpha: 0.3),
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 16,
-            color: Colors.red.shade700,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Element not found: @el $elementId',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.red.shade700,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// TODO: Placeholder widget for when element is not found
+// Will be implemented when element store is ready

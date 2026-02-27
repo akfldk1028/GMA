@@ -148,6 +148,8 @@ class WorkspaceHeaderV2 extends ConsumerWidget {
       ],
     ).then((value) {
       if (value == null) return;
+      if (!context.mounted) return;
+
       switch (value) {
         case 'open_pdf':
           _handleOpenPdf(context, ref);

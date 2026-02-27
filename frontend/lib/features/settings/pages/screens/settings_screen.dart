@@ -286,7 +286,7 @@ class _SettingsRow extends StatelessWidget {
               ],
             ),
           ),
-          if (trailing != null) trailing!,
+          if (trailing != null) ...[trailing!],
         ],
       ),
     );
