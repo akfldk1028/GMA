@@ -69,7 +69,7 @@ Future<List<NoteMetadata>> noteList(NoteListRef ref) async {
 
   return notesAsync.when(
     data: (notes) {
-      var filteredNotes = notes;
+      var filteredNotes = notes.toList();
 
       // Apply search filter
       if (filterState.searchQuery.isNotEmpty) {
