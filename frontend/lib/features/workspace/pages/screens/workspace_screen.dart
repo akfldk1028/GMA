@@ -7,6 +7,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../pdf_viewer/drawing/pages/widgets/drawing_toolbar.dart';
 import '../../../pdf_viewer/pages/screens/pdf_viewer_screen.dart';
 import '../../../pdf_viewer/pages/widgets/marker_pills_strip.dart';
+import '../../../scrapnote/pages/widgets/element_navigator_drawer.dart';
 import '../../models/pdf_marker_model.dart';
 import '../../models/workspace_state.dart';
 import '../providers/workspace_provider.dart';
@@ -339,14 +340,26 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               ],
             ),
 
-            // ── Overlay: File browser drawer ──
-            if (state.isFileBrowserOpen)
+            // ── Overlay: Sidebar drawers (file browser or element navigator) ──
+            if (state.isFileBrowserOpen &&
+                state.sidebarMode == SidebarMode.fileBrowser)
               FileBrowserDrawer(
                 onClose: () => notifier.closeFileBrowser(),
                 onNoteSelected: (note) {
                   notifier.loadNote(note.id);
                   if (note.hasLinkedPdf) {
                     notifier.loadPdf(note.linkedPdfPath!);
+                  }
+                },
+              ),
+            if (state.isFileBrowserOpen &&
+                state.sidebarMode == SidebarMode.elementNavigator)
+              ElementNavigatorDrawer(
+                onClose: () => notifier.closeFileBrowser(),
+                onElementTap: (element) async {
+                  final page = await notifier.navigateToElement(element.id);
+                  if (page != null && mounted) {
+                    _pdfController.goToPage(pageNumber: page);
                   }
                 },
               ),

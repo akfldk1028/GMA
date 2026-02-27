@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
+import '../../models/workspace_state.dart';
 import '../providers/theme_provider.dart';
 import '../providers/workspace_provider.dart';
 
@@ -86,6 +87,19 @@ class WorkspaceHeaderV2 extends ConsumerWidget {
               onPressed: onToggleFileBrowser,
               size: ShadButtonSize.sm,
               child: const Icon(Icons.menu, size: 20),
+            ),
+            // Sidebar mode toggle (file browser ↔ element navigator)
+            ShadButton.ghost(
+              onPressed: () => ref
+                  .read(workspaceProviderProvider.notifier)
+                  .toggleSidebarMode(),
+              size: ShadButtonSize.sm,
+              child: Icon(
+                workspaceState?.sidebarMode == SidebarMode.elementNavigator
+                    ? Icons.collections_bookmark
+                    : Icons.folder_open,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 8),
 
