@@ -160,6 +160,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         return;
       }
 
+      // Check mounted before updating PDF controller after async operation
+      if (!mounted) return;
+
       if (marker.textRect != null) {
         _pdfController.goToRectInsidePage(
           pageNumber: marker.pageNumber,
