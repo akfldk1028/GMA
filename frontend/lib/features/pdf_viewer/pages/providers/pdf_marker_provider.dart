@@ -4,7 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../constants/marker_colors.dart';
-import '../../models/pdf_marker_model.dart';
+import '../../../workspace/models/pdf_marker_model.dart';
 
 part 'pdf_marker_provider.g.dart';
 
