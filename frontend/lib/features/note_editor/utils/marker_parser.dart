@@ -40,12 +40,12 @@ class MarkerParser {
 
   /// Regex pattern for marker lines:
   /// - Starts with `- ` (list item)
-  /// - Followed by emoji (🔴🟡🟢🔵🟣) using alternation (not character class)
+  /// - Followed by emoji (🔴🟡🟢🔵🟣🖊️) using alternation (not character class)
   /// - Space and page number `P{number}`
   /// - Optional: two spaces and text content
   /// Note: Using alternation instead of character class because emojis are multi-byte unicode
   static final _markerLineRegex = RegExp(
-    r'^-\s+(🔴|🟡|🟢|🔵|🟣)\s+P(\d+)(?:\s{2}(.+))?$',
+    r'^-\s+(🔴|🟡|🟢|🔵|🟣|🖊️)\s+P(\d+)(?:\s{2}(.+))?$',
   );
 
   /// Regex pattern for image embed:
