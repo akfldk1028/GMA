@@ -476,6 +476,39 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     ));
   }
 
+  /// Update an existing marker
+  /// This is called when user edits a marker in the marker edit modal
+  Future<void> updateMarker({
+    required String markerId,
+    required MarkerColor color,
+  }) async {
+    final currentState = state.valueOrNull;
+    if (currentState == null) {
+      throw Exception('Workspace state not initialized');
+    }
+
+    // Find the marker by ID
+    final markerIndex = currentState.markers.indexWhere((m) => m.id == markerId);
+    if (markerIndex == -1) {
+      throw ArgumentError('Marker not found: $markerId');
+    }
+
+    final existingMarker = currentState.markers[markerIndex];
+
+    // Create updated marker with new color but same ID
+    final updatedMarker = existingMarker.copyWith(color: color);
+
+    // Update markers list
+    final updatedMarkers = List<PdfMarker>.from(currentState.markers);
+    updatedMarkers[markerIndex] = updatedMarker;
+
+    state = AsyncData(
+      currentState.copyWith(markers: updatedMarkers),
+    );
+
+    // TODO: Update marker line in note editor when updateMarker method is available
+  }
+
   /// Remove a marker by ID
   Future<void> removeMarker(String markerId) async {
     final currentState = state.valueOrNull;
