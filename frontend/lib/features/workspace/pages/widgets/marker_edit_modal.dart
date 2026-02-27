@@ -217,7 +217,7 @@ class _MarkerEditModalState extends ConsumerState<MarkerEditModal>
                           ),
                           const SizedBox(width: 8),
                           ShadButton(
-                            onPressed: () => _confirm(context, ref),
+                            onPressed: () => _confirm(ref),
                             child: const Text('Confirm'),
                           ),
                         ],
@@ -233,7 +233,7 @@ class _MarkerEditModalState extends ConsumerState<MarkerEditModal>
     );
   }
 
-  Future<void> _confirm(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirm(WidgetRef ref) async {
     final notifier = ref.read(workspaceProviderProvider.notifier);
     final workspaceState = ref.read(workspaceProviderProvider).valueOrNull;
     if (workspaceState == null) return;

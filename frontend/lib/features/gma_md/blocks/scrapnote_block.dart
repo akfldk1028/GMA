@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../note_editor/utils/markdown_extension.dart';
+import '../../scrapnote/utils/element_ref_parser.dart';
 import '../models/block_definition.dart';
-import '../stubs/element_stubs.dart';
-import '../widgets/element_card.dart';
 import '_block_base.dart';
 
 /// ScrapNote block definition.
@@ -62,36 +61,23 @@ class _ScrapnoteContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final store = ref.watch(elementStoreProvider);
+    // TODO: Implement once elementStoreProvider is available
+    // This requires ElementStore to be fully implemented with:
+    // - Provider definition for elementStoreProvider
+    // - ElementStore.getElementById() method
+    // See: lib/features/scrapnote/providers/scrapnote_provider.dart
+
     final lines = content.split('\n');
     final widgets = <Widget>[];
 
     for (final line in lines) {
-      final elementId = parseElementRef(line);
+      final elementId = ElementRefParser.parse(line);
 
       if (elementId != null) {
-        // This is an @el reference
-        final element = store.getElementById(elementId);
-
-        if (element != null) {
-          // Element found - render ElementCard
-          widgets.add(
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: ElementCard(
-                element: element,
-                onTap: () {
-                  // TODO: Navigation to PDF page (spec 025)
-                },
-              ),
-            ),
-          );
-        } else {
-          // Element not found - show placeholder
-          widgets.add(
-            _ElementNotFoundPlaceholder(elementId: elementId),
-          );
-        }
+        // This is an @el reference - show placeholder until ElementStore is implemented
+        widgets.add(
+          _ElementNotFoundPlaceholder(elementId: elementId),
+        );
       } else if (line.trim().isNotEmpty) {
         // Regular text line
         widgets.add(

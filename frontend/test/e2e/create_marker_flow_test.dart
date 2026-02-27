@@ -410,7 +410,7 @@ class MarkerCreationTestScreen extends StatefulWidget {
 }
 
 class _MarkerCreationTestScreenState extends State<MarkerCreationTestScreen> {
-  bool _pdfLoaded = true;
+  final bool _pdfLoaded = true;
   bool _textSelected = false;
   bool _markerCreated = false;
   MarkerColor _selectedColor = MarkerColor.red;
