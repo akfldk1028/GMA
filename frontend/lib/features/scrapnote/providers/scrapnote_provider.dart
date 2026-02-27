@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-// TODO: Import dependencies when available (subtask-1-3 and previous specs)
+// TODO: Import dependencies when ScrapNote feature is fully implemented
+// These will be provided by the future ScrapNote workspace integration:
 // import '../../workspace/models/workspace_state.dart';
 // import '../../workspace/pages/providers/workspace_provider.dart';
 // import 'element_store.dart';
@@ -26,7 +27,13 @@ class ScrapnoteProvider extends _$ScrapnoteProvider {
   /// Returns the page number to navigate to, or null if element not found.
   Future<int?> navigateToElement(String elementId) async {
     try {
-      // TODO: Once element_store and pdf_registry are implemented, use:
+      // TODO: Implement once ElementStore and PDFRegistry are available
+      // This requires:
+      // 1. ElementStore provider to look up element by ID
+      // 2. PDFRegistry to resolve PDF path from element.pdfId
+      // 3. WorkspaceProvider.loadPdf() method for PDF loading
+      //
+      // Future implementation:
       // final elementStore = ref.read(elementStoreProvider);
       // final element = elementStore.getElementById(elementId);
       // if (element == null) return null;
@@ -54,11 +61,15 @@ class ScrapnoteProvider extends _$ScrapnoteProvider {
   }
 
   /// Toggle sidebar mode between fileBrowser and elementNavigator
-  /// This method will call workspace_provider.toggleSidebarMode() once
-  /// that method is added in subtask-1-3
+  /// This method will delegate to WorkspaceProvider once implemented
   Future<void> toggleSidebarMode() async {
     try {
-      // TODO: Once workspace_provider.toggleSidebarMode() is added (subtask-1-3), use:
+      // TODO: Implement once WorkspaceProvider.toggleSidebarMode() is available
+      // This requires WorkspaceProvider to support toggling between:
+      // - fileBrowser mode (file tree navigation)
+      // - elementNavigator mode (captured element navigation)
+      //
+      // Future implementation:
       // final workspaceProvider = ref.read(workspaceProviderProvider.notifier);
       // await workspaceProvider.toggleSidebarMode();
 
