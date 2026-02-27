@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../models/note_metadata_model.dart';
@@ -62,7 +63,7 @@ class NoteListFilter extends _$NoteListFilter {
 
 /// Provider that returns filtered and sorted note list
 @riverpod
-Future<List<NoteMetadata>> noteList(NoteListRef ref) async {
+Future<List<NoteMetadata>> noteList(Ref ref) async {
   // Watch both the file manager and filter state
   final notesAsync = ref.watch(fileManagerProvider);
   final filterState = ref.watch(noteListFilterProvider);
@@ -105,27 +106,27 @@ Future<List<NoteMetadata>> noteList(NoteListRef ref) async {
       return filteredNotes;
     },
     loading: () => <NoteMetadata>[],
-    error: (_, __) => <NoteMetadata>[],
+    error: (_, _) => <NoteMetadata>[],
   );
 }
 
 /// Helper provider to check if notes list is loading
 @riverpod
-bool isNotesLoading(IsNotesLoadingRef ref) {
+bool isNotesLoading(Ref ref) {
   final notesAsync = ref.watch(fileManagerProvider);
   return notesAsync.isLoading;
 }
 
 /// Helper provider to get notes count
 @riverpod
-Future<int> notesCount(NotesCountRef ref) async {
+Future<int> notesCount(Ref ref) async {
   final notes = await ref.watch(noteListProvider.future);
   return notes.length;
 }
 
 /// Helper provider to check if search is active
 @riverpod
-bool isSearchActive(IsSearchActiveRef ref) {
+bool isSearchActive(Ref ref) {
   final filterState = ref.watch(noteListFilterProvider);
   return filterState.searchQuery.isNotEmpty;
 }

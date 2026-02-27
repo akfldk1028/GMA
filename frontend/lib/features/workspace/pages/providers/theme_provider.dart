@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -80,7 +81,7 @@ class ThemeMode$ extends _$ThemeMode$ {
 
 /// Helper provider to check if dark theme is active
 @riverpod
-bool isDarkTheme(IsDarkThemeRef ref) {
+bool isDarkTheme(Ref ref) {
   final themeMode = ref.watch(themeMode$Provider);
   return themeMode == ThemeMode.dark;
 }

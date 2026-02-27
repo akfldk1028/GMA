@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -78,14 +79,14 @@ class PdfDocument extends _$PdfDocument {
 
 /// Helper provider to check if a document is loaded.
 @riverpod
-bool isPdfLoaded(IsPdfLoadedRef ref) {
+bool isPdfLoaded(Ref ref) {
   final docState = ref.watch(pdfDocumentProvider);
   return docState.documentRef != null;
 }
 
 /// Helper provider to get the current page number.
 @riverpod
-int? currentPdfPage(CurrentPdfPageRef ref) {
+int? currentPdfPage(Ref ref) {
   final docState = ref.watch(pdfDocumentProvider);
   return docState.controller?.pageNumber;
 }

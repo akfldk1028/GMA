@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path/path.dart' as p;
 import 'package:pdfrx/pdfrx.dart';
@@ -508,21 +509,21 @@ class WorkspaceProvider extends _$WorkspaceProvider {
 
 /// Helper provider to check if a PDF is currently loaded
 @riverpod
-bool isPdfLoaded(IsPdfLoadedRef ref) {
+bool isPdfLoaded(Ref ref) {
   final workspaceState = ref.watch(workspaceProviderProvider);
   return workspaceState.valueOrNull?.currentPdfPath != null;
 }
 
 /// Helper provider to check if a note is currently loaded
 @riverpod
-bool isNoteLoaded(IsNoteLoadedRef ref) {
+bool isNoteLoaded(Ref ref) {
   final workspaceState = ref.watch(workspaceProviderProvider);
   return workspaceState.valueOrNull?.currentNoteId != null;
 }
 
 /// Helper provider to get current markers
 @riverpod
-List<PdfMarker> currentMarkers(CurrentMarkersRef ref) {
+List<PdfMarker> currentMarkers(Ref ref) {
   final workspaceState = ref.watch(workspaceProviderProvider);
   return workspaceState.valueOrNull?.markers ?? [];
 }

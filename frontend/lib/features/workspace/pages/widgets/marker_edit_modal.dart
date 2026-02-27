@@ -252,25 +252,25 @@ class _MarkerEditModalState extends ConsumerState<MarkerEditModal>
         textRect: workspaceState.pendingMarkerTextRect,
       );
 
-      if (mounted) {
-        ShadToaster.of(context).show(
-          ShadToast(
-            title: const Text('Marker Added'),
-            description: Text(
-              '${_selectedColor.emoji} P$pageNumber added to note',
-            ),
+      if (!mounted) return;
+      // ignore: use_build_context_synchronously
+      ShadToaster.of(context).show(
+        ShadToast(
+          title: const Text('Marker Added'),
+          description: Text(
+            '${_selectedColor.emoji} P$pageNumber added to note',
           ),
-        );
-      }
+        ),
+      );
     } catch (e) {
-      if (mounted) {
-        ShadToaster.of(context).show(
-          ShadToast.destructive(
-            title: const Text('Error'),
-            description: Text('Failed to create marker: $e'),
-          ),
-        );
-      }
+      if (!mounted) return;
+      // ignore: use_build_context_synchronously
+      ShadToaster.of(context).show(
+        ShadToast.destructive(
+          title: const Text('Error'),
+          description: Text('Failed to create marker: $e'),
+        ),
+      );
     }
 
     _close();
