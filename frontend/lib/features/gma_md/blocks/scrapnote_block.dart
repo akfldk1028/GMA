@@ -126,7 +126,7 @@ class _ScrapnoteContent extends ConsumerWidget {
   }
 }
 
-/// Placeholder widget shown when an element is not found.
+/// Placeholder widget shown when an element ID is referenced but not found in the store.
 class _ElementNotFoundPlaceholder extends StatelessWidget {
   const _ElementNotFoundPlaceholder({required this.elementId});
 
@@ -134,37 +134,31 @@ class _ElementNotFoundPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.05),
-        border: Border.all(
-          color: Colors.red.withValues(alpha: 0.3),
-          width: 1,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.orange.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
         ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 16,
-            color: Colors.red.shade700,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Element not found: @el $elementId',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.red.shade700,
-                fontFamily: 'monospace',
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber, size: 16, color: Colors.orange),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Element not found: $elementId',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.orange,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
