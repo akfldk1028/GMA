@@ -6,7 +6,7 @@ part of 'pdf_document_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$isPdfLoadedHash() => r'0aadfe4c21e173b964530657fbde022ab0cd5442';
+String _$isPdfLoadedHash() => r'155534d3a6f6d0f5362baa913c2b3fc67005a0de';
 
 /// Helper provider to check if a document is loaded.
 ///
@@ -25,7 +25,7 @@ final isPdfLoadedProvider = AutoDisposeProvider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef IsPdfLoadedRef = AutoDisposeProviderRef<bool>;
-String _$currentPdfPageHash() => r'082dd99b891689bc86396d384e26369fdcd666d3';
+String _$currentPdfPageHash() => r'62e1af8803535073ff24a3f29942d93a415146fe';
 
 /// Helper provider to get the current page number.
 ///

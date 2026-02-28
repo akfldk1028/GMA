@@ -7,7 +7,7 @@ part of 'file_system_provider.dart';
 // **************************************************************************
 
 String _$notesRootDirectoryHash() =>
-    r'09ceb155a5b01d3f265744e6d218db18b9457cc0';
+    r'36d54e44bba9c2d0e4130268e62bb0ec7d48fe5f';
 
 /// See also [notesRootDirectory].
 @ProviderFor(notesRootDirectory)
@@ -25,7 +25,7 @@ final notesRootDirectoryProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef NotesRootDirectoryRef = AutoDisposeFutureProviderRef<Directory>;
-String _$assetsDirectoryHash() => r'11edae3cf00f96b7b9684a6cdb4f19a86815051c';
+String _$assetsDirectoryHash() => r'6331f7ac36fbfd51dbfa0e9734ad6f8cdc9a9cda';
 
 /// See also [assetsDirectory].
 @ProviderFor(assetsDirectory)
@@ -42,7 +42,7 @@ final assetsDirectoryProvider = AutoDisposeFutureProvider<Directory>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AssetsDirectoryRef = AutoDisposeFutureProviderRef<Directory>;
-String _$capturesDirectoryHash() => r'ca3d6db4b875b4c41498f6973cee023caa9e64a9';
+String _$capturesDirectoryHash() => r'95dff47698c2b5b33b65d79bbf697b3b4ddd0cd0';
 
 /// See also [capturesDirectory].
 @ProviderFor(capturesDirectory)

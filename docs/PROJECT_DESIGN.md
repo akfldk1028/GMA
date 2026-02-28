@@ -558,7 +558,120 @@ pdfrx가 내부적으로 변환 처리
 
 ---
 
-## 11. 개발 우선순위
+## 11. ScrapNote 기획 (핵심 신규 기능)
+
+### 11.1 개념
+
+ScrapNote는 여러 PDF에서 수집한 하이라이트/필기를 하나의 노트로 모으는 **gma_md 블록 타입**이다.
+
+기존 블록(`:::concept`, `:::theorem`)이 "내용을 렌더링"하는 역할이라면,
+`:::scrapnote`는 **PDF element를 수집·링크·네비게이션**하는 역할.
+
+```
+기존:  Note ──1:1── PDF ──contains── Marker (노트 텍스트에 임베드)
+신규:  Element (독립 엔티티) ──N:M── ScrapNote (gma_md 블록)
+```
+
+### 11.2 Element (핵심 데이터 단위)
+
+PDF에서 하이라이트하거나 필기한 것 = **하나의 Element**.
+
+```
+Element {
+  id:          고유 ID (UUID)
+  pdfId:       PDF 고유 ID (파일명 변경돼도 유지)
+  pageNumber:  페이지 번호
+  type:        highlight | drawing
+  rect:        PDF 좌표 (PdfRect, 하이라이트 영역)
+  strokes:     필기 스트로크 데이터 (드로잉인 경우)
+  selectedText: 발췌 텍스트 (하이라이트인 경우)
+  imagePath:   캡처/필기 이미지 경로
+  createdAt:   생성 시각
+}
+```
+
+**특징:**
+- 독립 엔티티로 별도 저장 (노트 마크다운에 임베드 X)
+- 하나의 Element가 **여러 ScrapNote에 소속** 가능 (N:M)
+- **PDF 고유 ID** 기반 연결 → 파일명 변경돼도 링크 안 깨짐
+
+### 11.3 ScrapNote 문법 (`:::scrapnote`)
+
+```markdown
+::: scrapnote 통계정리
+@el e001   <!-- PDF1:P3 하이라이트 — "중심극한정리는..." -->
+@el e002   <!-- PDF1:P5 필기 이미지 -->
+@el e003   <!-- PDF2:P12 하이라이트 — "표본분산의 정의..." -->
+:::
+```
+
+- `:::scrapnote [제목]` 으로 블록 선언
+- 내부에 `@el [elementId]` 로 element 참조
+- 같은 element ID가 여러 scrapnote 블록에 나올 수 있음 (N:M)
+- 순서 = 작성 순서 (사용자가 하이라이트/필기한 순)
+
+### 11.4 유저 플로우
+
+```
+1. PDF1 열고 중요 문장 하이라이트
+   → Element A 자동 생성 → 현재 ScrapNote에 순서대로 추가
+
+2. PDF2 열고 그림 위에 필기
+   → Element B 자동 생성 → 같은 ScrapNote에 추가
+
+3. "통계정리" ScrapNote 클릭
+   → 사이드바에 Element A, B 목록이 쫙 나열
+
+4. Element A 클릭
+   → PDF1의 P3 페이지로 이동 (zoom 레벨 유지, 페이지만 이동)
+
+5. Element A를 "기말고사" ScrapNote에도 추가
+   → 같은 Element가 2개 ScrapNote에 존재
+
+6. PDF1 파일명 변경
+   → 고유 ID 기반이라 링크 안 깨짐
+```
+
+### 11.5 레이아웃 변경
+
+```
+┌──────────────────┬──────────────┬────────────────────┐
+│ ScrapNote:통계정리│  PDF Viewer  │  Markdown Editor   │
+│                  │              │                    │
+│ 🔴 PDF1:P3 텍스트│  ◄── 클릭시  │  ::: scrapnote     │
+│ 🟡 PDF1:P5 [필기]│  해당 페이지  │  통계정리           │
+│ 🔵 PDF2:P12 텍스트│  로 이동     │  @el e001          │
+│ ✏️ PDF2:P8 [필기]│  (zoom 유지) │  @el e002          │
+│                  │              │  :::               │
+└──────────────────┴──────────────┴────────────────────┘
+```
+
+- **왼쪽 사이드바** = 현재 ScrapNote의 element 목록 (네비게이터)
+- **가운데 PDF** = element 클릭 시 해당 페이지로 이동 (zoom 유지, page만 변경)
+- **오른쪽 에디터** = `:::scrapnote` 문법으로 element들이 노트 형태로 렌더링
+
+### 11.6 기존 시스템 대비 변경점
+
+| 항목 | 현재 | ScrapNote |
+|------|------|-----------|
+| PDF 연결 | Note 1:1 PDF | **ScrapNote : N개 PDF** |
+| 마커 저장 | 노트 마크다운 텍스트 (`🔴 P3 텍스트...`) | **Element = 독립 엔티티** (별도 저장) |
+| 소속 | 마커는 1개 노트에만 | **Element는 여러 ScrapNote에 소속 (N:M)** |
+| PDF 식별 | 파일 경로 | **PDF 고유 ID** (파일명 변경 안전) |
+| 네비게이션 | 마커 클릭 → zoom to rect | **zoom 유지 + page만 이동** |
+
+### 11.7 구현 범위 (예상)
+
+- **gma_md 블록:** `blocks/scrapnote_block.dart` + `block_registry.dart`에 등록
+- **Element 모델:** 독립 Freezed 모델 + 별도 저장소 (Hive 또는 JSON)
+- **PDF 고유 ID 시스템:** PDF 등록 시 UUID 부여, 경로 변경 추적
+- **사이드바 모드:** 파일 트리 ↔ Element 네비게이터 전환
+- **PDF 네비게이션:** zoom 유지 + 페이지만 이동하는 새 네비게이션 모드
+- **N:M 관계 관리:** Element ↔ ScrapNote 매핑 저장
+
+---
+
+## 12. 개발 우선순위
 
 ### Phase 1: 코어 (MVP)
 1. ✅ Flutter 프로젝트 초기 셋업

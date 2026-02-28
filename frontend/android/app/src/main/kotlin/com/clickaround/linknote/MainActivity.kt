@@ -1,4 +1,4 @@
-package com.gma.gma_frontend
+package com.clickaround.linknote
 
 import io.flutter.embedding.android.FlutterActivity
 

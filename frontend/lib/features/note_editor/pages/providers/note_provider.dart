@@ -88,9 +88,9 @@ class NoteState extends _$NoteState {
         markers: markers,
       );
     } catch (e, stackTrace) {
+      // If any error occurs, log it and return empty note
       debugPrint('Error loading note $noteId: $e');
       debugPrint('Stack trace: $stackTrace');
-      // If any error occurs, return empty note
       return Note(
         id: noteId,
         content: '',

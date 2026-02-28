@@ -86,7 +86,7 @@ Future<List<NoteMetadata>> noteList(Ref ref) async {
         }).toList();
       } else {
         // Create a copy of the list to avoid mutation
-        filteredNotes = notes.toList();
+        filteredNotes = [...notes];
       }
 
       // Apply sorting

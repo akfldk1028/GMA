@@ -7,7 +7,7 @@ part of 'note_storage_service.dart';
 // **************************************************************************
 
 String _$noteStorageServiceHash() =>
-    r'9468fc9dac5567e20074d8a682628709c294a397';
+    r'4ca13a163d1bc304cb4330ad1617a7cc2f67e265';
 
 /// Service for saving note content to filesystem with debouncing.
 /// Prevents excessive file I/O by delaying writes until user stops typing.

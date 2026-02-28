@@ -6,7 +6,7 @@ part of 'theme_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$isDarkThemeHash() => r'8f068d40638485e5680c12b951fc436af67bc5e2';
+String _$isDarkThemeHash() => r'f40c8a1f888dbbe58fb21cd024e00d654a0b16d3';
 
 /// Helper provider to check if dark theme is active
 ///
@@ -25,7 +25,7 @@ final isDarkThemeProvider = AutoDisposeProvider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef IsDarkThemeRef = AutoDisposeProviderRef<bool>;
-String _$themeMode$Hash() => r'50ff5f7dcf027db162881e02e29e3d126d6090c2';
+String _$themeMode$Hash() => r'884016ec5f4e0801353943c4df76589cb7185cfb';
 
 /// Provider that manages theme mode (light/dark) with Hive persistence.
 ///

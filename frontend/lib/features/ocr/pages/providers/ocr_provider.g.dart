@@ -6,7 +6,7 @@ part of 'ocr_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$ocrRecognizeHash() => r'3388965b0f562652371cae6afcfce092a20404d9';
+String _$ocrRecognizeHash() => r'f24c3843caa2ff4ac6604f854fcbca3690ee3ecf';
 
 /// Copied from Dart SDK
 class _SystemHash {

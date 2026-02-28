@@ -24,7 +24,7 @@ final drawingModeProvider =
     );
 
 typedef _$DrawingMode = Notifier<DrawingToolState>;
-String _$drawingStrokesHash() => r'3129ba4351f2c3c3ff8a2e441b4549c092707f1a';
+String _$drawingStrokesHash() => r'2bf04c667a17c5afdfccb5055ee626ededbdcf27';
 
 /// Copied from Dart SDK
 class _SystemHash {

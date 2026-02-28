@@ -6,7 +6,7 @@ part of 'note_list_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$noteListHash() => r'99bbf52ad1df4a65cba3efe58d4d39ee0e60a62b';
+String _$noteListHash() => r'de2be4de14da406f96e600c77b8dbc1643d48344';
 
 /// Provider that returns filtered and sorted note list
 ///
@@ -25,7 +25,7 @@ final noteListProvider = AutoDisposeFutureProvider<List<NoteMetadata>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef NoteListRef = AutoDisposeFutureProviderRef<List<NoteMetadata>>;
-String _$isNotesLoadingHash() => r'a8d57e58b022f03bfddfcdbe03bf95345f874bd5';
+String _$isNotesLoadingHash() => r'b05433739ab8aa871f49602d525ce19871dad197';
 
 /// Helper provider to check if notes list is loading
 ///
@@ -44,7 +44,7 @@ final isNotesLoadingProvider = AutoDisposeProvider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef IsNotesLoadingRef = AutoDisposeProviderRef<bool>;
-String _$notesCountHash() => r'3c62f9916e5e0b0d0733e925ad1ec1d655345914';
+String _$notesCountHash() => r'f9f337da596a65062b72176017279897e6cd74ee';
 
 /// Helper provider to get notes count
 ///
@@ -63,7 +63,7 @@ final notesCountProvider = AutoDisposeFutureProvider<int>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef NotesCountRef = AutoDisposeFutureProviderRef<int>;
-String _$isSearchActiveHash() => r'e9d8d0eef0d2292ec9f9b8b9e414dd8dcfffba7f';
+String _$isSearchActiveHash() => r'08740de92edfc5b51a4283629a3d620a001789ce';
 
 /// Helper provider to check if search is active
 ///
