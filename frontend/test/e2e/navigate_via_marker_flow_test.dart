@@ -651,7 +651,7 @@ pdf: ./papers/ml_survey.pdf
       expect(markerWithImage.pageNumber, 3);
       expect(markerWithImage.imagePath, './captures/p3_methods.png');
 
-      // Step 6: Verify all colors were used
+      // Step 6: Verify all primary colors were used (excluding pen)
       final colors = markers.map((m) => m.color).toSet();
       expect(colors.length, 6); // All 6 colors used
       expect(colors, containsAll(MarkerColor.values));
