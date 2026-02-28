@@ -263,7 +263,7 @@ void main() {
         pageNumber: 3,
         color: MarkerColor.red,
         selectedText: 'Important text',
-        textRect: PdfRect(72.0, 144.0, 372.0, 120.0),
+        textRect: PdfRect(72, 168, 372, 144),
       );
 
       // Step 2: Format marker as markdown
@@ -507,7 +507,7 @@ More text here.
         pageNumber: 42,
         color: MarkerColor.yellow,
         selectedText: 'Critical finding from the research',
-        textRect: PdfRect(100.0, 200.0, 500.0, 150.0),
+        textRect: PdfRect(100, 250, 500, 200),
       );
 
       // Step 2: Format and store in note

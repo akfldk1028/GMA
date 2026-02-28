@@ -14,7 +14,7 @@ void main() {
         pageNumber: 3,
         color: MarkerColor.red,
         selectedText: 'Dictionary-based sentiment analysis is...',
-        textRect: PdfRect(72.0, 144.0, 372.0, 120.0),
+        textRect: PdfRect(72, 168, 372, 144),
       );
 
       // Step 2: Format marker as markdown line
@@ -49,7 +49,7 @@ void main() {
         pageNumber: 5,
         color: MarkerColor.yellow,
         capturedImagePath: './captures/p5_capture.png',
-        textRect: PdfRect(100.0, 200.0, 500.0, -100.0),
+        textRect: PdfRect(100, 500, 500, 200),
       );
 
       // Step 2: Format marker as markdown with image embed
@@ -131,7 +131,7 @@ void main() {
         pageNumber: 7,
         color: MarkerColor.blue,
         selectedText: 'Figure 2.1: Network Architecture',
-        textRect: PdfRect(100.0, 200.0, 500.0, -100.0),
+        textRect: PdfRect(100, 500, 500, 200),
         capturedImagePath: './captures/p7_figure_2_1.png',
       );
 
@@ -303,7 +303,7 @@ tags: [research, machine-learning]
           pageNumber: 3,
           color: MarkerColor.red,
           selectedText: 'First important text',
-          textRect: PdfRect(10.0, 20.0, 110.0, -30.0),
+          textRect: PdfRect(10, 70, 110, 20),
         ),
         PdfMarker(
           id: 'm2',

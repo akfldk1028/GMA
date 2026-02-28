@@ -23,7 +23,7 @@ class PdfPageOverlay {
         for (final marker in markers) {
           if (marker.textRect == null) continue;
 
-          // marker.textRect is already a PdfRect(left, top, right, bottom) from pdfrx
+          // textRect is already a PdfRect(left, top, right, bottom) from pdfrx
           final pdfRect = marker.textRect!;
 
           // Use pdfrx built-in conversion (handles Y-flip + rotation + scale)

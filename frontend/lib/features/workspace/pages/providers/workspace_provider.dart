@@ -532,15 +532,14 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     // Create updated marker with new color but same ID
     final updatedMarker = existingMarker.copyWith(color: color);
 
-    // Update markers list
-    final updatedMarkers = List<PdfMarker>.from(currentState.markers);
-    updatedMarkers[markerIndex] = updatedMarker;
+    // Update markers list using map for immutability
+    final updatedMarkers = currentState.markers.map((m) {
+      return m.id == markerId ? updatedMarker : m;
+    }).toList();
 
     state = AsyncData(
       currentState.copyWith(markers: updatedMarkers),
     );
-
-    // TODO: Update marker line in note editor when updateMarker method is available
   }
 
   /// Remove a marker by ID

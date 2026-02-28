@@ -267,7 +267,7 @@ Quick access to important pages:
         pageNumber: 5,
         color: MarkerColor.yellow,
         selectedText: 'Important formula: E = mc²',
-        textRect: PdfRect(120.0, 250.0, 300.0, 226.0),
+        textRect: PdfRect(120, 274, 300, 250),
       );
 
       // Step 2: Format marker for note
@@ -298,9 +298,9 @@ Quick access to important pages:
       // Step 5: Verify navigation with exact coordinates
       expect(navigatedToPage, 5);
       expect(highlightRect?.left, 120.0);
-      expect(highlightRect?.top, 250.0);
+      expect(highlightRect?.top, 274.0);
       expect(highlightRect?.right, 300.0);
-      expect(highlightRect?.bottom, 226.0);
+      expect(highlightRect?.bottom, 250.0);
     });
 
     test('Mixed content: Only marker lines trigger navigation', () {
@@ -456,7 +456,7 @@ PDF References:
         pageNumber: 42,
         color: MarkerColor.purple,
         selectedText: 'The answer to life, the universe, and everything',
-        textRect: PdfRect(100.0, 200.0, 400.0, 180.0),
+        textRect: PdfRect(100, 220, 400, 200),
       );
 
       // Step 2: Format marker for note storage
@@ -620,7 +620,8 @@ pdf: ./papers/ml_survey.pdf
 
 ## Conclusion
 
-- 🔴 P15  Summary''';
+- 🔴 P15  Summary
+- 🖊️ P18  Final remarks''';
 
       final note = Note(
         id: 'note-e2e-final',
@@ -632,7 +633,7 @@ pdf: ./papers/ml_survey.pdf
       // Step 2: App parses markers from note
       final markers = MarkerParser.extractMarkers(note.content);
 
-      expect(markers.length, 6);
+      expect(markers.length, 7);
 
       // Step 3: User clicks through all markers sequentially
       final userNavigationPath = <int>[];
@@ -643,7 +644,7 @@ pdf: ./papers/ml_survey.pdf
       }
 
       // Step 4: Verify complete navigation path
-      expect(userNavigationPath, [1, 3, 7, 9, 12, 15]);
+      expect(userNavigationPath, [1, 3, 7, 9, 12, 15, 18]);
 
       // Step 5: Verify marker with image was handled
       final markerWithImage = markers.firstWhere((m) => m.imagePath != null);
@@ -652,7 +653,7 @@ pdf: ./papers/ml_survey.pdf
 
       // Step 6: Verify all colors were used
       final colors = markers.map((m) => m.color).toSet();
-      expect(colors.length, 5); // All 5 colors used
+      expect(colors.length, 6); // All 6 colors used
       expect(colors, containsAll(MarkerColor.values));
     });
   });

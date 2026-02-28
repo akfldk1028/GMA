@@ -286,11 +286,12 @@ class _MarkerEditModalState extends ConsumerState<MarkerEditModal>
         }
       }
     } catch (e) {
+      final action = workspaceState.editingMarkerId != null ? 'update' : 'create';
       if (mounted) {
         ShadToaster.of(context).show(
           ShadToast.destructive(
             title: const Text('Error'),
-            description: Text('Failed to save marker: $e'),
+            description: Text('Failed to $action marker: $e'),
           ),
         );
       }

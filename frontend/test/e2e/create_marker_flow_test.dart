@@ -86,7 +86,7 @@ void main() {
       // Step 1: Simulate PDF text selection
       const selectedText = 'Machine learning is a subset of AI';
       const pageNumber = 5;
-      final textRect = PdfRect(50.0, 100.0, 300.0, 80.0);
+      final textRect = PdfRect(50, 120, 300, 100);
 
       // Step 2: User chooses yellow color
       final selectedColor = MarkerColor.yellow;
@@ -140,7 +140,7 @@ void main() {
         () {
       // Step 1: Simulate PDF region selection
       const pageNumber = 8;
-      final captureRect = PdfRect(100.0, 200.0, 500.0, -100.0);
+      final captureRect = PdfRect(100, 500, 500, 200);
 
       // Step 2: User chooses green color
       final selectedColor = MarkerColor.green;
@@ -356,7 +356,7 @@ void main() {
         pageNumber: 7,
         color: MarkerColor.green,
         selectedText: 'Convolutional neural networks for image recognition',
-        textRect: PdfRect(80.0, 150.0, 400.0, 132.0),
+        textRect: PdfRect(80, 168, 400, 150),
       );
 
       // Step 2: Format and store in note
