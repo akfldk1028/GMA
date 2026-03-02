@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../../common_widgets/responsive.dart';
 import '../../../note_editor/pages/screens/note_editor_screen.dart';
 
 /// Center modal overlay for NoteEditorScreen.
-/// Covers most of the screen with a dimmed background.
+/// On desktop: covers 85% width / 90% height with dimmed background.
+/// On mobile: full screen, no dismiss-on-tap.
 class NoteEditorModal extends ConsumerStatefulWidget {
   const NoteEditorModal({
     super.key,
@@ -57,19 +59,26 @@ class _NoteEditorModalState extends ConsumerState<NoteEditorModal>
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
-    final screenSize = MediaQuery.of(context).size;
+    final screenSize = MediaQuery.sizeOf(context);
+    final isMobile = Responsive.isMobile(context);
 
-    // Modal size: 85% width, 90% height (centered)
-    final modalWidth = screenSize.width * 0.85;
-    final modalHeight = screenSize.height * 0.90;
+    final modalWidth = isMobile ? screenSize.width : screenSize.width * 0.85;
+    final modalHeight =
+        isMobile ? screenSize.height : screenSize.height * 0.90;
+    final borderRadius = isMobile ? 0.0 : 16.0;
 
-    return FadeTransition(
-      opacity: _fadeAnim,
-      child: Stack(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _close();
+      },
+      child: FadeTransition(
+        opacity: _fadeAnim,
+        child: Stack(
         children: [
-          // Dimmed background — tap to close
+          // Dimmed background — tap to close (disabled on mobile)
           GestureDetector(
-            onTap: _close,
+            onTap: isMobile ? null : _close,
             child: Container(color: Colors.black.withValues(alpha: 0.4)),
           ),
           // Center modal
@@ -81,15 +90,19 @@ class _NoteEditorModalState extends ConsumerState<NoteEditorModal>
                 height: modalHeight,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.background,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: theme.colorScheme.border),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 32,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  border: isMobile
+                      ? null
+                      : Border.all(color: theme.colorScheme.border),
+                  boxShadow: isMobile
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 32,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Column(
@@ -135,6 +148,7 @@ class _NoteEditorModalState extends ConsumerState<NoteEditorModal>
             ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import 'app_colors.dart';
+
 class AppTheme {
   AppTheme._();
 
@@ -12,15 +14,30 @@ class AppTheme {
     h4: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
   );
 
-  static ShadThemeData get light => ShadThemeData(
+  /// Material ThemeData bridge — ensures Material widgets (ElevatedButton,
+  /// CircularProgressIndicator, TextField, etc.) use violet accent colors
+  /// instead of the default blue.
+  static final ThemeData materialLight = ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: AppColors.primary,
         brightness: Brightness.light,
-        colorScheme: const ShadZincColorScheme.light(),
+      );
+
+  static final ThemeData materialDark = ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: AppColors.primary,
+        brightness: Brightness.dark,
+      );
+
+  static final ShadThemeData light = ShadThemeData(
+        brightness: Brightness.light,
+        colorScheme: const ShadVioletColorScheme.light(),
         textTheme: _textTheme,
       );
 
-  static ShadThemeData get dark => ShadThemeData(
+  static final ShadThemeData dark = ShadThemeData(
         brightness: Brightness.dark,
-        colorScheme: const ShadZincColorScheme.dark(),
+        colorScheme: const ShadVioletColorScheme.dark(),
         textTheme: _textTheme,
       );
 }

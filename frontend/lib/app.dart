@@ -15,10 +15,20 @@ class GmaApp extends ConsumerWidget {
     final themeMode = ref.watch(themeMode$Provider);
 
     return ShadApp.router(
-      title: 'GMA',
+      title: 'LinkNote',
       themeMode: themeMode,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
+      // Material ThemeData bridge — violet accent for Material widgets
+      materialThemeBuilder: (context, theme) {
+        final isDark = switch (themeMode) {
+          ThemeMode.dark => true,
+          ThemeMode.light => false,
+          ThemeMode.system =>
+            MediaQuery.platformBrightnessOf(context) == Brightness.dark,
+        };
+        return isDark ? AppTheme.materialDark : AppTheme.materialLight;
+      },
       routerConfig: router,
     );
   }

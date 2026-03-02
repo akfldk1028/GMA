@@ -31,7 +31,7 @@ class PdfDocumentState {
 
 /// Provider for managing PDF document loading state and PdfViewerController.
 /// Handles PDF file loading and controller lifecycle.
-@riverpod
+@Riverpod(keepAlive: true)
 class PdfDocument extends _$PdfDocument {
   @override
   PdfDocumentState build() {

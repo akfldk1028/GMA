@@ -63,17 +63,14 @@ final currentMarkersProvider = AutoDisposeProvider<List<PdfMarker>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CurrentMarkersRef = AutoDisposeProviderRef<List<PdfMarker>>;
-String _$workspaceProviderHash() => r'4440f24e7f94fc72151e92c8815079d3d376b0ae';
+String _$workspaceProviderHash() => r'02f72915b2be482b701eafd7c2f92322c5f80f49';
 
 /// Main workspace provider managing PDF-Note bidirectional linking
 ///
 /// Copied from [WorkspaceProvider].
 @ProviderFor(WorkspaceProvider)
 final workspaceProviderProvider =
-    AutoDisposeAsyncNotifierProvider<
-      WorkspaceProvider,
-      WorkspaceState
-    >.internal(
+    AsyncNotifierProvider<WorkspaceProvider, WorkspaceState>.internal(
       WorkspaceProvider.new,
       name: r'workspaceProviderProvider',
       debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -83,6 +80,6 @@ final workspaceProviderProvider =
       allTransitiveDependencies: null,
     );
 
-typedef _$WorkspaceProvider = AutoDisposeAsyncNotifier<WorkspaceState>;
+typedef _$WorkspaceProvider = AsyncNotifier<WorkspaceState>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

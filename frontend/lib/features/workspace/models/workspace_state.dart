@@ -37,6 +37,12 @@ class WorkspaceState with _$WorkspaceState {
     @Default(false) bool isEditorModalOpen,
     @Default(false) bool isFileBrowserOpen,
     @Default(false) bool isMarkerEditModalOpen,
+    /// Whether the sticky note floating window is visible
+    @Default(true) bool isStickyNoteVisible,
+    /// Whether the left page thumbnails panel is open
+    @Default(true) bool isPageNavOpen,
+    /// Whether the right live scraps panel is open
+    @Default(true) bool isLiveScrapsOpen,
     /// ID of the marker currently being edited in the modal (null = new marker)
     String? editingMarkerId,
     /// Pending marker data for the marker edit modal (from text selection)

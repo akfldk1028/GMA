@@ -44,7 +44,7 @@ final currentPdfPageProvider = AutoDisposeProvider<int?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CurrentPdfPageRef = AutoDisposeProviderRef<int?>;
-String _$pdfDocumentHash() => r'b0ef00bbe3a32e96b15427182e1f93b80a8cd4dc';
+String _$pdfDocumentHash() => r'f2c0a35c3d684ce86d36eb5d148264b64c4d4723';
 
 /// Provider for managing PDF document loading state and PdfViewerController.
 /// Handles PDF file loading and controller lifecycle.
@@ -52,7 +52,7 @@ String _$pdfDocumentHash() => r'b0ef00bbe3a32e96b15427182e1f93b80a8cd4dc';
 /// Copied from [PdfDocument].
 @ProviderFor(PdfDocument)
 final pdfDocumentProvider =
-    AutoDisposeNotifierProvider<PdfDocument, PdfDocumentState>.internal(
+    NotifierProvider<PdfDocument, PdfDocumentState>.internal(
       PdfDocument.new,
       name: r'pdfDocumentProvider',
       debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -62,6 +62,6 @@ final pdfDocumentProvider =
       allTransitiveDependencies: null,
     );
 
-typedef _$PdfDocument = AutoDisposeNotifier<PdfDocumentState>;
+typedef _$PdfDocument = Notifier<PdfDocumentState>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

@@ -6,7 +6,7 @@ part of 'pdf_registry_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$pdfRegistryProvHash() => r'a279811548b8f31f98c6883a057258893115c701';
+String _$pdfRegistryProvHash() => r'c86f16c5e59b388a50ea5ba8326665ba8a2c5ef4';
 
 /// Riverpod wrapper around PdfRegistry for PDF-to-UUID mapping.
 /// Box is opened in main.dart, so no async init needed.

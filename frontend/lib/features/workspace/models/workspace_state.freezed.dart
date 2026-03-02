@@ -233,6 +233,15 @@ mixin _$WorkspaceState {
   bool get isFileBrowserOpen => throw _privateConstructorUsedError;
   bool get isMarkerEditModalOpen => throw _privateConstructorUsedError;
 
+  /// Whether the sticky note floating window is visible
+  bool get isStickyNoteVisible => throw _privateConstructorUsedError;
+
+  /// Whether the left page thumbnails panel is open
+  bool get isPageNavOpen => throw _privateConstructorUsedError;
+
+  /// Whether the right live scraps panel is open
+  bool get isLiveScrapsOpen => throw _privateConstructorUsedError;
+
   /// ID of the marker currently being edited in the modal (null = new marker)
   String? get editingMarkerId => throw _privateConstructorUsedError;
 
@@ -268,6 +277,9 @@ abstract class $WorkspaceStateCopyWith<$Res> {
     bool isEditorModalOpen,
     bool isFileBrowserOpen,
     bool isMarkerEditModalOpen,
+    bool isStickyNoteVisible,
+    bool isPageNavOpen,
+    bool isLiveScrapsOpen,
     String? editingMarkerId,
     int? pendingMarkerPageNumber,
     String? pendingMarkerText,
@@ -300,6 +312,9 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
     Object? isEditorModalOpen = null,
     Object? isFileBrowserOpen = null,
     Object? isMarkerEditModalOpen = null,
+    Object? isStickyNoteVisible = null,
+    Object? isPageNavOpen = null,
+    Object? isLiveScrapsOpen = null,
     Object? editingMarkerId = freezed,
     Object? pendingMarkerPageNumber = freezed,
     Object? pendingMarkerText = freezed,
@@ -338,6 +353,18 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
             isMarkerEditModalOpen: null == isMarkerEditModalOpen
                 ? _value.isMarkerEditModalOpen
                 : isMarkerEditModalOpen // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isStickyNoteVisible: null == isStickyNoteVisible
+                ? _value.isStickyNoteVisible
+                : isStickyNoteVisible // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isPageNavOpen: null == isPageNavOpen
+                ? _value.isPageNavOpen
+                : isPageNavOpen // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isLiveScrapsOpen: null == isLiveScrapsOpen
+                ? _value.isLiveScrapsOpen
+                : isLiveScrapsOpen // ignore: cast_nullable_to_non_nullable
                       as bool,
             editingMarkerId: freezed == editingMarkerId
                 ? _value.editingMarkerId
@@ -389,6 +416,9 @@ abstract class _$$WorkspaceStateImplCopyWith<$Res>
     bool isEditorModalOpen,
     bool isFileBrowserOpen,
     bool isMarkerEditModalOpen,
+    bool isStickyNoteVisible,
+    bool isPageNavOpen,
+    bool isLiveScrapsOpen,
     String? editingMarkerId,
     int? pendingMarkerPageNumber,
     String? pendingMarkerText,
@@ -421,6 +451,9 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
     Object? isEditorModalOpen = null,
     Object? isFileBrowserOpen = null,
     Object? isMarkerEditModalOpen = null,
+    Object? isStickyNoteVisible = null,
+    Object? isPageNavOpen = null,
+    Object? isLiveScrapsOpen = null,
     Object? editingMarkerId = freezed,
     Object? pendingMarkerPageNumber = freezed,
     Object? pendingMarkerText = freezed,
@@ -460,6 +493,18 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
             ? _value.isMarkerEditModalOpen
             : isMarkerEditModalOpen // ignore: cast_nullable_to_non_nullable
                   as bool,
+        isStickyNoteVisible: null == isStickyNoteVisible
+            ? _value.isStickyNoteVisible
+            : isStickyNoteVisible // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isPageNavOpen: null == isPageNavOpen
+            ? _value.isPageNavOpen
+            : isPageNavOpen // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isLiveScrapsOpen: null == isLiveScrapsOpen
+            ? _value.isLiveScrapsOpen
+            : isLiveScrapsOpen // ignore: cast_nullable_to_non_nullable
+                  as bool,
         editingMarkerId: freezed == editingMarkerId
             ? _value.editingMarkerId
             : editingMarkerId // ignore: cast_nullable_to_non_nullable
@@ -493,6 +538,9 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     this.isEditorModalOpen = false,
     this.isFileBrowserOpen = false,
     this.isMarkerEditModalOpen = false,
+    this.isStickyNoteVisible = true,
+    this.isPageNavOpen = true,
+    this.isLiveScrapsOpen = true,
     this.editingMarkerId,
     this.pendingMarkerPageNumber,
     this.pendingMarkerText,
@@ -532,6 +580,21 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
   @JsonKey()
   final bool isMarkerEditModalOpen;
 
+  /// Whether the sticky note floating window is visible
+  @override
+  @JsonKey()
+  final bool isStickyNoteVisible;
+
+  /// Whether the left page thumbnails panel is open
+  @override
+  @JsonKey()
+  final bool isPageNavOpen;
+
+  /// Whether the right live scraps panel is open
+  @override
+  @JsonKey()
+  final bool isLiveScrapsOpen;
+
   /// ID of the marker currently being edited in the modal (null = new marker)
   @override
   final String? editingMarkerId;
@@ -547,7 +610,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
 
   @override
   String toString() {
-    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
+    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
   }
 
   @override
@@ -570,6 +633,12 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
                 other.isFileBrowserOpen == isFileBrowserOpen) &&
             (identical(other.isMarkerEditModalOpen, isMarkerEditModalOpen) ||
                 other.isMarkerEditModalOpen == isMarkerEditModalOpen) &&
+            (identical(other.isStickyNoteVisible, isStickyNoteVisible) ||
+                other.isStickyNoteVisible == isStickyNoteVisible) &&
+            (identical(other.isPageNavOpen, isPageNavOpen) ||
+                other.isPageNavOpen == isPageNavOpen) &&
+            (identical(other.isLiveScrapsOpen, isLiveScrapsOpen) ||
+                other.isLiveScrapsOpen == isLiveScrapsOpen) &&
             (identical(other.editingMarkerId, editingMarkerId) ||
                 other.editingMarkerId == editingMarkerId) &&
             (identical(
@@ -595,6 +664,9 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     isEditorModalOpen,
     isFileBrowserOpen,
     isMarkerEditModalOpen,
+    isStickyNoteVisible,
+    isPageNavOpen,
+    isLiveScrapsOpen,
     editingMarkerId,
     pendingMarkerPageNumber,
     pendingMarkerText,
@@ -628,6 +700,9 @@ abstract class _WorkspaceState implements WorkspaceState {
     final bool isEditorModalOpen,
     final bool isFileBrowserOpen,
     final bool isMarkerEditModalOpen,
+    final bool isStickyNoteVisible,
+    final bool isPageNavOpen,
+    final bool isLiveScrapsOpen,
     final String? editingMarkerId,
     final int? pendingMarkerPageNumber,
     final String? pendingMarkerText,
@@ -653,6 +728,18 @@ abstract class _WorkspaceState implements WorkspaceState {
   bool get isFileBrowserOpen;
   @override
   bool get isMarkerEditModalOpen;
+
+  /// Whether the sticky note floating window is visible
+  @override
+  bool get isStickyNoteVisible;
+
+  /// Whether the left page thumbnails panel is open
+  @override
+  bool get isPageNavOpen;
+
+  /// Whether the right live scraps panel is open
+  @override
+  bool get isLiveScrapsOpen;
 
   /// ID of the marker currently being edited in the modal (null = new marker)
   @override

@@ -19,6 +19,7 @@ import '../../../ocr/ocr_service.dart';
 import '../../../ocr/pages/providers/ocr_provider.dart';
 import '../../../scrapnote/models/element_model.dart';
 import '../../../scrapnote/providers/element_store.dart';
+import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
 import '../../../scrapnote/providers/pdf_registry_provider.dart';
 import '../../models/pdf_marker_model.dart';
 import '../../models/workspace_state.dart';
@@ -26,7 +27,7 @@ import '../../models/workspace_state.dart';
 part 'workspace_provider.g.dart';
 
 /// Main workspace provider managing PDF-Note bidirectional linking
-@riverpod
+@Riverpod(keepAlive: true)
 class WorkspaceProvider extends _$WorkspaceProvider {
   @override
   FutureOr<WorkspaceState> build() async {
@@ -44,6 +45,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
   }
 
   /// Load a PDF file into the workspace.
+  /// Also loads the document into pdfDocumentProvider for rendering.
   /// Auto-creates a linked note if no note is currently open.
   Future<void> loadPdf(String pdfPath) async {
     final currentState = state.valueOrNull;
@@ -55,9 +57,13 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       throw Exception('PDF file not found: $pdfPath');
     }
 
+    // Clear markers from previous PDF
     state = AsyncData(
-      currentState.copyWith(currentPdfPath: pdfPath),
+      currentState.copyWith(currentPdfPath: pdfPath, markers: []),
     );
+
+    // Load the actual PDF document for rendering
+    await ref.read(pdfDocumentProvider.notifier).loadFromFile(pdfPath);
 
     // Register PDF in PdfRegistry for ScrapNote UUID tracking
     await ref.read(pdfRegistryProvProvider.notifier).register(pdfPath);
@@ -172,6 +178,27 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     );
   }
 
+  /// Toggle sticky note visibility
+  void toggleStickyNote() {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(isStickyNoteVisible: !s.isStickyNoteVisible));
+  }
+
+  /// Toggle the left page navigation panel
+  void togglePageNav() {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(isPageNavOpen: !s.isPageNavOpen));
+  }
+
+  /// Toggle the right live scraps panel
+  void toggleLiveScraps() {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(isLiveScrapsOpen: !s.isLiveScrapsOpen));
+  }
+
   /// Navigate to an element by ID.
   /// Looks up the element from ElementStore, gets the PDF path from PdfRegistry,
   /// loads the PDF if it's different from the current one, and returns the page number
@@ -186,6 +213,8 @@ class WorkspaceProvider extends _$WorkspaceProvider {
         return null;
       }
 
+      // Ensure registry is initialized before lookup
+      await ref.read(pdfRegistryProvProvider.notifier).ensureReady();
       final pdfPath = ref.read(pdfRegistryProvProvider.notifier).getPathById(element.pdfId);
       if (pdfPath == null) {
         debugPrint('PDF path not found for pdfId: ${element.pdfId}');

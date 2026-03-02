@@ -6,28 +6,32 @@ PDF 문서를 왼쪽에 열고, 오른쪽에 Markdown 노트를 작성하면서
 **PDF의 특정 페이지/좌표와 노트가 양방향으로 연결되는** 학습용 메모 앱.
 
 ### 핵심 컨셉
+
+**앱 플로우:** Splash → Dashboard → Workspace
+
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      GMA App                            │
-│                                                         │
-│  ┌──────────────────┐  ┌─────────────────────────────┐  │
-│  │   PDF Viewer      │  │   Markdown Editor           │  │
-│  │                   │  │                             │  │
-│  │  ┌─────────────┐  │  │  # DMDA WK06               │  │
-│  │  │ Page 3      │  │  │  file: DMDA_WK06.pdf       │  │
-│  │  │             │  │  │                             │  │
-│  │  │  📍 P3 표시  │◄─┼──│  🔴 P3  Dictionary-based.. │  │
-│  │  │             │  │  │  🔴 P3  It is widely used.. │  │
-│  │  │             │  │  │                             │  │
-│  │  └─────────────┘  │  │  [[3blue1brown/NN]]         │  │
-│  │  ┌─────────────┐  │  │  [[3blue1brown/LLM]]        │  │
-│  │  │ Page 5      │  │  │                             │  │
-│  │  │             │  │  │  🟡 P5                      │  │
-│  │  │  📍 P5 표시  │◄─┼──│  [이미지 캡처 from PDF]     │  │
-│  │  │             │  │  │                             │  │
-│  │  └─────────────┘  │  │  ▸ Unlinked References      │  │
-│  └──────────────────┘  └─────────────────────────────┘  │
-└─────────────────────────────────────────────────────────┘
+Splash (1.5s)  →  Dashboard (노트-PDF 대시보드)  →  Workspace
+                  ┌──────────────────────────┐
+                  │ LinkNote    [+New][PDF][⚙]│
+                  │ ┌──────┐ ┌──────┐ ┌────┐ │
+                  │ │Note 1│ │Note 2│ │ .. │ │
+                  │ │📄 PDF│ │📄 2  │ │    │ │
+                  │ │3 elem│ │5 elem│ │    │ │
+                  │ └──────┘ └──────┘ └────┘ │
+                  └──────────────────────────┘
+                               ↓ tap
+┌──────────────────────────────────────────────────────┐
+│ WorkspaceHeaderV2                                    │
+├────┬─────────────────────────────────────────────────┤
+│ M  │  PDF Viewer (fullscreen)                        │
+│ A  │  + Sticky Note (floating)                       │
+│ R  │                                                 │
+│ K  │  Overlays:                                      │
+│ S  │  - NoteEditorModal (Ctrl+E)                     │
+│    │  - FileBrowserDrawer (Ctrl+B)                   │
+│    │  - ElementNavigatorDrawer                       │
+│    │  - MarkerEditModal                              │
+└────┴─────────────────────────────────────────────────┘
 ```
 
 ### 이미지 분석 결과 (사용자 레퍼런스)
@@ -226,40 +230,39 @@ markers:
 
 ## 5. 화면 구조
 
-### 5.1 메인 화면 (Split View)
+### 5.1 Workspace 화면 (PDF 전체화면 + 오버레이)
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│ 🔍 Search    [파일목록] [+새노트]          [설정]     │
-├────────────┬──────────────┬──────────────────────────┤
-│            │              │                          │
-│  Sidebar   │  PDF Viewer  │  Markdown Editor         │
-│            │              │                          │
-│  📁 Notes  │  ┌────────┐  │  ---                     │
-│   ├── WK01 │  │ Page 3 │  │  file: WK06.pdf         │
-│   ├── WK02 │  │        │  │  ---                     │
-│   ├── WK06 │  │  text  │  │                          │
-│   └── ...  │  │  text  │  │  # DMDA WK06             │
-│            │  │        │  │                          │
-│  📁 Refs   │  └────────┘  │  🔴 P3 Dictionary-based. │
-│   ├── NN   │  ┌────────┐  │  🟡 P5 [image]           │
-│   └── LLM  │  │ Page 5 │  │                          │
-│            │  │        │  │  [[3blue1brown/NN]]       │
-│            │  └────────┘  │                          │
-├────────────┴──────────────┴──────────────────────────┤
-│ Status: Page 3/42  |  Zoom: 100%  |  Auto-saved ✓   │
-└──────────────────────────────────────────────────────┘
+│ [🏠][≡][📁/📑]  PDF Title       [📝][✏️][⋮]         │
+├────┬─────────────────────────────────────────────────┤
+│ M  │  PDF Viewer (fullscreen)                        │
+│ A  │  + Sticky Note (floating, toggleable)           │
+│ R  │                                                 │
+│ K  │  Overlays:                                      │
+│ S  │  - NoteEditorModal (Ctrl+E)                     │
+│    │  - FileBrowserDrawer (Ctrl+B)                   │
+│    │  - ElementNavigatorDrawer                       │
+│    │  - MarkerEditModal                              │
+└────┴─────────────────────────────────────────────────┘
 ```
+
+- **🏠 Home:** Dashboard로 복귀
+- **≡ Menu:** FileBrowser / ElementNavigator 사이드바 토글
+- **📁/📑:** 사이드바 모드 전환 (File Browser ↔ Element Navigator)
+- **📝 Sticky Note:** 플로팅 메모 토글
+- **✏️ Editor:** NoteEditorModal 열기
+- **⋮ More:** Open PDF, Toggle Theme, Settings
 
 ### 5.2 화면 목록
 
 | 화면 | 경로 | 설명 |
 |------|------|------|
-| Home | `/` | 최근 노트 목록, 빠른 열기 |
-| Workspace | `/workspace` | **메인 3패널 (사이드바+PDF+에디터)** |
+| Splash | `/splash` | 브랜딩 + 로딩 (1.5초 후 Dashboard로 이동) |
+| Dashboard | `/dashboard` | 노트-PDF 대시보드 (홈 화면) |
+| Workspace | `/workspace` | PDF 전체화면 + 오버레이 모달 |
 | Note Only | `/note/:id` | 노트만 편집 (PDF 없이) |
 | Settings | `/settings` | 테마, 저장 경로, 마커 색상 설정 |
-| Login | `/login` | 인증 (향후 클라우드 동기화용) |
 
 ---
 
@@ -632,23 +635,27 @@ Element {
    → 고유 ID 기반이라 링크 안 깨짐
 ```
 
-### 11.5 레이아웃 변경
+### 11.5 레이아웃 (실제 구현)
 
 ```
-┌──────────────────┬──────────────┬────────────────────┐
-│ ScrapNote:통계정리│  PDF Viewer  │  Markdown Editor   │
-│                  │              │                    │
-│ 🔴 PDF1:P3 텍스트│  ◄── 클릭시  │  ::: scrapnote     │
-│ 🟡 PDF1:P5 [필기]│  해당 페이지  │  통계정리           │
-│ 🔵 PDF2:P12 텍스트│  로 이동     │  @el e001          │
-│ ✏️ PDF2:P8 [필기]│  (zoom 유지) │  @el e002          │
-│                  │              │  :::               │
-└──────────────────┴──────────────┴────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│ [🏠][≡][📑] PDF Title             [📝][✏️][⋮]       │
+├──────────────┬───────────────────────────────────────┤
+│ Element Nav  │  PDF Viewer (fullscreen)              │
+│ (drawer)     │                                       │
+│              │  + Sticky Note (floating)             │
+│ 🔴 PDF1:P3  │                                       │
+│ 🟡 PDF1:P5  │  Overlays:                            │
+│ 🔵 PDF2:P12 │  - NoteEditorModal (::: scrapnote)    │
+│ ✏️ PDF2:P8  │  - FileBrowserDrawer                  │
+│              │  - MarkerEditModal                    │
+└──────────────┴───────────────────────────────────────┘
 ```
 
-- **왼쪽 사이드바** = 현재 ScrapNote의 element 목록 (네비게이터)
-- **가운데 PDF** = element 클릭 시 해당 페이지로 이동 (zoom 유지, page만 변경)
-- **오른쪽 에디터** = `:::scrapnote` 문법으로 element들이 노트 형태로 렌더링
+- **Element Navigator (사이드바 드로어)** = 현재 PDF의 element 목록, 클릭 → 해당 페이지 이동
+- **PDF Viewer (전체화면)** = element 클릭 시 해당 페이지로 이동 (zoom 유지)
+- **NoteEditorModal (오버레이)** = `:::scrapnote` 블록 편집, Ctrl+E로 토글
+- **Sticky Note (플로팅)** = 간단한 메모 위젯, 토글 가능
 
 ### 11.6 기존 시스템 대비 변경점
 

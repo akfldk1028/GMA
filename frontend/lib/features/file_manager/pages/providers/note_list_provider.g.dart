@@ -6,7 +6,7 @@ part of 'note_list_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$noteListHash() => r'de2be4de14da406f96e600c77b8dbc1643d48344';
+String _$noteListHash() => r'4cd56ad8b1d628062a53619b68aa97092d69a40c';
 
 /// Provider that returns filtered and sorted note list
 ///

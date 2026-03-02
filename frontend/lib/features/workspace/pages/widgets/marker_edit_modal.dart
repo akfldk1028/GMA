@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../../common_widgets/responsive.dart';
 import '../../../../constants/marker_colors.dart';
 import '../../models/pdf_marker_model.dart';
 import '../providers/workspace_provider.dart';
@@ -81,7 +84,7 @@ class _MarkerEditModalState extends ConsumerState<MarkerEditModal>
             child: GestureDetector(
               onTap: () {}, // Absorb taps on the modal
               child: Container(
-                width: 420,
+                width: math.min(MediaQuery.sizeOf(context).width - 32, 420),
                 constraints: const BoxConstraints(maxHeight: 400),
                 margin: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -172,12 +175,14 @@ class _MarkerEditModalState extends ConsumerState<MarkerEditModal>
                                 .where((c) => c != MarkerColor.pen)
                                 .map((color) {
                               final isSelected = _selectedColor == color;
+                              final isMob = Responsive.isMobile(context);
+                              final circleSize = isMob ? 44.0 : 36.0;
                               return GestureDetector(
                                 onTap: () =>
                                     setState(() => _selectedColor = color),
                                 child: Container(
-                                  width: 36,
-                                  height: 36,
+                                  width: circleSize,
+                                  height: circleSize,
                                   margin:
                                       const EdgeInsets.symmetric(horizontal: 4),
                                   decoration: BoxDecoration(

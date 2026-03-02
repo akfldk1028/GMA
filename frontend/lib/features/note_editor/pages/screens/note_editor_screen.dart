@@ -81,6 +81,12 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     if (oldWidget.onMarkerClick != widget.onMarkerClick) {
       _extensions = _buildExtensions();
     }
+    // Reset preview content when switching notes
+    if (oldWidget.noteId != widget.noteId) {
+      _previewContent = '';
+      _listenedController?.removeListener(_onControllerChanged);
+      _listenedController = null;
+    }
   }
 
   void _attachControllerListener(TextEditingController controller) {
@@ -198,7 +204,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
     // No note selected
     if (widget.noteId == null) {
-      return Container(
+      return Material(
         color: theme.colorScheme.background,
         child: Center(
           child: Column(
@@ -244,7 +250,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
           _previewContent = controller.text;
         }
 
-        return Container(
+        return Material(
           color: theme.colorScheme.background,
           child: Column(
             children: [
@@ -257,7 +263,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
               // Main editor area
               Expanded(
-                child: _buildEditorArea(context, theme, controller, note),
+                child: _buildEditorArea(context, theme, controller),
               ),
             ],
           ),
@@ -284,7 +290,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     BuildContext context,
     ShadThemeData theme,
     TextEditingController controller,
-    dynamic note,
   ) {
     switch (_mode) {
       case EditorMode.edit:

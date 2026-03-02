@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../../common_widgets/responsive.dart';
 import '../../../../constants/marker_colors.dart';
 import '../../../../utils/file_system_provider.dart';
 import '../../../ocr/ocr_service.dart';
@@ -62,6 +63,46 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   int? _selectedPageNumber;
   PdfRect? _selectedTextRect;
 
+  // Track controller state to avoid excessive rebuilds from scroll/zoom
+  int? _lastPageNumber;
+  bool _wasReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller?.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant PdfViewerScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller?.removeListener(_onControllerChanged);
+      widget.controller?.addListener(_onControllerChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller?.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  /// Rebuild only when page number or ready state changes (not on every scroll/zoom).
+  void _onControllerChanged() {
+    if (!mounted) return;
+    final controller = widget.controller;
+    if (controller == null) return;
+
+    final isReady = controller.isReady;
+    final pageNumber = isReady ? controller.pageNumber : null;
+
+    if (isReady != _wasReady || pageNumber != _lastPageNumber) {
+      _wasReady = isReady;
+      _lastPageNumber = pageNumber;
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,9 +137,8 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           docState.documentRef!,
           controller: controller!,
           params: PdfViewerParams(
-            // 2-page facing layout (book-style side-by-side)
-            // Page 1 alone (cover), then pairs: 2-3, 4-5, ...
-            layoutPages: _facingPagesLayout,
+            // 2-page facing layout on desktop only; mobile uses default single-page scroll
+            layoutPages: Responsive.isMobile(context) ? null : _facingPagesLayout,
             // Disable text selection when drawing or capture mode is active
             textSelectionParams: anyOverlayActive
                 ? const PdfTextSelectionParams()
@@ -525,12 +565,12 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     );
   }
 
-  /// Load a PDF file from path into both workspace and document provider
+  /// Load a PDF file from path into workspace (which also loads the document provider).
   Future<void> _loadPdfFromPath(String pdfPath) async {
     final filename = pdfPath.split(RegExp(r'[/\\]')).last;
     try {
+      // loadPdf() already calls pdfDocumentProvider.loadFromFile() internally
       await ref.read(workspaceProviderProvider.notifier).loadPdf(pdfPath);
-      await ref.read(pdfDocumentProvider.notifier).loadFromFile(pdfPath);
 
       if (mounted) {
         ShadToaster.of(context).show(

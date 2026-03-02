@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../../common_widgets/responsive.dart';
 import '../../../file_manager/models/note_metadata_model.dart';
 import '../../../file_manager/pages/screens/file_browser_screen.dart';
 
@@ -69,12 +70,14 @@ class _FileBrowserDrawerState extends ConsumerState<FileBrowserDrawer>
             onTap: _close,
             child: Container(color: Colors.black.withValues(alpha: 0.3)),
           ),
-          // Slide-in drawer (left 300px)
+          // Slide-in drawer
           Positioned(
             top: 0,
             bottom: 0,
             left: 0,
-            width: 300,
+            width: Responsive.isMobile(context)
+                ? MediaQuery.sizeOf(context).width * 0.85
+                : 300,
             child: SlideTransition(
               position: _slideAnim,
               child: Container(

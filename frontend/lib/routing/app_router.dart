@@ -3,9 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../common_widgets/app_shell.dart';
+import '../features/dashboard/pages/screens/dashboard_screen.dart';
 import '../features/file_manager/pages/screens/file_browser_screen.dart';
 import '../features/note_editor/pages/screens/note_editor_screen.dart';
+import '../features/knowledge_graph/pages/screens/knowledge_graph_screen.dart';
+import '../features/scraps_library/pages/screens/scraps_library_screen.dart';
 import '../features/settings/pages/screens/settings_screen.dart';
+import '../features/splash/pages/screens/splash_screen.dart';
 import '../features/workspace/pages/screens/workspace_screen.dart';
 
 part 'app_router.g.dart';
@@ -13,17 +18,69 @@ part 'app_router.g.dart';
 @Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
   return GoRouter(
-    initialLocation: '/workspace',
+    initialLocation: '/splash',
     routes: [
+      GoRoute(
+        path: '/splash',
+        name: 'splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
+      // Shell route: sidebar-based pages
+      ShellRoute(
+        builder: (context, state, child) => AppShell(child: child),
+        routes: [
+          GoRoute(
+            path: '/dashboard',
+            name: 'dashboard',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const DashboardScreen(),
+              transitionsBuilder: _fadeTransition,
+            ),
+          ),
+          GoRoute(
+            path: '/file-browser',
+            name: 'file-browser',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const FileBrowserScreen(),
+              transitionsBuilder: _fadeTransition,
+            ),
+          ),
+          GoRoute(
+            path: '/scraps',
+            name: 'scraps',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const ScrapsLibraryScreen(),
+              transitionsBuilder: _fadeTransition,
+            ),
+          ),
+          GoRoute(
+            path: '/knowledge-graph',
+            name: 'knowledge-graph',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const KnowledgeGraphScreen(),
+              transitionsBuilder: _fadeTransition,
+            ),
+          ),
+          GoRoute(
+            path: '/settings',
+            name: 'settings',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const SettingsScreen(),
+              transitionsBuilder: _fadeTransition,
+            ),
+          ),
+        ],
+      ),
+      // Workspace: no sidebar
       GoRoute(
         path: '/workspace',
         name: 'workspace',
         builder: (context, state) => const WorkspaceScreen(),
-      ),
-      GoRoute(
-        path: '/file-browser',
-        name: 'file-browser',
-        builder: (context, state) => const FileBrowserScreen(),
       ),
       GoRoute(
         path: '/note/:id',
@@ -32,11 +89,6 @@ GoRouter appRouter(Ref ref) {
           noteId: state.pathParameters['id'],
         ),
       ),
-      GoRoute(
-        path: '/settings',
-        name: 'settings',
-        builder: (context, state) => const SettingsScreen(),
-      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(
@@ -44,4 +96,13 @@ GoRouter appRouter(Ref ref) {
       ),
     ),
   );
+}
+
+Widget _fadeTransition(
+  BuildContext context,
+  Animation<double> animation,
+  Animation<double> secondaryAnimation,
+  Widget child,
+) {
+  return FadeTransition(opacity: animation, child: child);
 }
