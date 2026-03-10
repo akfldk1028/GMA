@@ -11,6 +11,7 @@ import '../features/knowledge_graph/pages/screens/knowledge_graph_screen.dart';
 import '../features/scraps_library/pages/screens/scraps_library_screen.dart';
 import '../features/settings/pages/screens/settings_screen.dart';
 import '../features/splash/pages/screens/splash_screen.dart';
+import '../features/scrapnote/pages/screens/scrapnote_screen.dart';
 import '../features/workspace/pages/screens/workspace_screen.dart';
 
 part 'app_router.g.dart';
@@ -87,6 +88,13 @@ GoRouter appRouter(Ref ref) {
         name: 'note',
         builder: (context, state) => NoteEditorScreen(
           noteId: state.pathParameters['id'],
+        ),
+      ),
+      GoRoute(
+        path: '/scrapnote/:id',
+        name: 'scrapnote',
+        builder: (context, state) => ScrapnoteScreen(
+          scrapnoteId: state.pathParameters['id']!,
         ),
       ),
     ],
