@@ -96,32 +96,36 @@ class _HighlightCardWidgetState extends State<HighlightCardWidget> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Selected text
-                    if (widget.element.selectedText != null &&
-                        widget.element.selectedText!.isNotEmpty)
-                      Text(
-                        widget.element.selectedText!,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          height: 1.4,
-                          color: Colors.black87,
+                child: ClipRect(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Selected text
+                      if (widget.element.selectedText != null &&
+                          widget.element.selectedText!.isNotEmpty)
+                        Flexible(
+                          child: Text(
+                            widget.element.selectedText!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              height: 1.4,
+                              color: Colors.black87,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        maxLines: 4,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    // Page number badge
-                    if (widget.element.sourcePageNumber != null) ...[
-                      const SizedBox(height: 4),
-                      _PageIndicator(
-                        pageNumber: widget.element.sourcePageNumber!,
-                        color: stripColor,
-                      ),
+                      // Page number badge
+                      if (widget.element.sourcePageNumber != null) ...[
+                        const SizedBox(height: 4),
+                        _PageIndicator(
+                          pageNumber: widget.element.sourcePageNumber!,
+                          color: stripColor,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
