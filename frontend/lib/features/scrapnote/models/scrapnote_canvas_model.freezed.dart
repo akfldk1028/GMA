@@ -430,7 +430,10 @@ mixin _$CanvasElement {
       throw _privateConstructorUsedError; // Source PDF page number (1-indexed), null if unknown
   int? get sourcePageNumber =>
       throw _privateConstructorUsedError; // Path of the source PDF from which this element was extracted
-  String? get sourcePdfPath => throw _privateConstructorUsedError;
+  String? get sourcePdfPath =>
+      throw _privateConstructorUsedError; // Source region on the PDF page (for rendering highlight rectangles on PDF)
+  @PdfRectConverter()
+  PdfRect? get sourceRect => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
 
   /// Serializes this CanvasElement to a JSON map.
@@ -462,6 +465,7 @@ abstract class $CanvasElementCopyWith<$Res> {
     int? colorValue,
     int? sourcePageNumber,
     String? sourcePdfPath,
+    @PdfRectConverter() PdfRect? sourceRect,
     DateTime createdAt,
   });
 }
@@ -492,6 +496,7 @@ class _$CanvasElementCopyWithImpl<$Res, $Val extends CanvasElement>
     Object? colorValue = freezed,
     Object? sourcePageNumber = freezed,
     Object? sourcePdfPath = freezed,
+    Object? sourceRect = freezed,
     Object? createdAt = null,
   }) {
     return _then(
@@ -540,6 +545,10 @@ class _$CanvasElementCopyWithImpl<$Res, $Val extends CanvasElement>
                 ? _value.sourcePdfPath
                 : sourcePdfPath // ignore: cast_nullable_to_non_nullable
                       as String?,
+            sourceRect: freezed == sourceRect
+                ? _value.sourceRect
+                : sourceRect // ignore: cast_nullable_to_non_nullable
+                      as PdfRect?,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -571,6 +580,7 @@ abstract class _$$CanvasElementImplCopyWith<$Res>
     int? colorValue,
     int? sourcePageNumber,
     String? sourcePdfPath,
+    @PdfRectConverter() PdfRect? sourceRect,
     DateTime createdAt,
   });
 }
@@ -600,6 +610,7 @@ class __$$CanvasElementImplCopyWithImpl<$Res>
     Object? colorValue = freezed,
     Object? sourcePageNumber = freezed,
     Object? sourcePdfPath = freezed,
+    Object? sourceRect = freezed,
     Object? createdAt = null,
   }) {
     return _then(
@@ -648,6 +659,10 @@ class __$$CanvasElementImplCopyWithImpl<$Res>
             ? _value.sourcePdfPath
             : sourcePdfPath // ignore: cast_nullable_to_non_nullable
                   as String?,
+        sourceRect: freezed == sourceRect
+            ? _value.sourceRect
+            : sourceRect // ignore: cast_nullable_to_non_nullable
+                  as PdfRect?,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -672,6 +687,7 @@ class _$CanvasElementImpl implements _CanvasElement {
     this.colorValue,
     this.sourcePageNumber,
     this.sourcePdfPath,
+    @PdfRectConverter() this.sourceRect,
     required this.createdAt,
   });
 
@@ -705,12 +721,16 @@ class _$CanvasElementImpl implements _CanvasElement {
   // Path of the source PDF from which this element was extracted
   @override
   final String? sourcePdfPath;
+  // Source region on the PDF page (for rendering highlight rectangles on PDF)
+  @override
+  @PdfRectConverter()
+  final PdfRect? sourceRect;
   @override
   final DateTime createdAt;
 
   @override
   String toString() {
-    return 'CanvasElement(id: $id, type: $type, x: $x, y: $y, width: $width, height: $height, imagePath: $imagePath, selectedText: $selectedText, colorValue: $colorValue, sourcePageNumber: $sourcePageNumber, sourcePdfPath: $sourcePdfPath, createdAt: $createdAt)';
+    return 'CanvasElement(id: $id, type: $type, x: $x, y: $y, width: $width, height: $height, imagePath: $imagePath, selectedText: $selectedText, colorValue: $colorValue, sourcePageNumber: $sourcePageNumber, sourcePdfPath: $sourcePdfPath, sourceRect: $sourceRect, createdAt: $createdAt)';
   }
 
   @override
@@ -734,6 +754,8 @@ class _$CanvasElementImpl implements _CanvasElement {
                 other.sourcePageNumber == sourcePageNumber) &&
             (identical(other.sourcePdfPath, sourcePdfPath) ||
                 other.sourcePdfPath == sourcePdfPath) &&
+            (identical(other.sourceRect, sourceRect) ||
+                other.sourceRect == sourceRect) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt));
   }
@@ -753,6 +775,7 @@ class _$CanvasElementImpl implements _CanvasElement {
     colorValue,
     sourcePageNumber,
     sourcePdfPath,
+    sourceRect,
     createdAt,
   );
 
@@ -783,6 +806,7 @@ abstract class _CanvasElement implements CanvasElement {
     final int? colorValue,
     final int? sourcePageNumber,
     final String? sourcePdfPath,
+    @PdfRectConverter() final PdfRect? sourceRect,
     required final DateTime createdAt,
   }) = _$CanvasElementImpl;
 
@@ -810,7 +834,10 @@ abstract class _CanvasElement implements CanvasElement {
   @override
   int? get sourcePageNumber; // Path of the source PDF from which this element was extracted
   @override
-  String? get sourcePdfPath;
+  String? get sourcePdfPath; // Source region on the PDF page (for rendering highlight rectangles on PDF)
+  @override
+  @PdfRectConverter()
+  PdfRect? get sourceRect;
   @override
   DateTime get createdAt;
 

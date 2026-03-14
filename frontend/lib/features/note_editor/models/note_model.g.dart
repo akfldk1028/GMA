@@ -25,6 +25,6 @@ Map<String, dynamic> _$$NoteImplToJson(_$NoteImpl instance) =>
       'id': instance.id,
       'content': instance.content,
       'filePath': instance.filePath,
-      'frontmatter': instance.frontmatter,
-      'markers': instance.markers,
+      'frontmatter': instance.frontmatter?.toJson(),
+      'markers': instance.markers.map((e) => e.toJson()).toList(),
     };

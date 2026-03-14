@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../../../../constants/app_colors.dart';
@@ -141,7 +142,7 @@ class _ScrapCardState extends State<ScrapCard> {
     final el = widget.element;
 
     // Image capture
-    if (el.type == ElementType.capture && el.imagePath != null) {
+    if (el.type == ElementType.capture && el.imagePath != null && !kIsWeb) {
       final imgPath = widget.capturesDir != null
           ? '${widget.capturesDir}/${el.imagePath!}'
           : el.imagePath!;

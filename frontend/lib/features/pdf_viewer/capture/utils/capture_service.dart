@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/painting.dart' show Rect;
 import 'package:path/path.dart' as path;
 import 'package:pdfrx/pdfrx.dart';
@@ -71,9 +72,17 @@ class CaptureService {
       throw Exception('Failed to encode image as PNG');
     }
 
-    // Save to file
+    // Generate filename
     final filename =
         'p${pageNumber}_${DateTime.now().millisecondsSinceEpoch}.png';
+
+    // On web, skip file I/O (dart:io.File not available) and return the filename only.
+    // The image data is available in byteData but cannot be persisted to disk on web.
+    if (kIsWeb) {
+      return filename;
+    }
+
+    // Save to file (native platforms only)
     final filePath = path.join(capturesDir, filename);
     await File(filePath).writeAsBytes(byteData.buffer.asUint8List());
 

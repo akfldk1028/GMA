@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../../models/scrapnote_canvas_model.dart';
@@ -94,7 +95,7 @@ class _CaptureElementWidgetState extends State<CaptureElementWidget> {
 
   Widget _buildImageContent() {
     final path = widget.element.imagePath;
-    if (path == null || path.isEmpty) {
+    if (path == null || path.isEmpty || kIsWeb) {
       return _buildPlaceholder();
     }
 

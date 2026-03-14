@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path/path.dart' as path;
 
 import '../models/drawing_model.dart';
@@ -21,6 +22,7 @@ class DrawingSerializer {
       }
     }
 
+    if (kIsWeb) return;
     final json = jsonEncode({'strokes': allStrokes});
     await File(filePath).writeAsString(json);
   }
@@ -29,6 +31,7 @@ class DrawingSerializer {
   static Future<Map<int, List<DrawingStroke>>> load({
     required String filePath,
   }) async {
+    if (kIsWeb) return {};
     final file = File(filePath);
     if (!await file.exists()) {
       return {};

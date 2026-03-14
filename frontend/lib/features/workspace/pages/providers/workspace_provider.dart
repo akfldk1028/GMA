@@ -51,26 +51,90 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     final currentState = state.valueOrNull;
     if (currentState == null) return;
 
-    // Verify PDF file exists
-    final file = File(pdfPath);
-    if (!await file.exists()) {
-      throw Exception('PDF file not found: $pdfPath');
+    final isAsset = pdfPath.startsWith('assets/');
+
+    // Verify PDF file exists (skip for assets and web)
+    if (!isAsset && !kIsWeb) {
+      final file = File(pdfPath);
+      if (!await file.exists()) {
+        throw Exception('PDF file not found: $pdfPath');
+      }
+    }
+
+    // Update open tabs list — add if not already open
+    final openPdfs = List<String>.from(currentState.openPdfPaths);
+    if (!openPdfs.contains(pdfPath)) {
+      openPdfs.add(pdfPath);
     }
 
     // Clear markers from previous PDF
     state = AsyncData(
-      currentState.copyWith(currentPdfPath: pdfPath, markers: []),
+      currentState.copyWith(
+        currentPdfPath: pdfPath,
+        markers: [],
+        openPdfPaths: openPdfs,
+      ),
     );
 
     // Load the actual PDF document for rendering
-    await ref.read(pdfDocumentProvider.notifier).loadFromFile(pdfPath);
+    if (isAsset) {
+      await ref.read(pdfDocumentProvider.notifier).loadFromAsset(pdfPath);
+    } else {
+      await ref.read(pdfDocumentProvider.notifier).loadFromFile(pdfPath);
+    }
 
     // Register PDF in PdfRegistry for ScrapNote UUID tracking
     await ref.read(pdfRegistryProvProvider.notifier).register(pdfPath);
 
-    // Auto-create a linked note if none is currently open
-    if (currentState.currentNoteId == null) {
+    // Auto-create a linked note if none is currently open (skip on web for assets)
+    if (currentState.currentNoteId == null && !isAsset) {
       await _autoCreateNote(pdfPath);
+    }
+
+    // On web with asset PDF, create virtual note ID for UI (capture button needs noteId)
+    if (isAsset && state.valueOrNull?.currentNoteId == null) {
+      final virtualNoteId = 'web-sample-${DateTime.now().millisecondsSinceEpoch}';
+      state = AsyncData(state.value!.copyWith(currentNoteId: virtualNoteId));
+    }
+  }
+
+  /// Switch to an already-open PDF tab.
+  Future<void> switchPdfTab(String pdfPath) async {
+    final currentState = state.valueOrNull;
+    if (currentState == null) return;
+    if (currentState.currentPdfPath == pdfPath) return;
+    await loadPdf(pdfPath);
+  }
+
+  /// Close a PDF tab. If it's the active tab, switch to adjacent tab.
+  void closePdfTab(String pdfPath) {
+    final currentState = state.valueOrNull;
+    if (currentState == null) return;
+
+    final openPdfs = List<String>.from(currentState.openPdfPaths);
+    final idx = openPdfs.indexOf(pdfPath);
+    if (idx == -1) return;
+
+    openPdfs.removeAt(idx);
+
+    // If closing the active tab, switch to an adjacent one
+    if (currentState.currentPdfPath == pdfPath) {
+      if (openPdfs.isEmpty) {
+        state = AsyncData(currentState.copyWith(
+          currentPdfPath: null,
+          openPdfPaths: [],
+          markers: [],
+        ));
+      } else {
+        final newIdx = idx.clamp(0, openPdfs.length - 1);
+        state = AsyncData(currentState.copyWith(
+          openPdfPaths: openPdfs,
+        ));
+        // Load the new active PDF
+        loadPdf(openPdfs[newIdx]);
+      }
+    } else {
+      state = AsyncData(currentState.copyWith(openPdfPaths: openPdfs));
     }
   }
 

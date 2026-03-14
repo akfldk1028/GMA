@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:uuid/uuid.dart';
 
 import '../models/scrapnote_canvas_model.dart';
@@ -83,18 +84,22 @@ class ScrapnoteService {
     if (_index != null) return _index!;
 
     final index = <String, String>{};
-    final dir = Directory(notesDir);
 
-    if (await dir.exists()) {
-      await for (final entity in dir.list()) {
-        if (entity is File && entity.path.endsWith('.gma')) {
-          try {
-            final data = await ScrapnoteSerializer.load(filePath: entity.path);
-            if (data != null && data.linkedPdfPath.isNotEmpty) {
-              index[data.linkedPdfPath] = data.id;
+    if (!kIsWeb) {
+      final dir = Directory(notesDir);
+
+      if (await dir.exists()) {
+        await for (final entity in dir.list()) {
+          if (entity is File && entity.path.endsWith('.gma')) {
+            try {
+              final data =
+                  await ScrapnoteSerializer.load(filePath: entity.path);
+              if (data != null && data.linkedPdfPath.isNotEmpty) {
+                index[data.linkedPdfPath] = data.id;
+              }
+            } catch (_) {
+              // Skip corrupted files
             }
-          } catch (_) {
-            // Skip corrupted files
           }
         }
       }

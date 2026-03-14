@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -119,10 +118,16 @@ class _ScrapPreviewCardState extends State<_ScrapPreviewCard> {
       final imgPath = widget.capturesDir != null
           ? '${widget.capturesDir}/${el.imagePath!}'
           : el.imagePath!;
+      if (kIsWeb) {
+        return Center(
+          child: Icon(Icons.image_rounded,
+              color: AppColors.textMuted, size: 20),
+        );
+      }
       return ClipRRect(
         borderRadius: BorderRadius.circular(6),
-        child: Image.file(
-          File(imgPath),
+        child: Image.network(
+          imgPath,
           fit: BoxFit.cover,
           width: double.infinity,
           errorBuilder: (_, e, st) => Center(

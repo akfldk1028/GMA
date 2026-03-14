@@ -1,6 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 import '../../pdf_viewer/drawing/models/drawing_model.dart';
+import '../../workspace/models/pdf_marker_model.dart';
 
 part 'scrapnote_canvas_model.freezed.dart';
 part 'scrapnote_canvas_model.g.dart';
@@ -67,6 +69,8 @@ class CanvasElement with _$CanvasElement {
     int? sourcePageNumber,
     // Path of the source PDF from which this element was extracted
     String? sourcePdfPath,
+    // Source region on the PDF page (for rendering highlight rectangles on PDF)
+    @PdfRectConverter() PdfRect? sourceRect,
     required DateTime createdAt,
   }) = _CanvasElement;
 

@@ -20,7 +20,7 @@ _$WorkspaceStateImpl _$$WorkspaceStateImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$WorkspaceStateImplToJson(
   _$WorkspaceStateImpl instance,
 ) => <String, dynamic>{
-  'currentNote': instance.currentNote,
+  'currentNote': instance.currentNote?.toJson(),
   'currentPdf': instance.currentPdf,
   'panelSizes': instance.panelSizes,
 };

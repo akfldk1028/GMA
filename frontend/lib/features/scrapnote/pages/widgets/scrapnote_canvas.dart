@@ -5,6 +5,8 @@ import 'package:uuid/uuid.dart';
 import '../../../pdf_viewer/drawing/models/drawing_model.dart';
 import '../../../pdf_viewer/drawing/tools/tool_registry.dart';
 import '../../models/scrapnote_canvas_model.dart';
+import 'capture_element_widget.dart';
+import 'highlight_card_widget.dart';
 
 /// CustomPainter for scrapnote strokes that uses ABSOLUTE pixel coordinates.
 ///
@@ -186,19 +188,12 @@ class _ScrapnoteCanvasState extends State<ScrapnoteCanvas> {
   }
 
   Widget _buildElementWidget(CanvasElement element) {
-    // Placeholder rendering — full element widgets are Optional Goal A
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey, width: 1),
-        color: Colors.grey.withValues(alpha: 0.1),
-      ),
-      child: Center(
-        child: Text(
-          element.type == CanvasElementType.capture ? 'Capture' : 'Highlight',
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
-        ),
-      ),
-    );
+    switch (element.type) {
+      case CanvasElementType.capture:
+        return CaptureElementWidget(element: element);
+      case CanvasElementType.highlight:
+        return HighlightCardWidget(element: element);
+    }
   }
 
   void _onPointerDown(PointerDownEvent event) {

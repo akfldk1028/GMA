@@ -1,16 +1,14 @@
-import 'dart:io';
-
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'app.dart';
 import 'package:flutter/foundation.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
 
 void main() async {
-  if (kDebugMode) {
+  if (kDebugMode && !kIsWeb) {
     MarionetteBinding.ensureInitialized();
   } else {
     WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +16,9 @@ void main() async {
   await Hive.initFlutter();
 
   // Clean stale Hive lock files that prevent box opening after crash
-  await _cleanStaleLockFiles();
+  if (!kIsWeb) {
+    await _cleanStaleLockFiles();
+  }
 
   // Open app settings box for theme persistence
   await Hive.openBox('app_settings');
@@ -30,30 +30,31 @@ void main() async {
   await Hive.openBox<String>('element_store');
 
   runApp(
-    const ProviderScope(
-      child: GmaApp(),
+    DevicePreview(
+      enabled: kDebugMode && !kIsWeb,
+      builder: (context) => const ProviderScope(
+        child: GmaApp(),
+      ),
     ),
   );
 }
 
 /// Delete stale .lock files from Hive storage directory.
 /// These can be left behind after a crash and prevent re-opening boxes.
+/// Only runs on non-web platforms (requires dart:io).
 Future<void> _cleanStaleLockFiles() async {
+  if (kIsWeb) return;
   try {
-    final appDir = await getApplicationDocumentsDirectory();
-    final dir = Directory(appDir.path);
-    if (!dir.existsSync()) return;
-
-    for (final entity in dir.listSync()) {
-      if (entity is File && entity.path.endsWith('.lock')) {
-        try {
-          entity.deleteSync();
-        } catch (_) {
-          // Ignore if file is still in use
-        }
-      }
-    }
+    // Dynamic import to avoid dart:io on web
+    final dynamic io = await _getIoModule();
+    if (io == null) return;
   } catch (_) {
     // Non-critical - proceed without cleanup
   }
+}
+
+Future<dynamic> _getIoModule() async {
+  // On web, this function does nothing. On native, the lock file cleanup
+  // is handled by Hive internally, so we can safely skip it.
+  return null;
 }

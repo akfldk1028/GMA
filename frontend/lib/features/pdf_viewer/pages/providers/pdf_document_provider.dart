@@ -63,6 +63,20 @@ class PdfDocument extends _$PdfDocument {
     }
   }
 
+  /// Load a PDF from a Flutter asset path (e.g. 'assets/sample/sample_math.pdf').
+  Future<void> loadFromAsset(String assetPath) async {
+    try {
+      final documentRef = PdfDocumentRefAsset(assetPath);
+      state = state.copyWith(
+        documentRef: documentRef,
+        filePath: assetPath,
+      );
+    } catch (e) {
+      state = PdfDocumentState(controller: state.controller);
+      rethrow;
+    }
+  }
+
   /// Clear the current document while keeping the controller.
   void clearDocument() {
     state = PdfDocumentState(

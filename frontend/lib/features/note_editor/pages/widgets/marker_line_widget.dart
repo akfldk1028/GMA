@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:gma_frontend/constants/marker_colors.dart';
 
@@ -102,7 +103,7 @@ class MarkerLineWidget extends StatelessWidget {
               ],
             ),
             // Image embed (if any)
-            if (imagePath != null && imagePath!.isNotEmpty) ...[
+            if (imagePath != null && imagePath!.isNotEmpty && !kIsWeb) ...[
               const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),

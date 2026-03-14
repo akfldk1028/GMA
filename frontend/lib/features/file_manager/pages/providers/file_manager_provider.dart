@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path/path.dart' as path;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
@@ -15,6 +16,7 @@ part 'file_manager_provider.g.dart';
 class FileManager extends _$FileManager {
   @override
   Future<List<NoteMetadata>> build() async {
+    if (kIsWeb) return [];
     return _scanNotesDirectory();
   }
 
@@ -142,6 +144,7 @@ class CreateNoteMutation extends _$CreateNoteMutation {
     required String title,
     String? linkedPdfPath,
   }) async {
+    if (kIsWeb) throw UnsupportedError('File creation not supported on web');
     state = const AsyncLoading();
     try {
       final notesRoot = await ref.read(notesRootDirectoryProvider.future);

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../../services/scrap_insertion_service.dart';
@@ -77,6 +78,15 @@ class ConfirmScrapPopup extends StatelessWidget {
   Widget _buildPreview() {
     if (proposal is CaptureProposal) {
       final cap = proposal as CaptureProposal;
+      if (kIsWeb) {
+        return Container(
+          height: 100,
+          color: Colors.grey[200],
+          child: const Center(
+            child: Icon(Icons.image_outlined, color: Colors.grey),
+          ),
+        );
+      }
       return ClipRRect(
         borderRadius: BorderRadius.circular(6),
         child: Image.file(

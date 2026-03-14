@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -104,7 +104,7 @@ class AppSidebar extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        Platform.isMacOS ? '⌘K' : 'Ctrl+K',
+                        defaultTargetPlatform == TargetPlatform.macOS ? '⌘K' : 'Ctrl+K',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w500,

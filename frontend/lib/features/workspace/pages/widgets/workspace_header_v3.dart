@@ -8,6 +8,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../common_widgets/responsive.dart';
 import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
 import '../providers/workspace_provider.dart';
+import 'workspace_kebab_menu.dart';
 
 class WorkspaceHeaderV3 extends ConsumerWidget {
   const WorkspaceHeaderV3({
@@ -20,6 +21,32 @@ class WorkspaceHeaderV3 extends ConsumerWidget {
   final VoidCallback onToggleEditor;
   final VoidCallback onTogglePageNav;
   final VoidCallback onToggleLiveScraps;
+
+  Future<void> _handleLoadSamplePdf(BuildContext context, WidgetRef ref) async {
+    try {
+      const assetPath = 'assets/sample/sample_math.pdf';
+      await ref
+          .read(workspaceProviderProvider.notifier)
+          .loadPdf(assetPath);
+      if (context.mounted) {
+        ShadToaster.of(context).show(
+          const ShadToast(
+            title: Text('Sample PDF Loaded'),
+            description: Text('3-page math textbook loaded for testing.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ShadToaster.of(context).show(
+          ShadToast.destructive(
+            title: const Text('Sample PDF Load Failed'),
+            description: Text('$e'),
+          ),
+        );
+      }
+    }
+  }
 
   Future<void> _handleOpenPdf(BuildContext context, WidgetRef ref) async {
     try {
@@ -113,12 +140,23 @@ class WorkspaceHeaderV3 extends ConsumerWidget {
             ),
 
             // Actions
+            WorkspaceKebabMenu(
+              buttonSize: buttonSize,
+              iconSize: iconSize,
+            ),
             _HeaderIconButton(
               icon: Icons.file_open_rounded,
               tooltip: 'Open PDF',
               size: buttonSize,
               iconSize: iconSize,
               onTap: () => _handleOpenPdf(context, ref),
+            ),
+            _HeaderIconButton(
+              icon: Icons.science_rounded,
+              tooltip: 'Load Sample PDF',
+              size: buttonSize,
+              iconSize: iconSize,
+              onTap: () => _handleLoadSamplePdf(context, ref),
             ),
             if (!isMobile)
               _HeaderIconButton(

@@ -34,6 +34,8 @@ class NoteStorageService {
   /// Cancels any pending save operations and schedules a new save after [debounceDuration].
   /// This ensures that rapid consecutive changes result in only one file write.
   ///
+  /// On web, this is a no-op (filesystem not available).
+  ///
   /// Parameters:
   /// - [noteId]: Unique identifier for the note (used as filename)
   /// - [content]: Markdown content to save
@@ -43,6 +45,9 @@ class NoteStorageService {
     required String noteId,
     required String content,
   }) async {
+    // Web platform does not support dart:io file operations
+    if (kIsWeb) return;
+
     // Validate parameters
     if (noteId.isEmpty) {
       debugPrint('Note ID cannot be empty');
@@ -67,10 +72,13 @@ class NoteStorageService {
   ///
   /// Use this for explicit save operations (e.g., user clicks "Save" button).
   /// For auto-save during typing, use [saveNote] instead.
+  /// On web, this is a no-op (filesystem not available).
   Future<void> saveNoteImmediate({
     required String noteId,
     required String content,
   }) async {
+    if (kIsWeb) return;
+
     // Cancel any pending debounced save
     _debounceTimer?.cancel();
 
@@ -102,8 +110,10 @@ class NoteStorageService {
 
   /// Load note content from filesystem.
   ///
-  /// Returns null if note file doesn't exist.
+  /// Returns null if note file doesn't exist or on web.
   Future<String?> loadNote({required String noteId}) async {
+    if (kIsWeb) return null;
+
     try {
       final notesDir = await ref.read(notesRootDirectoryProvider.future);
       final noteFile = File('${notesDir.path}/$noteId.md');
@@ -121,7 +131,10 @@ class NoteStorageService {
   }
 
   /// Delete note file from filesystem.
+  /// On web, this is a no-op.
   Future<void> deleteNote({required String noteId}) async {
+    if (kIsWeb) return;
+
     try {
       final notesDir = await ref.read(notesRootDirectoryProvider.future);
       final noteFile = File('${notesDir.path}/$noteId.md');
@@ -137,7 +150,10 @@ class NoteStorageService {
   }
 
   /// Check if note file exists.
+  /// Returns false on web (filesystem not available).
   Future<bool> noteExists({required String noteId}) async {
+    if (kIsWeb) return false;
+
     try {
       final notesDir = await ref.read(notesRootDirectoryProvider.future);
       final noteFile = File('${notesDir.path}/$noteId.md');

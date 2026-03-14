@@ -1,3 +1,4 @@
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -19,6 +20,9 @@ class GmaApp extends ConsumerWidget {
       themeMode: themeMode,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
+      // DevicePreview integration
+      locale: DevicePreview.locale(context),
+      builder: DevicePreview.appBuilder,
       // Material ThemeData bridge — violet accent for Material widgets
       materialThemeBuilder: (context, theme) {
         final isDark = switch (themeMode) {

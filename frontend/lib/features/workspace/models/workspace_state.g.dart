@@ -29,6 +29,11 @@ _$WorkspaceStateImpl _$$WorkspaceStateImplFromJson(Map<String, dynamic> json) =>
               ?.map((e) => PdfMarker.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
+      openPdfPaths:
+          (json['openPdfPaths'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
       panelSizes: json['panelSizes'] == null
           ? const PanelSizes()
           : PanelSizes.fromJson(json['panelSizes'] as Map<String, dynamic>),
@@ -55,8 +60,9 @@ Map<String, dynamic> _$$WorkspaceStateImplToJson(
 ) => <String, dynamic>{
   'currentPdfPath': instance.currentPdfPath,
   'currentNoteId': instance.currentNoteId,
-  'markers': instance.markers,
-  'panelSizes': instance.panelSizes,
+  'markers': instance.markers.map((e) => e.toJson()).toList(),
+  'openPdfPaths': instance.openPdfPaths,
+  'panelSizes': instance.panelSizes.toJson(),
   'sidebarMode': _$SidebarModeEnumMap[instance.sidebarMode]!,
   'isEditorModalOpen': instance.isEditorModalOpen,
   'isFileBrowserOpen': instance.isFileBrowserOpen,

@@ -226,6 +226,9 @@ mixin _$WorkspaceState {
   String? get currentPdfPath => throw _privateConstructorUsedError;
   String? get currentNoteId => throw _privateConstructorUsedError;
   List<PdfMarker> get markers => throw _privateConstructorUsedError;
+
+  /// List of currently open PDF paths (tab bar)
+  List<String> get openPdfPaths => throw _privateConstructorUsedError;
   PanelSizes get panelSizes => throw _privateConstructorUsedError;
   SidebarMode get sidebarMode =>
       throw _privateConstructorUsedError; // Modal/drawer UI state
@@ -272,6 +275,7 @@ abstract class $WorkspaceStateCopyWith<$Res> {
     String? currentPdfPath,
     String? currentNoteId,
     List<PdfMarker> markers,
+    List<String> openPdfPaths,
     PanelSizes panelSizes,
     SidebarMode sidebarMode,
     bool isEditorModalOpen,
@@ -307,6 +311,7 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
     Object? currentPdfPath = freezed,
     Object? currentNoteId = freezed,
     Object? markers = null,
+    Object? openPdfPaths = null,
     Object? panelSizes = null,
     Object? sidebarMode = null,
     Object? isEditorModalOpen = null,
@@ -334,6 +339,10 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
                 ? _value.markers
                 : markers // ignore: cast_nullable_to_non_nullable
                       as List<PdfMarker>,
+            openPdfPaths: null == openPdfPaths
+                ? _value.openPdfPaths
+                : openPdfPaths // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
             panelSizes: null == panelSizes
                 ? _value.panelSizes
                 : panelSizes // ignore: cast_nullable_to_non_nullable
@@ -411,6 +420,7 @@ abstract class _$$WorkspaceStateImplCopyWith<$Res>
     String? currentPdfPath,
     String? currentNoteId,
     List<PdfMarker> markers,
+    List<String> openPdfPaths,
     PanelSizes panelSizes,
     SidebarMode sidebarMode,
     bool isEditorModalOpen,
@@ -446,6 +456,7 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
     Object? currentPdfPath = freezed,
     Object? currentNoteId = freezed,
     Object? markers = null,
+    Object? openPdfPaths = null,
     Object? panelSizes = null,
     Object? sidebarMode = null,
     Object? isEditorModalOpen = null,
@@ -473,6 +484,10 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
             ? _value._markers
             : markers // ignore: cast_nullable_to_non_nullable
                   as List<PdfMarker>,
+        openPdfPaths: null == openPdfPaths
+            ? _value._openPdfPaths
+            : openPdfPaths // ignore: cast_nullable_to_non_nullable
+                  as List<String>,
         panelSizes: null == panelSizes
             ? _value.panelSizes
             : panelSizes // ignore: cast_nullable_to_non_nullable
@@ -533,6 +548,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     this.currentPdfPath,
     this.currentNoteId,
     final List<PdfMarker> markers = const [],
+    final List<String> openPdfPaths = const [],
     this.panelSizes = const PanelSizes(),
     this.sidebarMode = SidebarMode.fileBrowser,
     this.isEditorModalOpen = false,
@@ -545,7 +561,8 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     this.pendingMarkerPageNumber,
     this.pendingMarkerText,
     @PdfRectConverter() this.pendingMarkerTextRect,
-  }) : _markers = markers;
+  }) : _markers = markers,
+       _openPdfPaths = openPdfPaths;
 
   factory _$WorkspaceStateImpl.fromJson(Map<String, dynamic> json) =>
       _$$WorkspaceStateImplFromJson(json);
@@ -561,6 +578,18 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     if (_markers is EqualUnmodifiableListView) return _markers;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableListView(_markers);
+  }
+
+  /// List of currently open PDF paths (tab bar)
+  final List<String> _openPdfPaths;
+
+  /// List of currently open PDF paths (tab bar)
+  @override
+  @JsonKey()
+  List<String> get openPdfPaths {
+    if (_openPdfPaths is EqualUnmodifiableListView) return _openPdfPaths;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_openPdfPaths);
   }
 
   @override
@@ -610,7 +639,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
 
   @override
   String toString() {
-    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
+    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, openPdfPaths: $openPdfPaths, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
   }
 
   @override
@@ -623,6 +652,10 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
             (identical(other.currentNoteId, currentNoteId) ||
                 other.currentNoteId == currentNoteId) &&
             const DeepCollectionEquality().equals(other._markers, _markers) &&
+            const DeepCollectionEquality().equals(
+              other._openPdfPaths,
+              _openPdfPaths,
+            ) &&
             (identical(other.panelSizes, panelSizes) ||
                 other.panelSizes == panelSizes) &&
             (identical(other.sidebarMode, sidebarMode) ||
@@ -659,6 +692,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     currentPdfPath,
     currentNoteId,
     const DeepCollectionEquality().hash(_markers),
+    const DeepCollectionEquality().hash(_openPdfPaths),
     panelSizes,
     sidebarMode,
     isEditorModalOpen,
@@ -695,6 +729,7 @@ abstract class _WorkspaceState implements WorkspaceState {
     final String? currentPdfPath,
     final String? currentNoteId,
     final List<PdfMarker> markers,
+    final List<String> openPdfPaths,
     final PanelSizes panelSizes,
     final SidebarMode sidebarMode,
     final bool isEditorModalOpen,
@@ -718,6 +753,10 @@ abstract class _WorkspaceState implements WorkspaceState {
   String? get currentNoteId;
   @override
   List<PdfMarker> get markers;
+
+  /// List of currently open PDF paths (tab bar)
+  @override
+  List<String> get openPdfPaths;
   @override
   PanelSizes get panelSizes;
   @override

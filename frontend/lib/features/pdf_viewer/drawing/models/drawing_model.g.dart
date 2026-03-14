@@ -22,7 +22,7 @@ Map<String, dynamic> _$$DrawingStrokeImplToJson(_$DrawingStrokeImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'pageNumber': instance.pageNumber,
-      'points': instance.points,
+      'points': instance.points.map((e) => e.toJson()).toList(),
       'toolId': instance.toolId,
       'colorValue': instance.colorValue,
       'size': instance.size,

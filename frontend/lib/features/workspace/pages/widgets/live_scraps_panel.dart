@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -272,19 +271,27 @@ class _ElementCard extends StatelessWidget {
                     child: SizedBox(
                       height: 80,
                       width: double.infinity,
-                      child: Image.file(
-                        File(capturesDir != null
-                            ? '$capturesDir/${element.imagePath!}'
-                            : element.imagePath!),
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, e, st) => Container(
-                          color: AppColors.surfaceDim,
-                          child: const Center(
-                            child: Icon(Icons.broken_image_rounded,
-                                color: AppColors.textMuted, size: 20),
-                          ),
-                        ),
-                      ),
+                      child: kIsWeb
+                          ? Container(
+                              color: AppColors.surfaceDim,
+                              child: const Center(
+                                child: Icon(Icons.image_rounded,
+                                    color: AppColors.textMuted, size: 20),
+                              ),
+                            )
+                          : Image.network(
+                              capturesDir != null
+                                  ? '$capturesDir/${element.imagePath!}'
+                                  : element.imagePath!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, e, st) => Container(
+                                color: AppColors.surfaceDim,
+                                child: const Center(
+                                  child: Icon(Icons.broken_image_rounded,
+                                      color: AppColors.textMuted, size: 20),
+                                ),
+                              ),
+                            ),
                     ),
                   ),
                 ],

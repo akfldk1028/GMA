@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path/path.dart' as p;
 
 import '../models/scrapnote_canvas_model.dart';
@@ -27,6 +28,8 @@ class ScrapnoteSerializer {
     required String filePath,
     required ScrapnoteCanvasData data,
   }) async {
+    if (kIsWeb) return;
+
     final json = data.toJson();
     // Embed the schema version at the top level
     json['version'] = _currentVersion;
@@ -47,6 +50,8 @@ class ScrapnoteSerializer {
   static Future<ScrapnoteCanvasData?> load({
     required String filePath,
   }) async {
+    if (kIsWeb) return null;
+
     final file = File(filePath);
     if (!await file.exists()) {
       return null;
