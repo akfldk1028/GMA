@@ -181,7 +181,6 @@ class _$MarkerImpl implements _Marker {
 
   @override
   final String id;
-  // ignore: invalid_annotation_target
   @override
   @MarkerColorConverter()
   final MarkerColor color;
@@ -189,7 +188,6 @@ class _$MarkerImpl implements _Marker {
   final int pageNumber;
   @override
   final String? selectedText;
-  // ignore: invalid_annotation_target
   @override
   @JsonKey()
   @_PdfRectConverter()
@@ -245,14 +243,14 @@ abstract class _Marker implements Marker {
   factory _Marker.fromJson(Map<String, dynamic> json) = _$MarkerImpl.fromJson;
 
   @override
-  String get id; // ignore: invalid_annotation_target
+  String get id;
   @override
   @MarkerColorConverter()
   MarkerColor get color;
   @override
   int get pageNumber;
   @override
-  String? get selectedText; // ignore: invalid_annotation_target
+  String? get selectedText;
   @override
   @_PdfRectConverter()
   PdfRect? get rect;

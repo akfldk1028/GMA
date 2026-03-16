@@ -11,6 +11,13 @@ import '../../../../constants/marker_colors.dart';
 import '../../../../utils/file_system_provider.dart';
 import '../../../ocr/ocr_service.dart';
 import '../../../ocr/pages/providers/ocr_provider.dart';
+import '../../../scrapnote/models/element_model.dart';
+import '../../../scrapnote/models/scrapnote_canvas_model.dart';
+import '../../../scrapnote/pages/providers/scrapnote_canvas_provider.dart';
+import '../../../scrapnote/providers/element_store.dart';
+import '../../../scrapnote/providers/pdf_registry_provider.dart';
+import '../../../scrapnote/providers/scrap_insertion_provider.dart';
+import '../../../scrapnote/services/scrap_insertion_service.dart';
 import '../../../workspace/pages/providers/workspace_provider.dart';
 import '../../capture/pages/providers/capture_provider.dart';
 import '../../capture/pages/widgets/capture_overlay.dart';
@@ -223,38 +230,140 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     }
   }
 
-  /// Build a single "Add Marker" button (for modal flow).
+  /// Build text selection action buttons (Add Marker + Add Scrap).
   Widget _buildAddMarkerButton() {
     return Positioned(
       top: 60,
       right: 16,
-      child: ShadButton(
-        onPressed: () {
-          if (_selectedPageNumber == null) return;
-          widget.onAddMarkerPressed?.call(
-            pageNumber: _selectedPageNumber!,
-            selectedText: _selectedText,
-            textRect: _selectedTextRect,
-          );
-          // Clear selection
-          setState(() {
-            _textSelections = null;
-            _selectedText = null;
-            _selectedPageNumber = null;
-            _selectedTextRect = null;
-          });
-        },
-        size: ShadButtonSize.sm,
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.bookmark_add, size: 16),
-            SizedBox(width: 6),
-            Text('Add Marker'),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ShadButton(
+            onPressed: () {
+              if (_selectedPageNumber == null) return;
+              widget.onAddMarkerPressed?.call(
+                pageNumber: _selectedPageNumber!,
+                selectedText: _selectedText,
+                textRect: _selectedTextRect,
+              );
+              _clearSelection();
+            },
+            size: ShadButtonSize.sm,
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.bookmark_add, size: 16),
+                SizedBox(width: 6),
+                Text('Add Marker'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          ShadButton.outline(
+            onPressed: () => _handleAddScrap(),
+            size: ShadButtonSize.sm,
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.auto_awesome_mosaic_rounded, size: 16),
+                SizedBox(width: 6),
+                Text('Add Scrap'),
+              ],
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _textSelections = null;
+      _selectedText = null;
+      _selectedPageNumber = null;
+      _selectedTextRect = null;
+    });
+  }
+
+  /// Add selected text as a scrap element to the element store.
+  Future<void> _handleAddScrap() async {
+    if (_selectedPageNumber == null || _selectedText == null) return;
+
+    final workspaceState =
+        ref.read(workspaceProviderProvider).valueOrNull;
+    if (workspaceState?.currentPdfPath == null) return;
+
+    final pdfId = ref
+        .read(pdfRegistryProvProvider.notifier)
+        .getIdByPath(workspaceState!.currentPdfPath!);
+    if (pdfId == null) return;
+
+    final element = ScrapElement(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      pdfId: pdfId,
+      pageNumber: _selectedPageNumber!,
+      type: ElementType.highlight,
+      selectedText: _selectedText,
+      rect: _selectedTextRect,
+      createdAt: DateTime.now(),
+    );
+
+    ref.read(elementStoreProvider.notifier).add(element);
+
+    // Also add a CanvasElement to the scrapnote canvas so it appears visually.
+    _addElementToCanvas(
+      pdfId: pdfId,
+      elementId: element.id,
+      selectedText: _selectedText,
+      pageNumber: _selectedPageNumber!,
+      pdfPath: workspaceState.currentPdfPath!,
+    );
+
+    _clearSelection();
+  }
+
+  /// Adds a [CanvasElement] to the [ScrapnoteCanvasState] for the given [pdfId].
+  ///
+  /// The element's Y position is calculated by stacking below existing elements
+  /// (max(y + height) + 20px gap), so new scraps appear below previous ones.
+  void _addElementToCanvas({
+    required String pdfId,
+    required String elementId,
+    required String? selectedText,
+    required int pageNumber,
+    required String pdfPath,
+  }) {
+    final canvasState =
+        ref.read(scrapnoteCanvasStateProvider(pdfId)).valueOrNull;
+
+    double nextY = 20.0;
+    if (canvasState != null && canvasState.elements.isNotEmpty) {
+      // Calculate the bottom edge of the lowest existing element
+      double maxBottom = 0;
+      for (final e in canvasState.elements) {
+        final bottom = e.y + e.height;
+        if (bottom > maxBottom) maxBottom = bottom;
+      }
+      nextY = maxBottom + 20.0;
+    }
+
+    final canvasElement = CanvasElement(
+      id: elementId,
+      type: CanvasElementType.highlight,
+      x: 20.0,
+      y: nextY,
+      width: 300.0,
+      height: 80.0,
+      selectedText: selectedText,
+      sourcePageNumber: pageNumber,
+      sourcePdfPath: pdfPath,
+      createdAt: DateTime.now(),
+    );
+
+    ref
+        .read(scrapnoteCanvasStateProvider(pdfId).notifier)
+        .addElement(canvasElement);
   }
 
 
@@ -321,6 +430,22 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         normalizedRect.bottom,
       );
 
+      // Build full image path for proposal preview
+      final capturesDir = await ref.read(capturesDirectoryProvider.future);
+      final fullImagePath = '${capturesDir.path}/$filename';
+
+      // Show confirm popup via ScrapInsertionService
+      final workspaceState = ref.read(workspaceProviderProvider).valueOrNull;
+      final service = ref.read(scrapInsertionServiceProvider);
+      final result = await service.proposeCapture(CaptureProposal(
+        imagePath: fullImagePath,
+        sourcePageNumber: pageNumber,
+        sourcePdfPath: workspaceState?.currentPdfPath ?? '',
+      ));
+
+      if (result != InsertionResult.accepted) return;
+
+      // User accepted — create marker and scrap element
       final workspaceNotifier = ref.read(workspaceProviderProvider.notifier);
       await workspaceNotifier.createMarker(
         pageNumber: pageNumber,
@@ -329,6 +454,25 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         selectedText: extractedText,
         textRect: pdfRect,
       );
+
+      // Also add as scrap element
+      if (workspaceState?.currentPdfPath != null) {
+        final pdfId = ref
+            .read(pdfRegistryProvProvider.notifier)
+            .getIdByPath(workspaceState!.currentPdfPath!);
+        if (pdfId != null) {
+          ref.read(elementStoreProvider.notifier).add(ScrapElement(
+                id: DateTime.now().microsecondsSinceEpoch.toString(),
+                pdfId: pdfId,
+                pageNumber: pageNumber,
+                type: ElementType.capture,
+                selectedText: extractedText,
+                imagePath: filename,
+                rect: pdfRect,
+                createdAt: DateTime.now(),
+              ));
+        }
+      }
     } catch (e) {
       if (mounted) {
         ShadToaster.of(context).show(

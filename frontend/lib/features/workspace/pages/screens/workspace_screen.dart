@@ -8,16 +8,19 @@ import '../../../../common_widgets/responsive.dart';
 import '../../../pdf_viewer/drawing/pages/widgets/drawing_toolbar.dart';
 import '../../../pdf_viewer/pages/screens/pdf_viewer_screen.dart';
 import '../../../pdf_viewer/pages/widgets/marker_pills_strip.dart';
+import '../../../scrapnote/pages/widgets/confirm_scrap_popup.dart';
 import '../../../scrapnote/pages/widgets/element_navigator_drawer.dart';
+import '../../../scrapnote/providers/scrap_insertion_provider.dart';
 import '../../models/pdf_marker_model.dart';
 import '../../models/workspace_state.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/file_browser_drawer.dart';
-import '../widgets/live_scraps_panel.dart';
+import '../widgets/scrapnote_panel.dart';
 import '../widgets/marker_edit_modal.dart';
 import '../widgets/note_editor_modal.dart';
 import '../widgets/page_thumbnails_panel.dart';
 import '../widgets/sticky_note_widget.dart';
+import '../widgets/pdf_tab_bar.dart';
 import '../widgets/workspace_header_v3.dart';
 
 /// Main workspace screen: 3-panel layout with PDF + page nav + live scraps.
@@ -193,6 +196,29 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     }
   }
 
+  // ─── Scrap confirm popup overlay ─────────────────────────
+
+  Widget _buildConfirmScrapPopup() {
+    final proposal = ref.watch(activeScrapProposalProvider);
+    if (proposal == null) return const SizedBox.shrink();
+
+    return Positioned(
+      bottom: 24,
+      right: 24,
+      child: ConfirmScrapPopup(
+        proposal: proposal,
+        onAccept: () {
+          ref.read(scrapInsertionServiceProvider).accept();
+          ref.read(activeScrapProposalProvider.notifier).clear();
+        },
+        onReject: () {
+          ref.read(scrapInsertionServiceProvider).reject();
+          ref.read(activeScrapProposalProvider.notifier).clear();
+        },
+      ),
+    );
+  }
+
   // ─── Keyboard shortcuts ──────────────────────────────────
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
@@ -292,17 +318,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         maxChildSize: 0.9,
         expand: false,
         builder: (ctx, controller) {
-          final notifier = ref.read(workspaceProviderProvider.notifier);
-          return LiveScrapsPanel(
-            isSheet: true,
-            onElementTap: (element) async {
-              Navigator.of(ctx).pop();
-              final page = await notifier.navigateToElement(element.id);
-              if (page != null && mounted) {
-                await _pdfController.goToPage(pageNumber: page);
-              }
-            },
-          );
+          return const ScrapnotePanel(isSheet: true);
         },
       ),
     );
@@ -445,6 +461,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 MarkerEditModal(
                   onClose: () => notifier.closeMarkerEditModal(),
                 ),
+
+              // ── Overlay: Scrap confirm popup ──
+              _buildConfirmScrapPopup(),
             ],
           ),
         ),
@@ -478,6 +497,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   onTogglePageNav: () => notifier.togglePageNav(),
                   onToggleLiveScraps: () => notifier.toggleLiveScraps(),
                 ),
+
+                // PDF document tab bar (shows when 2+ PDFs are open)
+                const PdfTabBar(),
 
                 // Drawing toolbar
                 if (state.currentNoteId != null)
@@ -530,18 +552,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                         ),
                       ),
 
-                      // Live scraps panel (togglable)
+                      // Scrapnote canvas panel (togglable)
                       if (state.isLiveScrapsOpen)
-                        LiveScrapsPanel(
-                          onElementTap: (element) async {
-                            final page = await notifier
-                                .navigateToElement(element.id);
-                            if (page != null && mounted) {
-                              await _pdfController.goToPage(
-                                  pageNumber: page);
-                            }
-                          },
-                        ),
+                        const ScrapnotePanel(),
                     ],
                   ),
                 ),
@@ -592,6 +605,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               MarkerEditModal(
                 onClose: () => notifier.closeMarkerEditModal(),
               ),
+
+            // ── Overlay: Scrap confirm popup ──
+            _buildConfirmScrapPopup(),
           ],
         ),
       ),

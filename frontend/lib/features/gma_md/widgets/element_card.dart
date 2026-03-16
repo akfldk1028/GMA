@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
@@ -145,7 +146,7 @@ class ElementCard extends ConsumerWidget {
               ),
             ),
             // Right thumbnail (if image exists)
-            if (hasImage) ...[
+            if (hasImage && !kIsWeb) ...[
               const SizedBox(width: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),

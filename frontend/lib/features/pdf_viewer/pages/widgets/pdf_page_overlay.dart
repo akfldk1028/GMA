@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 import '../providers/pdf_marker_provider.dart';
+import 'capture_highlight_overlay.dart';
 
 /// Creates paint callbacks for rendering marker highlights on PDF pages.
 /// Uses pdfrx's pagePaintCallbacks and built-in coordinate conversion
@@ -16,6 +17,9 @@ class PdfPageOverlay {
     WidgetRef ref,
   ) {
     return [
+      // Capture-region highlights (cyan rectangles for captured areas)
+      ...CaptureHighlightOverlay.createPaintCallbacks(ref),
+      // Marker highlights (colored rectangles for text selections)
       (Canvas canvas, Rect pageRect, PdfPage page) {
         final markers = ref.read(markersForPageProvider(page.pageNumber));
         if (markers.isEmpty) return;

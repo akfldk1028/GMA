@@ -31,6 +31,8 @@ class WorkspaceState with _$WorkspaceState {
     String? currentPdfPath,
     String? currentNoteId,
     @Default([]) List<PdfMarker> markers,
+    /// List of currently open PDF paths (tab bar)
+    @Default([]) List<String> openPdfPaths,
     @Default(PanelSizes()) PanelSizes panelSizes,
     @Default(SidebarMode.fileBrowser) SidebarMode sidebarMode,
     // Modal/drawer UI state

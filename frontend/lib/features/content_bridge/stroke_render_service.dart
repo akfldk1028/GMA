@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:perfect_freehand/perfect_freehand.dart';
 
@@ -101,6 +102,12 @@ class StrokeRenderService {
     // 7. Save file
     final filename =
         'p${pageNumber}_stroke_${DateTime.now().millisecondsSinceEpoch}.png';
+
+    // On web, skip dart:io.File write (not supported) and return filename only.
+    if (kIsWeb) {
+      return filename;
+    }
+
     final filePath = '$capturesDir/$filename';
     await File(filePath).writeAsBytes(byteData.buffer.asUint8List());
 

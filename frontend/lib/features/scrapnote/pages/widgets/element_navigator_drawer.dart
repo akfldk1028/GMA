@@ -4,7 +4,9 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../gma_md/widgets/element_card.dart';
 import '../../../note_editor/pages/providers/note_editor_provider.dart';
+import '../../../scraps_library/pages/providers/scraps_filter_provider.dart';
 import '../../../workspace/pages/providers/workspace_provider.dart';
+import '../../../../constants/app_colors.dart';
 import '../../models/element_model.dart';
 import '../../providers/element_store.dart';
 import '../../utils/element_ref_parser.dart';
@@ -69,9 +71,10 @@ class _ElementNavigatorDrawerState
     final theme = ShadTheme.of(context);
     final ws = ref.watch(workspaceProviderProvider).valueOrNull;
     final noteId = ws?.currentNoteId;
+    final activeFilter = ref.watch(scrapsFilterProvider);
 
     // Get element IDs from current note content
-    final elements = <ScrapElement>[];
+    final allElements = <ScrapElement>[];
     if (noteId != null) {
       final controller = ref.watch(noteEditorProvider(noteId));
       final content = controller?.text ?? '';
@@ -81,9 +84,14 @@ class _ElementNavigatorDrawerState
       final store = ref.read(elementStoreProvider.notifier);
       for (final id in ids) {
         final el = store.getById(id);
-        if (el != null) elements.add(el);
+        if (el != null) allElements.add(el);
       }
     }
+
+    // Apply filter
+    final elements = activeFilter == null
+        ? allElements
+        : allElements.where((e) => e.type == activeFilter).toList();
 
     return FadeTransition(
       opacity: _fadeAnim,
@@ -142,6 +150,17 @@ class _ElementNavigatorDrawerState
                         ],
                       ),
                     ),
+                    // Filter tabs
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 6),
+                      child: _ElementFilterTabs(
+                        activeFilter: activeFilter,
+                        onFilterChanged: (type) => ref
+                            .read(scrapsFilterProvider.notifier)
+                            .setFilter(type),
+                      ),
+                    ),
                     // Element list
                     Expanded(
                       child: elements.isEmpty
@@ -151,7 +170,9 @@ class _ElementNavigatorDrawerState
                                 child: Text(
                                   noteId == null
                                       ? 'No note open'
-                                      : 'No elements in this note.\nUse @el <id> in a :::scrapnote block.',
+                                      : activeFilter != null
+                                          ? 'No ${activeFilter.name} elements.'
+                                          : 'No elements in this note.\nUse @el <id> in a :::scrapnote block.',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: theme.colorScheme.mutedForeground,
@@ -182,6 +203,135 @@ class _ElementNavigatorDrawerState
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Compact filter tabs for the element navigator drawer.
+class _ElementFilterTabs extends StatelessWidget {
+  const _ElementFilterTabs({
+    required this.activeFilter,
+    required this.onFilterChanged,
+  });
+
+  final ElementType? activeFilter;
+  final ValueChanged<ElementType?> onFilterChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _FilterChip(
+            label: 'All',
+            isActive: activeFilter == null,
+            onTap: () => onFilterChanged(null),
+          ),
+          const SizedBox(width: 6),
+          _FilterChip(
+            label: 'Highlight',
+            icon: Icons.format_quote_rounded,
+            isActive: activeFilter == ElementType.highlight,
+            onTap: () => onFilterChanged(ElementType.highlight),
+          ),
+          const SizedBox(width: 6),
+          _FilterChip(
+            label: 'Capture',
+            icon: Icons.image_rounded,
+            isActive: activeFilter == ElementType.capture,
+            onTap: () => onFilterChanged(ElementType.capture),
+          ),
+          const SizedBox(width: 6),
+          _FilterChip(
+            label: 'Drawing',
+            icon: Icons.brush_rounded,
+            isActive: activeFilter == ElementType.drawing,
+            onTap: () => onFilterChanged(ElementType.drawing),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Single filter chip with hover and active states.
+class _FilterChip extends StatefulWidget {
+  const _FilterChip({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+    this.icon,
+  });
+
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+  final IconData? icon;
+
+  @override
+  State<_FilterChip> createState() => _FilterChipState();
+}
+
+class _FilterChipState extends State<_FilterChip> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            gradient: widget.isActive ? AppColors.primaryGradient : null,
+            color: widget.isActive
+                ? null
+                : _isHovered
+                    ? AppColors.surfaceHover
+                    : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: widget.isActive
+                  ? Colors.transparent
+                  : _isHovered
+                      ? AppColors.primary.withValues(alpha: 0.2)
+                      : AppColors.border,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.icon != null) ...[
+                Icon(
+                  widget.icon,
+                  size: 12,
+                  color: widget.isActive ? Colors.white : AppColors.textMuted,
+                ),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight:
+                      widget.isActive ? FontWeight.w600 : FontWeight.w500,
+                  color: widget.isActive
+                      ? Colors.white
+                      : _isHovered
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

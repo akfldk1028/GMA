@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:markdown_widget/markdown_widget.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -79,8 +80,8 @@ MarkdownConfig buildMarkdownConfig(
             ),
           );
 
-      // Handle absolute file:// URIs
-      if (url.startsWith('file:///')) {
+      // Handle absolute file:// URIs (native only)
+      if (!kIsWeb && url.startsWith('file:///')) {
         final filePath = Uri.parse(url).toFilePath();
         return Image.file(
           File(filePath),
@@ -98,10 +99,8 @@ MarkdownConfig buildMarkdownConfig(
         );
       }
 
-      // Handle relative paths if baseDir is provided
-      // Relative paths don't start with '/', 'http', or 'file://'
-      if (baseDir != null && !url.startsWith('/')) {
-        // Normalize path: remove leading './' if present
+      // Handle relative paths if baseDir is provided (native only)
+      if (!kIsWeb && baseDir != null && !url.startsWith('/')) {
         final normalizedUrl = url.startsWith('./') ? url.substring(2) : url;
         final absolutePath = '$baseDir/$normalizedUrl';
         return Image.file(
