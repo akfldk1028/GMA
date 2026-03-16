@@ -1,0 +1,22 @@
+## SPEC-SP-001 Progress
+
+- Started: 2026-03-15T00:00:00Z
+- Phase 1 complete: Strategy analysis approved, 10 tasks created
+- Phase 1.6 complete: 10 acceptance criteria groups registered as pending tasks
+- Phase 1.7 complete: New files created:
+  - secplan_state.dart (model)
+  - open_pdf_tab.dart (model)
+  - panel_provider.dart (provider)
+  - panel_divider.dart (widget)
+  - panel_manager.dart (widget)
+  - scrapnote_panel.dart (widget)
+  - sidebar_provider.dart (provider)
+  - item_sidebar.dart (widget)
+  - kebab_menu.dart (widget)
+  - secplan_header.dart (in progress)
+  - tab_provider.dart (in progress)
+  - pdf_tab_bar.dart (in progress)
+- Modified files:
+  - workspace_screen.dart (SecPlanHeader, PanelManager, PdfTabBar, ItemSidebar, toolbar always visible)
+- Phase 2 complete: All 12 new files created, workspace_screen.dart restructured
+- Pending: build_runner code generation (requires Flutter SDK in PATH)
