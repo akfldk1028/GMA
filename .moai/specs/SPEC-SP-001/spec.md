@@ -7,7 +7,7 @@
 | SPEC ID     | SPEC-SP-001                                   |
 | Title       | SecPlan Workspace Transformation              |
 | Created     | 2026-03-15                                    |
-| Status      | Approved                                      |
+| Status      | Completed                                     |
 | Priority    | High                                          |
 | Lifecycle   | spec-anchored                                 |
 | Depends On  | SPEC-SCRAPNOTE-001 (Implemented)              |
