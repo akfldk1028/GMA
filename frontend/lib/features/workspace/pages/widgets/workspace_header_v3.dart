@@ -78,10 +78,10 @@ class WorkspaceHeaderV3 extends ConsumerWidget {
             // Home
             _HeaderIconButton(
               icon: Icons.home_rounded,
-              tooltip: 'Dashboard',
+              tooltip: 'Home',
               size: buttonSize,
               iconSize: iconSize,
-              onTap: () => context.go('/dashboard'),
+              onTap: () => context.go('/home'),
             ),
             const SizedBox(width: 2),
 

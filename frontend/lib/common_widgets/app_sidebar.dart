@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../constants/app_colors.dart';
-import 'app_shell.dart';
 import 'sidebar_item.dart';
 
 class AppSidebar extends StatelessWidget {
@@ -15,7 +14,7 @@ class AppSidebar extends StatelessWidget {
     final currentPath = GoRouterState.of(context).uri.path;
 
     return Container(
-      width: AppShell.sidebarWidth,
+      width: 260,
       decoration: BoxDecoration(
         color: AppColors.surface,
         border: const Border(
@@ -134,8 +133,8 @@ class AppSidebar extends StatelessWidget {
                 SidebarItem(
                   icon: Icons.folder_rounded,
                   label: 'My Library',
-                  isActive: currentPath.startsWith('/file-browser'),
-                  onTap: () => context.go('/file-browser'),
+                  isActive: currentPath.startsWith('/home'),
+                  onTap: () => context.go('/home'),
                 ),
                 SidebarItem(
                   icon: Icons.auto_awesome_mosaic_rounded,

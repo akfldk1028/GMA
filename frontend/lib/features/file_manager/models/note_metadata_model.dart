@@ -15,11 +15,14 @@ class NoteMetadata with _$NoteMetadata {
     required DateTime modifiedAt,
     String? linkedPdfPath,
     String? previewText,
+    String? folderId,
+    @Default(false) bool isPinned,
+    @Default(false) bool isDeleted,
+    DateTime? deletedAt,
   }) = _NoteMetadata;
 
   factory NoteMetadata.fromJson(Map<String, dynamic> json) =>
       _$NoteMetadataFromJson(json);
 
-  /// Computed property to check if this note has a linked PDF
   bool get hasLinkedPdf => linkedPdfPath != null && linkedPdfPath!.isNotEmpty;
 }

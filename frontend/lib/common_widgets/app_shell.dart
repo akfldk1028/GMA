@@ -1,85 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../constants/app_colors.dart';
-import 'app_sidebar.dart';
+import '../features/home/pages/widgets/home_expanded_sidebar.dart';
+import '../features/home/pages/widgets/home_icon_rail.dart';
+import '../features/home/providers/home_state_provider.dart';
 import 'responsive.dart';
 
-class AppShell extends StatefulWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.child});
-
-  static const sidebarWidth = 260.0;
 
   final Widget child;
 
-  @override
-  State<AppShell> createState() => _AppShellState();
-}
-
-class _AppShellState extends State<AppShell> {
-  bool _isSidebarExpanded = true;
-  bool _didAutoCollapse = false;
-
-  static const _navItems = [
-    (icon: Icons.dashboard_rounded, label: 'Dashboard', path: '/dashboard'),
-    (icon: Icons.folder_rounded, label: 'Library', path: '/file-browser'),
-    (icon: Icons.auto_awesome_mosaic_rounded, label: 'Scraps', path: '/scraps'),
-    (icon: Icons.hub_rounded, label: 'Graph', path: '/knowledge-graph'),
-    (icon: Icons.settings_rounded, label: 'Settings', path: '/settings'),
+  static const _mobileNavItems = [
+    (icon: Icons.description_outlined, activeIcon: Icons.description, label: 'Notes', tab: HomeTab.allNotes),
+    (icon: Icons.delete_outline, activeIcon: Icons.delete, label: 'Trash', tab: HomeTab.trash),
+    (icon: Icons.folder_outlined, activeIcon: Icons.folder, label: 'Folders', tab: HomeTab.folders),
   ];
 
-  int _currentNavIndex(String currentPath) {
-    for (var i = 0; i < _navItems.length; i++) {
-      if (currentPath.startsWith(_navItems[i].path)) return i;
-    }
-    return 0;
-  }
-
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Auto-collapse sidebar on mobile (only once per size change)
+  Widget build(BuildContext context, WidgetRef ref) {
     final isMobile = Responsive.isMobile(context);
-    if (isMobile && _isSidebarExpanded && !_didAutoCollapse) {
-      _isSidebarExpanded = false;
-      _didAutoCollapse = true;
-    } else if (!isMobile) {
-      _didAutoCollapse = false;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isMobile = Responsive.isMobile(context);
-    final isCompact = MediaQuery.sizeOf(context).width <= Breakpoints.tablet;
+    final currentPath = GoRouterState.of(context).uri.path;
+    final isHomePath = currentPath.startsWith('/home');
 
     if (isMobile) {
-      return _buildMobileShell(context);
+      return _buildMobileShell(context, ref, isHomePath);
     }
-    return _buildDesktopShell(context, isCompact);
+    return _buildDesktopShell(context, ref, isHomePath);
   }
 
-  Widget _buildMobileShell(BuildContext context) {
-    final currentPath = GoRouterState.of(context).uri.path;
-    final selectedIndex = _currentNavIndex(currentPath);
+  Widget _buildMobileShell(
+      BuildContext context, WidgetRef ref, bool isHomePath) {
+    if (!isHomePath) {
+      // Non-home routes: no bottom nav
+      return Scaffold(body: SafeArea(child: child));
+    }
+
+    final homeState = ref.watch(homeStateProvider);
+    final selectedIndex = _mobileNavItems
+        .indexWhere((item) => item.tab == homeState.activeTab);
 
     return Scaffold(
-      body: SafeArea(child: widget.child),
+      body: SafeArea(child: child),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
+        selectedIndex: selectedIndex.clamp(0, _mobileNavItems.length - 1),
         onDestinationSelected: (index) {
-          context.go(_navItems[index].path);
+          ref
+              .read(homeStateProvider.notifier)
+              .setTab(_mobileNavItems[index].tab);
         },
         height: 64,
         backgroundColor: AppColors.surface,
         indicatorColor: AppColors.primaryLight,
         surfaceTintColor: Colors.transparent,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: _navItems
+        destinations: _mobileNavItems
             .map((item) => NavigationDestination(
                   icon: Icon(item.icon, size: 22),
                   selectedIcon:
-                      Icon(item.icon, size: 22, color: AppColors.primary),
+                      Icon(item.activeIcon, size: 22, color: AppColors.primary),
                   label: item.label,
                 ))
             .toList(),
@@ -87,61 +68,52 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  Widget _buildDesktopShell(BuildContext context, bool isCompact) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Main content
-          Row(
-            children: [
-              // Reserve space for sidebar when expanded
-              if (_isSidebarExpanded) const SizedBox(width: AppShell.sidebarWidth),
-              // Collapsed rail on compact screens
-              if (!_isSidebarExpanded && isCompact)
-                Container(
-                  width: 48,
-                  decoration: const BoxDecoration(
-                    color: AppColors.surface,
-                    border: Border(
-                      right: BorderSide(color: AppColors.border, width: 1),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 12),
-                      Tooltip(
-                        message: 'Open menu',
-                        child: IconButton(
-                          onPressed: () =>
-                              setState(() => _isSidebarExpanded = true),
-                          icon: const Icon(Icons.menu, size: 20),
-                        ),
-                      ),
-                    ],
-                  ),
+  Widget _buildDesktopShell(
+      BuildContext context, WidgetRef ref, bool isHomePath) {
+    if (!isHomePath) {
+      // Non-home routes (dashboard, settings, etc.): minimal shell
+      return Scaffold(
+        body: Row(
+          children: [
+            // Minimal back rail
+            Container(
+              width: 48,
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                border: Border(
+                  right: BorderSide(color: AppColors.border, width: 1),
                 ),
-              Expanded(child: widget.child),
-            ],
-          ),
-
-          // Sidebar (overlay on tablet, inline on desktop)
-          if (_isSidebarExpanded)
-            Row(
-              children: [
-                const AppSidebar(),
-                // Dismiss area on compact screens
-                if (isCompact)
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () =>
-                          setState(() => _isSidebarExpanded = false),
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.3),
-                      ),
-                    ),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  IconButton(
+                    onPressed: () => context.go('/home'),
+                    icon: const Icon(Icons.arrow_back, size: 20),
+                    tooltip: 'Back to Home',
                   ),
-              ],
+                ],
+              ),
             ),
+            Expanded(child: child),
+          ],
+        ),
+      );
+    }
+
+    final isSidebarExpanded = ref.watch(
+        homeStateProvider.select((s) => s.isSidebarExpanded));
+
+    return Scaffold(
+      body: Row(
+        children: [
+          // Sidebar: icon rail or expanded
+          if (isSidebarExpanded)
+            const HomeExpandedSidebar()
+          else
+            const HomeIconRail(),
+          // Main content
+          Expanded(child: child),
         ],
       ),
     );

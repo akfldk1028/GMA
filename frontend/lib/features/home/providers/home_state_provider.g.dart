@@ -1,27 +1,25 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'app_router.dart';
+part of 'home_state_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$appRouterHash() => r'af4530a1e2542ec0a483cfce8cbcd8fc1b15825a';
+String _$homeStateHash() => r'a64df5cbe73026ee2c835d09fcc30a7a115e8963';
 
-/// See also [appRouter].
-@ProviderFor(appRouter)
-final appRouterProvider = Provider<GoRouter>.internal(
-  appRouter,
-  name: r'appRouterProvider',
+/// See also [HomeState].
+@ProviderFor(HomeState)
+final homeStateProvider = NotifierProvider<HomeState, HomeStateData>.internal(
+  HomeState.new,
+  name: r'homeStateProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$appRouterHash,
+      : _$homeStateHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef AppRouterRef = ProviderRef<GoRouter>;
+typedef _$HomeState = Notifier<HomeStateData>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

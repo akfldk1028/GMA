@@ -62,6 +62,10 @@ class FileManager extends _$FileManager {
       DateTime? createdAt;
       DateTime? modifiedAt = stat.modified;
       String? previewText;
+      String? folderId;
+      bool isPinned = false;
+      bool isDeleted = false;
+      DateTime? deletedAt;
 
       if (content.startsWith('---')) {
         final endIndex = content.indexOf('---', 3);
@@ -81,6 +85,14 @@ class FileManager extends _$FileManager {
               modifiedAt =
                   DateTime.tryParse(frontmatter['modifiedAt'].toString()) ??
                       stat.modified;
+            }
+
+            // Parse new fields
+            folderId = frontmatter['folderId']?.toString();
+            isPinned = frontmatter['isPinned'] == true;
+            isDeleted = frontmatter['isDeleted'] == true;
+            if (frontmatter['deletedAt'] != null) {
+              deletedAt = DateTime.tryParse(frontmatter['deletedAt'].toString());
             }
           }
 
@@ -124,6 +136,10 @@ class FileManager extends _$FileManager {
         modifiedAt: modifiedAt,
         linkedPdfPath: linkedPdfPath,
         previewText: previewText,
+        folderId: folderId,
+        isPinned: isPinned,
+        isDeleted: isDeleted,
+        deletedAt: deletedAt,
       );
     } catch (e) {
       // Return null if parsing fails
@@ -197,7 +213,7 @@ class CreateNoteMutation extends _$CreateNoteMutation {
   }
 }
 
-/// Mutation provider for deleting a note
+/// Mutation provider for soft-deleting a note (marks isDeleted in frontmatter)
 @riverpod
 class DeleteNoteMutation extends _$DeleteNoteMutation {
   @override
@@ -207,17 +223,18 @@ class DeleteNoteMutation extends _$DeleteNoteMutation {
     state = const AsyncLoading();
     try {
       final file = File(filePath);
-
       if (!await file.exists()) {
         throw Exception('File not found: $filePath');
       }
 
-      // Delete the file
-      await file.delete();
+      final content = await file.readAsString();
+      final updated = _updateFrontmatter(content, {
+        'isDeleted': true,
+        'deletedAt': DateTime.now().toIso8601String(),
+      });
+      await file.writeAsString(updated, flush: true);
 
-      // Refresh the file manager to update the list
       await ref.read(fileManagerProvider.notifier).refresh();
-
       state = const AsyncData(true);
       return true;
     } catch (e, st) {
@@ -225,4 +242,166 @@ class DeleteNoteMutation extends _$DeleteNoteMutation {
       rethrow;
     }
   }
+}
+
+/// Restore a soft-deleted note
+@riverpod
+class RestoreNoteMutation extends _$RestoreNoteMutation {
+  @override
+  FutureOr<bool?> build() => null;
+
+  Future<bool> call({required String filePath}) async {
+    state = const AsyncLoading();
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) throw Exception('File not found: $filePath');
+
+      final content = await file.readAsString();
+      final updated = _updateFrontmatter(content, {
+        'isDeleted': false,
+        'deletedAt': null,
+      });
+      await file.writeAsString(updated, flush: true);
+
+      await ref.read(fileManagerProvider.notifier).refresh();
+      state = const AsyncData(true);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+}
+
+/// Permanently delete a note file
+@riverpod
+class PermanentDeleteMutation extends _$PermanentDeleteMutation {
+  @override
+  FutureOr<bool?> build() => null;
+
+  Future<bool> call({required String filePath}) async {
+    state = const AsyncLoading();
+    try {
+      final file = File(filePath);
+      if (await file.exists()) await file.delete();
+      await ref.read(fileManagerProvider.notifier).refresh();
+      state = const AsyncData(true);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+}
+
+/// Move note to a folder
+@riverpod
+class MoveToFolderMutation extends _$MoveToFolderMutation {
+  @override
+  FutureOr<bool?> build() => null;
+
+  Future<bool> call({required String filePath, String? folderId}) async {
+    state = const AsyncLoading();
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) throw Exception('File not found: $filePath');
+
+      final content = await file.readAsString();
+      final updated = _updateFrontmatter(content, {'folderId': folderId});
+      await file.writeAsString(updated, flush: true);
+
+      await ref.read(fileManagerProvider.notifier).refresh();
+      state = const AsyncData(true);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+}
+
+/// Toggle pin/favorite on a note
+@riverpod
+class TogglePinMutation extends _$TogglePinMutation {
+  @override
+  FutureOr<bool?> build() => null;
+
+  Future<bool> call({required String filePath, required bool isPinned}) async {
+    state = const AsyncLoading();
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) throw Exception('File not found: $filePath');
+
+      final content = await file.readAsString();
+      final updated = _updateFrontmatter(content, {'isPinned': isPinned});
+      await file.writeAsString(updated, flush: true);
+
+      await ref.read(fileManagerProvider.notifier).refresh();
+      state = const AsyncData(true);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+}
+
+/// Helper to update or insert frontmatter fields
+String _updateFrontmatter(String content, Map<String, Object?> fields) {
+  if (!content.startsWith('---')) {
+    // No frontmatter exists, create one
+    final sb = StringBuffer()..writeln('---');
+    for (final entry in fields.entries) {
+      if (entry.value != null) {
+        sb.writeln('${entry.key}: ${entry.value}');
+      }
+    }
+    sb.writeln('---');
+    sb.write(content);
+    return sb.toString();
+  }
+
+  final endIndex = content.indexOf('---', 3);
+  if (endIndex == -1) return content;
+
+  final frontmatterStr = content.substring(3, endIndex);
+  final body = content.substring(endIndex + 3);
+
+  // Parse existing lines
+  final lines = frontmatterStr.trim().split('\n');
+  final existingKeys = <String>{};
+  final updatedLines = <String>[];
+
+  for (final line in lines) {
+    final colonIdx = line.indexOf(':');
+    if (colonIdx == -1) {
+      updatedLines.add(line);
+      continue;
+    }
+    final key = line.substring(0, colonIdx).trim();
+    if (fields.containsKey(key)) {
+      existingKeys.add(key);
+      final value = fields[key];
+      // null → remove the field entirely
+      if (value == null) continue;
+      // all other values (including false) → write explicitly
+      updatedLines.add('$key: $value');
+    } else {
+      updatedLines.add(line);
+    }
+  }
+
+  // Add new fields not yet in frontmatter
+  for (final entry in fields.entries) {
+    if (!existingKeys.contains(entry.key) && entry.value != null) {
+      updatedLines.add('${entry.key}: ${entry.value}');
+    }
+  }
+
+  final sb = StringBuffer()
+    ..writeln('---')
+    ..writeln(updatedLines.join('\n'))
+    ..write('---')
+    ..write(body);
+  return sb.toString();
 }

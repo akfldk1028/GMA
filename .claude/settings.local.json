@@ -102,7 +102,14 @@
       "Bash(keytool:*)",
       "Bash(jarsigner:*)",
       "Bash(\"/c/Program Files/Android/Android Studio/jbr/bin/keytool.exe\":*)",
-      "Bash(flutter devices:*)"
+      "Bash(flutter devices:*)",
+      "mcp__desktop-commander__read_multiple_files",
+      "Bash(flutter attach:*)",
+      "Skill(gma-build)",
+      "Bash(start:*)",
+      "Bash(grep:*)",
+      "Bash(xxd:*)",
+      "mcp__desktop-commander__get_config"
     ]
   }
 }

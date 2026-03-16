@@ -78,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen>
     });
 
     _navigationTimer = Timer(const Duration(milliseconds: 2000), () {
-      if (mounted) context.go('/dashboard');
+      if (mounted) context.go('/home');
     });
   }
 

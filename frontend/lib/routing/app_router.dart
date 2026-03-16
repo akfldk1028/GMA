@@ -5,7 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../common_widgets/app_shell.dart';
 import '../features/dashboard/pages/screens/dashboard_screen.dart';
-import '../features/file_manager/pages/screens/file_browser_screen.dart';
+import '../features/home/pages/screens/home_screen.dart';
 import '../features/note_editor/pages/screens/note_editor_screen.dart';
 import '../features/knowledge_graph/pages/screens/knowledge_graph_screen.dart';
 import '../features/scraps_library/pages/screens/scraps_library_screen.dart';
@@ -30,20 +30,20 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state, child) => AppShell(child: child),
         routes: [
           GoRoute(
+            path: '/home',
+            name: 'home',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const HomeScreen(),
+              transitionsBuilder: _fadeTransition,
+            ),
+          ),
+          GoRoute(
             path: '/dashboard',
             name: 'dashboard',
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
               child: const DashboardScreen(),
-              transitionsBuilder: _fadeTransition,
-            ),
-          ),
-          GoRoute(
-            path: '/file-browser',
-            name: 'file-browser',
-            pageBuilder: (context, state) => CustomTransitionPage(
-              key: state.pageKey,
-              child: const FileBrowserScreen(),
               transitionsBuilder: _fadeTransition,
             ),
           ),
@@ -75,6 +75,11 @@ GoRouter appRouter(Ref ref) {
             ),
           ),
         ],
+      ),
+      // Redirect old file-browser to home
+      GoRoute(
+        path: '/file-browser',
+        redirect: (context, state) => '/home',
       ),
       // Workspace: no sidebar
       GoRoute(

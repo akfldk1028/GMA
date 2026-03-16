@@ -28,6 +28,10 @@ mixin _$NoteMetadata {
   DateTime get modifiedAt => throw _privateConstructorUsedError;
   String? get linkedPdfPath => throw _privateConstructorUsedError;
   String? get previewText => throw _privateConstructorUsedError;
+  String? get folderId => throw _privateConstructorUsedError;
+  bool get isPinned => throw _privateConstructorUsedError;
+  bool get isDeleted => throw _privateConstructorUsedError;
+  DateTime? get deletedAt => throw _privateConstructorUsedError;
 
   /// Serializes this NoteMetadata to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -54,6 +58,10 @@ abstract class $NoteMetadataCopyWith<$Res> {
     DateTime modifiedAt,
     String? linkedPdfPath,
     String? previewText,
+    String? folderId,
+    bool isPinned,
+    bool isDeleted,
+    DateTime? deletedAt,
   });
 }
 
@@ -79,6 +87,10 @@ class _$NoteMetadataCopyWithImpl<$Res, $Val extends NoteMetadata>
     Object? modifiedAt = null,
     Object? linkedPdfPath = freezed,
     Object? previewText = freezed,
+    Object? folderId = freezed,
+    Object? isPinned = null,
+    Object? isDeleted = null,
+    Object? deletedAt = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -110,6 +122,22 @@ class _$NoteMetadataCopyWithImpl<$Res, $Val extends NoteMetadata>
                 ? _value.previewText
                 : previewText // ignore: cast_nullable_to_non_nullable
                       as String?,
+            folderId: freezed == folderId
+                ? _value.folderId
+                : folderId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            isPinned: null == isPinned
+                ? _value.isPinned
+                : isPinned // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isDeleted: null == isDeleted
+                ? _value.isDeleted
+                : isDeleted // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            deletedAt: freezed == deletedAt
+                ? _value.deletedAt
+                : deletedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
           )
           as $Val,
     );
@@ -133,6 +161,10 @@ abstract class _$$NoteMetadataImplCopyWith<$Res>
     DateTime modifiedAt,
     String? linkedPdfPath,
     String? previewText,
+    String? folderId,
+    bool isPinned,
+    bool isDeleted,
+    DateTime? deletedAt,
   });
 }
 
@@ -157,6 +189,10 @@ class __$$NoteMetadataImplCopyWithImpl<$Res>
     Object? modifiedAt = null,
     Object? linkedPdfPath = freezed,
     Object? previewText = freezed,
+    Object? folderId = freezed,
+    Object? isPinned = null,
+    Object? isDeleted = null,
+    Object? deletedAt = freezed,
   }) {
     return _then(
       _$NoteMetadataImpl(
@@ -188,6 +224,22 @@ class __$$NoteMetadataImplCopyWithImpl<$Res>
             ? _value.previewText
             : previewText // ignore: cast_nullable_to_non_nullable
                   as String?,
+        folderId: freezed == folderId
+            ? _value.folderId
+            : folderId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        isPinned: null == isPinned
+            ? _value.isPinned
+            : isPinned // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isDeleted: null == isDeleted
+            ? _value.isDeleted
+            : isDeleted // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        deletedAt: freezed == deletedAt
+            ? _value.deletedAt
+            : deletedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
       ),
     );
   }
@@ -204,6 +256,10 @@ class _$NoteMetadataImpl extends _NoteMetadata {
     required this.modifiedAt,
     this.linkedPdfPath,
     this.previewText,
+    this.folderId,
+    this.isPinned = false,
+    this.isDeleted = false,
+    this.deletedAt,
   }) : super._();
 
   factory _$NoteMetadataImpl.fromJson(Map<String, dynamic> json) =>
@@ -223,10 +279,20 @@ class _$NoteMetadataImpl extends _NoteMetadata {
   final String? linkedPdfPath;
   @override
   final String? previewText;
+  @override
+  final String? folderId;
+  @override
+  @JsonKey()
+  final bool isPinned;
+  @override
+  @JsonKey()
+  final bool isDeleted;
+  @override
+  final DateTime? deletedAt;
 
   @override
   String toString() {
-    return 'NoteMetadata(id: $id, title: $title, filePath: $filePath, createdAt: $createdAt, modifiedAt: $modifiedAt, linkedPdfPath: $linkedPdfPath, previewText: $previewText)';
+    return 'NoteMetadata(id: $id, title: $title, filePath: $filePath, createdAt: $createdAt, modifiedAt: $modifiedAt, linkedPdfPath: $linkedPdfPath, previewText: $previewText, folderId: $folderId, isPinned: $isPinned, isDeleted: $isDeleted, deletedAt: $deletedAt)';
   }
 
   @override
@@ -245,7 +311,15 @@ class _$NoteMetadataImpl extends _NoteMetadata {
             (identical(other.linkedPdfPath, linkedPdfPath) ||
                 other.linkedPdfPath == linkedPdfPath) &&
             (identical(other.previewText, previewText) ||
-                other.previewText == previewText));
+                other.previewText == previewText) &&
+            (identical(other.folderId, folderId) ||
+                other.folderId == folderId) &&
+            (identical(other.isPinned, isPinned) ||
+                other.isPinned == isPinned) &&
+            (identical(other.isDeleted, isDeleted) ||
+                other.isDeleted == isDeleted) &&
+            (identical(other.deletedAt, deletedAt) ||
+                other.deletedAt == deletedAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -259,6 +333,10 @@ class _$NoteMetadataImpl extends _NoteMetadata {
     modifiedAt,
     linkedPdfPath,
     previewText,
+    folderId,
+    isPinned,
+    isDeleted,
+    deletedAt,
   );
 
   /// Create a copy of NoteMetadata
@@ -284,6 +362,10 @@ abstract class _NoteMetadata extends NoteMetadata {
     required final DateTime modifiedAt,
     final String? linkedPdfPath,
     final String? previewText,
+    final String? folderId,
+    final bool isPinned,
+    final bool isDeleted,
+    final DateTime? deletedAt,
   }) = _$NoteMetadataImpl;
   const _NoteMetadata._() : super._();
 
@@ -304,6 +386,14 @@ abstract class _NoteMetadata extends NoteMetadata {
   String? get linkedPdfPath;
   @override
   String? get previewText;
+  @override
+  String? get folderId;
+  @override
+  bool get isPinned;
+  @override
+  bool get isDeleted;
+  @override
+  DateTime? get deletedAt;
 
   /// Create a copy of NoteMetadata
   /// with the given fields replaced by the non-null parameter values.

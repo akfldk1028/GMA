@@ -1,0 +1,18 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'folder_model.freezed.dart';
+part 'folder_model.g.dart';
+
+@freezed
+class FolderModel with _$FolderModel {
+  const factory FolderModel({
+    required String id,
+    required String name,
+    String? parentId,
+    @Default(0) int order,
+    required DateTime createdAt,
+  }) = _FolderModel;
+
+  factory FolderModel.fromJson(Map<String, dynamic> json) =>
+      _$FolderModelFromJson(json);
+}

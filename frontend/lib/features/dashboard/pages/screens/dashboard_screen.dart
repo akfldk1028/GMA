@@ -177,7 +177,7 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                       const Spacer(),
                       TextButton(
-                        onPressed: () => context.go('/file-browser'),
+                        onPressed: () => context.go('/home'),
                         child: const Text(
                           'View All',
                           style: TextStyle(

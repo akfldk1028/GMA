@@ -29,6 +29,9 @@ void main() async {
   // Open element_store box for ScrapElement persistence
   await Hive.openBox<String>('element_store');
 
+  // Open note_folders box for folder structure
+  await Hive.openBox<String>('note_folders');
+
   runApp(
     const ProviderScope(
       child: GmaApp(),

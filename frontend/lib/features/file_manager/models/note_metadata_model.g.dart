@@ -15,6 +15,12 @@ _$NoteMetadataImpl _$$NoteMetadataImplFromJson(Map<String, dynamic> json) =>
       modifiedAt: DateTime.parse(json['modifiedAt'] as String),
       linkedPdfPath: json['linkedPdfPath'] as String?,
       previewText: json['previewText'] as String?,
+      folderId: json['folderId'] as String?,
+      isPinned: json['isPinned'] as bool? ?? false,
+      isDeleted: json['isDeleted'] as bool? ?? false,
+      deletedAt: json['deletedAt'] == null
+          ? null
+          : DateTime.parse(json['deletedAt'] as String),
     );
 
 Map<String, dynamic> _$$NoteMetadataImplToJson(_$NoteMetadataImpl instance) =>
@@ -26,4 +32,8 @@ Map<String, dynamic> _$$NoteMetadataImplToJson(_$NoteMetadataImpl instance) =>
       'modifiedAt': instance.modifiedAt.toIso8601String(),
       'linkedPdfPath': instance.linkedPdfPath,
       'previewText': instance.previewText,
+      'folderId': instance.folderId,
+      'isPinned': instance.isPinned,
+      'isDeleted': instance.isDeleted,
+      'deletedAt': instance.deletedAt?.toIso8601String(),
     };
