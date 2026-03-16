@@ -7,7 +7,7 @@
 | SPEC ID     | SPEC-PDF-001                                  |
 | Title       | PDF Viewer and Drawing System                 |
 | Created     | 2026-03-15                                    |
-| Status      | Approved                                      |
+| Status      | Completed                                     |
 | Depends On  | SPEC-SP-001 (Workspace Layout), SPEC-SP-000 (Design System) |
 
 ---
