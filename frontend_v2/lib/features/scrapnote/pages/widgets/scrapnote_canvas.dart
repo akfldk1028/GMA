@@ -180,7 +180,7 @@ class _CaptureElementWidget extends StatelessWidget {
           ? Image.file(
               File(imagePath),
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
+              errorBuilder: (_, _, _) =>
                   _ImageErrorPlaceholder(isDark: isDark),
             )
           : _ImageErrorPlaceholder(isDark: isDark),

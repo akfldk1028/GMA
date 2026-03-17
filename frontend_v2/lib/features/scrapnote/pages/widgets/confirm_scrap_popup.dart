@@ -108,7 +108,7 @@ class _ConfirmScrapPopupState extends State<ConfirmScrapPopup> {
                 ShadButton.outline(
                   size: ShadButtonSize.sm,
                   onPressed: _reject,
-                  icon: Icon(
+                  child: Icon(
                     Icons.close,
                     size: AppIconSize.xs,
                     color: theme.colorScheme.destructive,
@@ -118,7 +118,7 @@ class _ConfirmScrapPopupState extends State<ConfirmScrapPopup> {
                 ShadButton(
                   size: ShadButtonSize.sm,
                   onPressed: _accept,
-                  icon: Icon(
+                  child: Icon(
                     Icons.check,
                     size: AppIconSize.xs,
                     color: theme.colorScheme.primaryForeground,

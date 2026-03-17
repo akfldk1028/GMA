@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gma_app/features/pdf_viewer/highlight/models/highlight_marker_data.dart';
 import 'package:gma_app/features/pdf_viewer/highlight/providers/highlight_provider.dart';
 import 'package:gma_app/features/scrapnote/models/element_model.dart';
 import 'package:gma_app/features/scrapnote/providers/element_store.dart';

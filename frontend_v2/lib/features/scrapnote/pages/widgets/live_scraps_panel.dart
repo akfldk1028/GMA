@@ -34,7 +34,7 @@ class LiveScrapsPanel extends ConsumerWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(AppSpacing.md),
       itemCount: elements.length,
-      separatorBuilder: (_, __) =>
+      separatorBuilder: (_, _) =>
           const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, index) {
         final element = elements[index];
@@ -116,7 +116,7 @@ class _TypeIcon extends StatelessWidget {
         child: Icon(
           Icons.text_fields,
           size: 12,
-          color: colors.foreground.withOpacity(0.7),
+          color: colors.foreground.withValues(alpha: 0.7),
         ),
       );
     }
@@ -159,7 +159,7 @@ class _ScrapContent extends StatelessWidget {
           height: 80,
           width: double.infinity,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _ImagePlaceholder(colors: colors),
+          errorBuilder: (_, _, _) => _ImagePlaceholder(colors: colors),
         ),
       );
     }

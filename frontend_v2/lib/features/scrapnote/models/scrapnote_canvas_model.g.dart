@@ -21,21 +21,20 @@ _$CanvasElementImpl _$$CanvasElementImplFromJson(Map<String, dynamic> json) =>
       elementId: json['elementId'] as String,
     );
 
-Map<String, dynamic> _$$CanvasElementImplToJson(
-  _$CanvasElementImpl instance,
-) => <String, dynamic>{
-  'id': instance.id,
-  'type': _$CanvasElementTypeEnumMap[instance.type]!,
-  'x': instance.x,
-  'y': instance.y,
-  'width': instance.width,
-  'height': instance.height,
-  'imagePath': instance.imagePath,
-  'selectedText': instance.selectedText,
-  'sourcePageNumber': instance.sourcePageNumber,
-  'colorValue': instance.colorValue,
-  'elementId': instance.elementId,
-};
+Map<String, dynamic> _$$CanvasElementImplToJson(_$CanvasElementImpl instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'type': _$CanvasElementTypeEnumMap[instance.type]!,
+      'x': instance.x,
+      'y': instance.y,
+      'width': instance.width,
+      'height': instance.height,
+      'imagePath': instance.imagePath,
+      'selectedText': instance.selectedText,
+      'sourcePageNumber': instance.sourcePageNumber,
+      'colorValue': instance.colorValue,
+      'elementId': instance.elementId,
+    };
 
 const _$CanvasElementTypeEnumMap = {
   CanvasElementType.capture: 'capture',
@@ -48,15 +47,18 @@ _$ScrapnoteCanvasDataImpl _$$ScrapnoteCanvasDataImplFromJson(
   id: json['id'] as String,
   linkedPdfPath: json['linkedPdfPath'] as String,
   canvasMode: json['canvasMode'] as String? ?? 'infinite',
-  strokes: (json['strokes'] as List<dynamic>?)
+  strokes:
+      (json['strokes'] as List<dynamic>?)
           ?.map((e) => DrawingStroke.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
-  elements: (json['elements'] as List<dynamic>?)
+  elements:
+      (json['elements'] as List<dynamic>?)
           ?.map((e) => CanvasElement.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
-  layerOrder: (json['layerOrder'] as List<dynamic>?)
+  layerOrder:
+      (json['layerOrder'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList() ??
       const [],
