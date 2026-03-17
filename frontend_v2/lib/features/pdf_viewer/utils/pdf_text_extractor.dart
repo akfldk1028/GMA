@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'dart:ui';
 
 // @MX:NOTE: Coordinate conversion utility for PDF text selection.
 // Normalized coordinates (0..1) allow coordinates to be stored independent

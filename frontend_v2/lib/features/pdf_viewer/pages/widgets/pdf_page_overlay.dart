@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:gma_app/features/drawing/models/drawing_model.dart';
 import 'package:gma_app/features/drawing/pages/providers/drawing_provider.dart';
 import 'package:gma_app/features/drawing/pages/widgets/drawing_canvas.dart';
 

@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gma_app/features/drawing/models/drawing_model.dart';
 import 'package:gma_app/features/drawing/pages/providers/drawing_provider.dart';
 import 'package:gma_app/features/drawing/pages/widgets/drawing_toolbar.dart';
-import 'package:gma_app/features/workspace/pages/providers/panel_provider.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 void main() {

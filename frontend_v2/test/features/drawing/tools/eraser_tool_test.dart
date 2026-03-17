@@ -58,7 +58,7 @@ void main() {
 
     group('hit-test logic (AC-09)', () {
       // Creates a stroke with points forming a horizontal line
-      DrawingStroke _makeHorizontalStroke({
+      DrawingStroke makeHorizontalStroke({
         required String id,
         required int pageNumber,
         required double y,
@@ -78,7 +78,7 @@ void main() {
       }
 
       test('isStrokeHit returns true when pointer is within proximity', () {
-        final stroke = _makeHorizontalStroke(id: 's1', pageNumber: 1, y: 0.5);
+        final stroke = makeHorizontalStroke(id: 's1', pageNumber: 1, y: 0.5);
         // Pointer at (0.5, 0.5) is exactly on the stroke
         final hit = eraserTool.isStrokeHit(
           stroke: stroke,
@@ -90,7 +90,7 @@ void main() {
       });
 
       test('isStrokeHit returns false when pointer is far from stroke', () {
-        final stroke = _makeHorizontalStroke(id: 's1', pageNumber: 1, y: 0.5);
+        final stroke = makeHorizontalStroke(id: 's1', pageNumber: 1, y: 0.5);
         // Pointer at (0.5, 0.9) is far from the stroke at y=0.5
         final hit = eraserTool.isStrokeHit(
           stroke: stroke,
@@ -102,7 +102,7 @@ void main() {
       });
 
       test('isStrokeHit uses eraserSize as proximity radius', () {
-        final stroke = _makeHorizontalStroke(id: 's1', pageNumber: 1, y: 0.5);
+        final stroke = makeHorizontalStroke(id: 's1', pageNumber: 1, y: 0.5);
         // Pointer at (0.5, 0.52) is within 0.05 radius of stroke at y=0.5
         final hitWithLargeEraser = eraserTool.isStrokeHit(
           stroke: stroke,
@@ -140,9 +140,9 @@ void main() {
 
       test('filterHitStrokes removes strokes within proximity', () {
         final strokes = [
-          _makeHorizontalStroke(id: 's1', pageNumber: 1, y: 0.5),
-          _makeHorizontalStroke(id: 's2', pageNumber: 1, y: 0.8),
-          _makeHorizontalStroke(id: 's3', pageNumber: 1, y: 0.2),
+          makeHorizontalStroke(id: 's1', pageNumber: 1, y: 0.5),
+          makeHorizontalStroke(id: 's2', pageNumber: 1, y: 0.8),
+          makeHorizontalStroke(id: 's3', pageNumber: 1, y: 0.2),
         ];
 
         // Pointer at y=0.5 should only erase s1

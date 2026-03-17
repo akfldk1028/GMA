@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
-import 'package:gma_app/constants/design_tokens.dart';
 import 'package:gma_app/features/drawing/pages/widgets/drawing_toolbar.dart';
 import 'package:gma_app/features/pdf_viewer/pages/screens/pdf_viewer_screen.dart';
 import 'package:gma_app/features/sidebar/pages/widgets/item_sidebar.dart';

@@ -58,7 +58,7 @@ void main() {
     test('loadDocument sets loading state during load', () {
       // Test that loading state is set (document will fail since path is invalid)
       // We just verify the state transitions happen
-      final notifier = container.read(pdfDocumentNotifierProvider.notifier);
+      container.read(pdfDocumentNotifierProvider.notifier);
 
       // Calling loadDocument with invalid path should set error state
       // We test the transition: not loading -> loading -> error
