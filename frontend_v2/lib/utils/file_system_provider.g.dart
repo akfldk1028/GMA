@@ -43,7 +43,7 @@ final capturesDirectoryProvider = AutoDisposeFutureProvider<Directory>.internal(
 // ignore: unused_element
 typedef CapturesDirectoryRef = AutoDisposeFutureProviderRef<Directory>;
 String _$scrapnotesDirectoryHash() =>
-    r'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0';
+    r'8022a2facd1560208586889dd9dfcfe02c8a3bc2';
 
 /// See also [scrapnotesDirectory].
 @ProviderFor(scrapnotesDirectory)

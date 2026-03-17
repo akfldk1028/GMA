@@ -6,8 +6,7 @@ part of 'scrap_orchestrator_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$scrapOrchestratorHash() =>
-    r'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1';
+String _$scrapOrchestratorHash() => r'9257bf3a4b483c14b86aaeb55c75b27c89158493';
 
 /// Central orchestrator for creating and storing ScrapElements.
 /// Acts as the single entry point for all scrap insertion workflows.

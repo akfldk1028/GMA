@@ -45,7 +45,7 @@ Map<String, dynamic> _$$ScrapElementImplToJson(_$ScrapElementImpl instance) =>
       'selectedText': instance.selectedText,
       'imagePath': instance.imagePath,
       'sourcePageNumber': instance.sourcePageNumber,
-      'sourceRect': instance.sourceRect.toJson(),
+      'sourceRect': instance.sourceRect,
       'colorValue': instance.colorValue,
       'createdAt': instance.createdAt.toIso8601String(),
     };

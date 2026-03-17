@@ -12,7 +12,8 @@ part of 'capture_provider.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$CaptureState {
@@ -31,8 +32,9 @@ mixin _$CaptureState {
 /// @nodoc
 abstract class $CaptureStateCopyWith<$Res> {
   factory $CaptureStateCopyWith(
-          CaptureState value, $Res Function(CaptureState) then) =
-      _$CaptureStateCopyWithImpl<$Res, CaptureState>;
+    CaptureState value,
+    $Res Function(CaptureState) then,
+  ) = _$CaptureStateCopyWithImpl<$Res, CaptureState>;
   @useResult
   $Res call({
     bool isCapturing,
@@ -62,24 +64,27 @@ class _$CaptureStateCopyWithImpl<$Res, $Val extends CaptureState>
     Object? previewImageBytes = freezed,
     Object? showConfirmation = null,
   }) {
-    return _then(_value.copyWith(
-      isCapturing: null == isCapturing
-          ? _value.isCapturing
-          : isCapturing // ignore: cast_nullable_to_non_nullable
-              as bool,
-      selectedRect: freezed == selectedRect
-          ? _value.selectedRect
-          : selectedRect // ignore: cast_nullable_to_non_nullable
-              as Rect?,
-      previewImageBytes: freezed == previewImageBytes
-          ? _value.previewImageBytes
-          : previewImageBytes // ignore: cast_nullable_to_non_nullable
-              as Uint8List?,
-      showConfirmation: null == showConfirmation
-          ? _value.showConfirmation
-          : showConfirmation // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            isCapturing: null == isCapturing
+                ? _value.isCapturing
+                : isCapturing // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            selectedRect: freezed == selectedRect
+                ? _value.selectedRect
+                : selectedRect // ignore: cast_nullable_to_non_nullable
+                      as Rect?,
+            previewImageBytes: freezed == previewImageBytes
+                ? _value.previewImageBytes
+                : previewImageBytes // ignore: cast_nullable_to_non_nullable
+                      as Uint8List?,
+            showConfirmation: null == showConfirmation
+                ? _value.showConfirmation
+                : showConfirmation // ignore: cast_nullable_to_non_nullable
+                      as bool,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -87,8 +92,9 @@ class _$CaptureStateCopyWithImpl<$Res, $Val extends CaptureState>
 abstract class _$$CaptureStateImplCopyWith<$Res>
     implements $CaptureStateCopyWith<$Res> {
   factory _$$CaptureStateImplCopyWith(
-          _$CaptureStateImpl value, $Res Function(_$CaptureStateImpl) then) =
-      __$$CaptureStateImplCopyWithImpl<$Res>;
+    _$CaptureStateImpl value,
+    $Res Function(_$CaptureStateImpl) then,
+  ) = __$$CaptureStateImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({
@@ -104,8 +110,9 @@ class __$$CaptureStateImplCopyWithImpl<$Res>
     extends _$CaptureStateCopyWithImpl<$Res, _$CaptureStateImpl>
     implements _$$CaptureStateImplCopyWith<$Res> {
   __$$CaptureStateImplCopyWithImpl(
-      _$CaptureStateImpl _value, $Res Function(_$CaptureStateImpl) _then)
-      : super(_value, _then);
+    _$CaptureStateImpl _value,
+    $Res Function(_$CaptureStateImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of CaptureState
   /// with the given fields replaced by the non-null parameter values.
@@ -117,24 +124,26 @@ class __$$CaptureStateImplCopyWithImpl<$Res>
     Object? previewImageBytes = freezed,
     Object? showConfirmation = null,
   }) {
-    return _then(_$CaptureStateImpl(
-      isCapturing: null == isCapturing
-          ? _value.isCapturing
-          : isCapturing // ignore: cast_nullable_to_non_nullable
-              as bool,
-      selectedRect: freezed == selectedRect
-          ? _value.selectedRect
-          : selectedRect // ignore: cast_nullable_to_non_nullable
-              as Rect?,
-      previewImageBytes: freezed == previewImageBytes
-          ? _value.previewImageBytes
-          : previewImageBytes // ignore: cast_nullable_to_non_nullable
-              as Uint8List?,
-      showConfirmation: null == showConfirmation
-          ? _value.showConfirmation
-          : showConfirmation // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ));
+    return _then(
+      _$CaptureStateImpl(
+        isCapturing: null == isCapturing
+            ? _value.isCapturing
+            : isCapturing // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        selectedRect: freezed == selectedRect
+            ? _value.selectedRect
+            : selectedRect // ignore: cast_nullable_to_non_nullable
+                  as Rect?,
+        previewImageBytes: freezed == previewImageBytes
+            ? _value.previewImageBytes
+            : previewImageBytes // ignore: cast_nullable_to_non_nullable
+                  as Uint8List?,
+        showConfirmation: null == showConfirmation
+            ? _value.showConfirmation
+            : showConfirmation // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
   }
 }
 
@@ -173,19 +182,22 @@ class _$CaptureStateImpl implements _CaptureState {
                 other.isCapturing == isCapturing) &&
             (identical(other.selectedRect, selectedRect) ||
                 other.selectedRect == selectedRect) &&
-            const DeepCollectionEquality()
-                .equals(other.previewImageBytes, previewImageBytes) &&
+            const DeepCollectionEquality().equals(
+              other.previewImageBytes,
+              previewImageBytes,
+            ) &&
             (identical(other.showConfirmation, showConfirmation) ||
                 other.showConfirmation == showConfirmation));
   }
 
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      isCapturing,
-      selectedRect,
-      const DeepCollectionEquality().hash(previewImageBytes),
-      showConfirmation);
+    runtimeType,
+    isCapturing,
+    selectedRect,
+    const DeepCollectionEquality().hash(previewImageBytes),
+    showConfirmation,
+  );
 
   /// Create a copy of CaptureState
   /// with the given fields replaced by the non-null parameter values.

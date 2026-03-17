@@ -6,7 +6,7 @@ part of 'highlight_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$highlightMarkersHash() => r'b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0';
+String _$highlightMarkersHash() => r'aa5fde3f4caea7e36146597116ee94b055c5d38a';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -30,8 +30,7 @@ class _SystemHash {
 }
 
 abstract class _$HighlightMarkers
-    extends
-        BuildlessAutoDisposeNotifier<Map<int, List<HighlightMarkerData>>> {
+    extends BuildlessAutoDisposeNotifier<Map<int, List<HighlightMarkerData>>> {
   late final String documentPath;
 
   Map<int, List<HighlightMarkerData>> build(String documentPath);
@@ -40,6 +39,9 @@ abstract class _$HighlightMarkers
 /// Derives per-page [HighlightMarkerData] from the flat [ElementStoreNotifier]
 /// state, filtered to [documentPath] and [ScrapElementType.highlight] only.
 ///
+/// Returns an empty map when there are no highlights for the document.
+/// Automatically updates whenever [elementStoreNotifierProvider] changes.
+///
 /// Copied from [HighlightMarkers].
 @ProviderFor(HighlightMarkers)
 const highlightMarkersProvider = HighlightMarkersFamily();
@@ -47,17 +49,26 @@ const highlightMarkersProvider = HighlightMarkersFamily();
 /// Derives per-page [HighlightMarkerData] from the flat [ElementStoreNotifier]
 /// state, filtered to [documentPath] and [ScrapElementType.highlight] only.
 ///
+/// Returns an empty map when there are no highlights for the document.
+/// Automatically updates whenever [elementStoreNotifierProvider] changes.
+///
 /// Copied from [HighlightMarkers].
 class HighlightMarkersFamily
     extends Family<Map<int, List<HighlightMarkerData>>> {
   /// Derives per-page [HighlightMarkerData] from the flat [ElementStoreNotifier]
   /// state, filtered to [documentPath] and [ScrapElementType.highlight] only.
   ///
+  /// Returns an empty map when there are no highlights for the document.
+  /// Automatically updates whenever [elementStoreNotifierProvider] changes.
+  ///
   /// Copied from [HighlightMarkers].
   const HighlightMarkersFamily();
 
   /// Derives per-page [HighlightMarkerData] from the flat [ElementStoreNotifier]
   /// state, filtered to [documentPath] and [ScrapElementType.highlight] only.
+  ///
+  /// Returns an empty map when there are no highlights for the document.
+  /// Automatically updates whenever [elementStoreNotifierProvider] changes.
   ///
   /// Copied from [HighlightMarkers].
   HighlightMarkersProvider call(String documentPath) {
@@ -89,6 +100,9 @@ class HighlightMarkersFamily
 /// Derives per-page [HighlightMarkerData] from the flat [ElementStoreNotifier]
 /// state, filtered to [documentPath] and [ScrapElementType.highlight] only.
 ///
+/// Returns an empty map when there are no highlights for the document.
+/// Automatically updates whenever [elementStoreNotifierProvider] changes.
+///
 /// Copied from [HighlightMarkers].
 class HighlightMarkersProvider
     extends
@@ -98,6 +112,9 @@ class HighlightMarkersProvider
         > {
   /// Derives per-page [HighlightMarkerData] from the flat [ElementStoreNotifier]
   /// state, filtered to [documentPath] and [ScrapElementType.highlight] only.
+  ///
+  /// Returns an empty map when there are no highlights for the document.
+  /// Automatically updates whenever [elementStoreNotifierProvider] changes.
   ///
   /// Copied from [HighlightMarkers].
   HighlightMarkersProvider(String documentPath)
@@ -176,8 +193,7 @@ class HighlightMarkersProvider
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 mixin HighlightMarkersRef
-    on
-        AutoDisposeNotifierProviderRef<Map<int, List<HighlightMarkerData>>> {
+    on AutoDisposeNotifierProviderRef<Map<int, List<HighlightMarkerData>>> {
   /// The parameter `documentPath` of this provider.
   String get documentPath;
 }
@@ -192,8 +208,7 @@ class _HighlightMarkersProviderElement
   _HighlightMarkersProviderElement(super.provider);
 
   @override
-  String get documentPath =>
-      (origin as HighlightMarkersProvider).documentPath;
+  String get documentPath => (origin as HighlightMarkersProvider).documentPath;
 }
 
 // ignore_for_file: type=lint

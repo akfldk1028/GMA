@@ -26,8 +26,11 @@ mixin _$ElementRect {
   double get right => throw _privateConstructorUsedError;
   double get bottom => throw _privateConstructorUsedError;
 
+  /// Serializes this ElementRect to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
+  /// Create a copy of ElementRect
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   $ElementRectCopyWith<ElementRect> get copyWith =>
       throw _privateConstructorUsedError;
@@ -48,9 +51,13 @@ class _$ElementRectCopyWithImpl<$Res, $Val extends ElementRect>
     implements $ElementRectCopyWith<$Res> {
   _$ElementRectCopyWithImpl(this._value, this._then);
 
+  // ignore: unused_field
   final $Val _value;
+  // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of ElementRect
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -104,6 +111,8 @@ class __$$ElementRectImplCopyWithImpl<$Res>
     $Res Function(_$ElementRectImpl) _then,
   ) : super(_value, _then);
 
+  /// Create a copy of ElementRect
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -177,6 +186,8 @@ class _$ElementRectImpl implements _ElementRect {
   @override
   int get hashCode => Object.hash(runtimeType, left, top, right, bottom);
 
+  /// Create a copy of ElementRect
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
@@ -209,6 +220,8 @@ abstract class _ElementRect implements ElementRect {
   @override
   double get bottom;
 
+  /// Create a copy of ElementRect
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ElementRectImplCopyWith<_$ElementRectImpl> get copyWith =>
@@ -231,8 +244,11 @@ mixin _$ScrapElement {
   int get colorValue => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
 
+  /// Serializes this ScrapElement to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
+  /// Create a copy of ScrapElement
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   $ScrapElementCopyWith<ScrapElement> get copyWith =>
       throw _privateConstructorUsedError;
@@ -265,9 +281,13 @@ class _$ScrapElementCopyWithImpl<$Res, $Val extends ScrapElement>
     implements $ScrapElementCopyWith<$Res> {
   _$ScrapElementCopyWithImpl(this._value, this._then);
 
+  // ignore: unused_field
   final $Val _value;
+  // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of ScrapElement
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -324,6 +344,8 @@ class _$ScrapElementCopyWithImpl<$Res, $Val extends ScrapElement>
     );
   }
 
+  /// Create a copy of ScrapElement
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $ElementRectCopyWith<$Res> get sourceRect {
@@ -367,6 +389,8 @@ class __$$ScrapElementImplCopyWithImpl<$Res>
     $Res Function(_$ScrapElementImpl) _then,
   ) : super(_value, _then);
 
+  /// Create a copy of ScrapElement
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -503,6 +527,8 @@ class _$ScrapElementImpl implements _ScrapElement {
     createdAt,
   );
 
+  /// Create a copy of ScrapElement
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
@@ -550,6 +576,8 @@ abstract class _ScrapElement implements ScrapElement {
   @override
   DateTime get createdAt;
 
+  /// Create a copy of ScrapElement
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ScrapElementImplCopyWith<_$ScrapElementImpl> get copyWith =>

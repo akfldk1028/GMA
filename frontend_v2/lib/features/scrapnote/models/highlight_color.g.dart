@@ -7,7 +7,7 @@ part of 'highlight_color.dart';
 // **************************************************************************
 
 String _$lastUsedHighlightColorHash() =>
-    r'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2';
+    r'bcbf1917dabe1f5c0bcf93f5b99c05b267cac6fa';
 
 /// Tracks the last-used highlight color for the current session.
 /// Resets to [HighlightColors.defaultColor] on app restart.

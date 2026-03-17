@@ -21,7 +21,7 @@ Map<String, dynamic> _$$HighlightMarkerDataImplToJson(
   _$HighlightMarkerDataImpl instance,
 ) => <String, dynamic>{
   'pageNumber': instance.pageNumber,
-  'normalizedRects': instance.normalizedRects.map((e) => e.toJson()).toList(),
+  'normalizedRects': instance.normalizedRects,
   'colorValue': instance.colorValue,
   'elementId': instance.elementId,
 };

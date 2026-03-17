@@ -52,8 +52,7 @@ abstract class $HighlightMarkerDataCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$HighlightMarkerDataCopyWithImpl<$Res,
-        $Val extends HighlightMarkerData>
+class _$HighlightMarkerDataCopyWithImpl<$Res, $Val extends HighlightMarkerData>
     implements $HighlightMarkerDataCopyWith<$Res> {
   _$HighlightMarkerDataCopyWithImpl(this._value, this._then);
 

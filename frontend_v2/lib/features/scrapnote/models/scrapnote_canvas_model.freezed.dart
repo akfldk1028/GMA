@@ -23,18 +23,39 @@ CanvasElement _$CanvasElementFromJson(Map<String, dynamic> json) {
 mixin _$CanvasElement {
   String get id => throw _privateConstructorUsedError;
   CanvasElementType get type => throw _privateConstructorUsedError;
+
+  /// Absolute pixel X position on the canvas.
   double get x => throw _privateConstructorUsedError;
+
+  /// Absolute pixel Y position on the canvas.
   double get y => throw _privateConstructorUsedError;
+
+  /// Width in pixels.
   double get width => throw _privateConstructorUsedError;
+
+  /// Height in pixels.
   double get height => throw _privateConstructorUsedError;
+
+  /// Absolute path to capture image file. Only set for capture elements.
   String? get imagePath => throw _privateConstructorUsedError;
+
+  /// Highlighted text content. Only set for highlight elements.
   String? get selectedText => throw _privateConstructorUsedError;
+
+  /// Source PDF page number (1-based).
   int? get sourcePageNumber => throw _privateConstructorUsedError;
+
+  /// ARGB color value for highlight elements.
   int get colorValue => throw _privateConstructorUsedError;
+
+  /// Reference to the originating ScrapElement ID.
   String get elementId => throw _privateConstructorUsedError;
 
+  /// Serializes this CanvasElement to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
+  /// Create a copy of CanvasElement
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   $CanvasElementCopyWith<CanvasElement> get copyWith =>
       throw _privateConstructorUsedError;
@@ -72,6 +93,8 @@ class _$CanvasElementCopyWithImpl<$Res, $Val extends CanvasElement>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of CanvasElement
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -172,6 +195,8 @@ class __$$CanvasElementImplCopyWithImpl<$Res>
     $Res Function(_$CanvasElementImpl) _then,
   ) : super(_value, _then);
 
+  /// Create a copy of CanvasElement
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -262,23 +287,41 @@ class _$CanvasElementImpl implements _CanvasElement {
   final String id;
   @override
   final CanvasElementType type;
+
+  /// Absolute pixel X position on the canvas.
   @override
   final double x;
+
+  /// Absolute pixel Y position on the canvas.
   @override
   final double y;
+
+  /// Width in pixels.
   @override
   final double width;
+
+  /// Height in pixels.
   @override
   final double height;
+
+  /// Absolute path to capture image file. Only set for capture elements.
   @override
   final String? imagePath;
+
+  /// Highlighted text content. Only set for highlight elements.
   @override
   final String? selectedText;
+
+  /// Source PDF page number (1-based).
   @override
   final int? sourcePageNumber;
+
+  /// ARGB color value for highlight elements.
   @override
   @JsonKey()
   final int colorValue;
+
+  /// Reference to the originating ScrapElement ID.
   @override
   final String elementId;
 
@@ -327,6 +370,8 @@ class _$CanvasElementImpl implements _CanvasElement {
     elementId,
   );
 
+  /// Create a copy of CanvasElement
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
@@ -361,25 +406,45 @@ abstract class _CanvasElement implements CanvasElement {
   String get id;
   @override
   CanvasElementType get type;
+
+  /// Absolute pixel X position on the canvas.
   @override
   double get x;
+
+  /// Absolute pixel Y position on the canvas.
   @override
   double get y;
+
+  /// Width in pixels.
   @override
   double get width;
+
+  /// Height in pixels.
   @override
   double get height;
+
+  /// Absolute path to capture image file. Only set for capture elements.
   @override
   String? get imagePath;
+
+  /// Highlighted text content. Only set for highlight elements.
   @override
   String? get selectedText;
+
+  /// Source PDF page number (1-based).
   @override
   int? get sourcePageNumber;
+
+  /// ARGB color value for highlight elements.
   @override
   int get colorValue;
+
+  /// Reference to the originating ScrapElement ID.
   @override
   String get elementId;
 
+  /// Create a copy of CanvasElement
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CanvasElementImplCopyWith<_$CanvasElementImpl> get copyWith =>
@@ -393,16 +458,29 @@ ScrapnoteCanvasData _$ScrapnoteCanvasDataFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$ScrapnoteCanvasData {
   String get id => throw _privateConstructorUsedError;
+
+  /// Absolute path to the linked PDF file.
   String get linkedPdfPath => throw _privateConstructorUsedError;
+
+  /// Canvas layout mode: 'infinite' (default) or 'a4'.
   String get canvasMode => throw _privateConstructorUsedError;
+
+  /// All freehand strokes drawn on the canvas.
   List<DrawingStroke> get strokes => throw _privateConstructorUsedError;
+
+  /// All elements placed on the canvas.
   List<CanvasElement> get elements => throw _privateConstructorUsedError;
+
+  /// Element IDs in z-order (bottom to top).
   List<String> get layerOrder => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get modifiedAt => throw _privateConstructorUsedError;
 
+  /// Serializes this ScrapnoteCanvasData to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
+  /// Create a copy of ScrapnoteCanvasData
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   $ScrapnoteCanvasDataCopyWith<ScrapnoteCanvasData> get copyWith =>
       throw _privateConstructorUsedError;
@@ -428,8 +506,7 @@ abstract class $ScrapnoteCanvasDataCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$ScrapnoteCanvasDataCopyWithImpl<$Res,
-        $Val extends ScrapnoteCanvasData>
+class _$ScrapnoteCanvasDataCopyWithImpl<$Res, $Val extends ScrapnoteCanvasData>
     implements $ScrapnoteCanvasDataCopyWith<$Res> {
   _$ScrapnoteCanvasDataCopyWithImpl(this._value, this._then);
 
@@ -438,6 +515,8 @@ class _$ScrapnoteCanvasDataCopyWithImpl<$Res,
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of ScrapnoteCanvasData
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -520,6 +599,8 @@ class __$$ScrapnoteCanvasDataImplCopyWithImpl<$Res>
     $Res Function(_$ScrapnoteCanvasDataImpl) _then,
   ) : super(_value, _then);
 
+  /// Create a copy of ScrapnoteCanvasData
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -592,12 +673,20 @@ class _$ScrapnoteCanvasDataImpl implements _ScrapnoteCanvasData {
 
   @override
   final String id;
+
+  /// Absolute path to the linked PDF file.
   @override
   final String linkedPdfPath;
+
+  /// Canvas layout mode: 'infinite' (default) or 'a4'.
   @override
   @JsonKey()
   final String canvasMode;
+
+  /// All freehand strokes drawn on the canvas.
   final List<DrawingStroke> _strokes;
+
+  /// All freehand strokes drawn on the canvas.
   @override
   @JsonKey()
   List<DrawingStroke> get strokes {
@@ -606,7 +695,10 @@ class _$ScrapnoteCanvasDataImpl implements _ScrapnoteCanvasData {
     return EqualUnmodifiableListView(_strokes);
   }
 
+  /// All elements placed on the canvas.
   final List<CanvasElement> _elements;
+
+  /// All elements placed on the canvas.
   @override
   @JsonKey()
   List<CanvasElement> get elements {
@@ -615,7 +707,10 @@ class _$ScrapnoteCanvasDataImpl implements _ScrapnoteCanvasData {
     return EqualUnmodifiableListView(_elements);
   }
 
+  /// Element IDs in z-order (bottom to top).
   final List<String> _layerOrder;
+
+  /// Element IDs in z-order (bottom to top).
   @override
   @JsonKey()
   List<String> get layerOrder {
@@ -645,10 +740,7 @@ class _$ScrapnoteCanvasDataImpl implements _ScrapnoteCanvasData {
             (identical(other.canvasMode, canvasMode) ||
                 other.canvasMode == canvasMode) &&
             const DeepCollectionEquality().equals(other._strokes, _strokes) &&
-            const DeepCollectionEquality().equals(
-              other._elements,
-              _elements,
-            ) &&
+            const DeepCollectionEquality().equals(other._elements, _elements) &&
             const DeepCollectionEquality().equals(
               other._layerOrder,
               _layerOrder,
@@ -673,11 +765,12 @@ class _$ScrapnoteCanvasDataImpl implements _ScrapnoteCanvasData {
     modifiedAt,
   );
 
+  /// Create a copy of ScrapnoteCanvasData
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$ScrapnoteCanvasDataImplCopyWith<_$ScrapnoteCanvasDataImpl>
-  get copyWith =>
+  _$$ScrapnoteCanvasDataImplCopyWith<_$ScrapnoteCanvasDataImpl> get copyWith =>
       __$$ScrapnoteCanvasDataImplCopyWithImpl<_$ScrapnoteCanvasDataImpl>(
         this,
         _$identity,
@@ -706,14 +799,24 @@ abstract class _ScrapnoteCanvasData implements ScrapnoteCanvasData {
 
   @override
   String get id;
+
+  /// Absolute path to the linked PDF file.
   @override
   String get linkedPdfPath;
+
+  /// Canvas layout mode: 'infinite' (default) or 'a4'.
   @override
   String get canvasMode;
+
+  /// All freehand strokes drawn on the canvas.
   @override
   List<DrawingStroke> get strokes;
+
+  /// All elements placed on the canvas.
   @override
   List<CanvasElement> get elements;
+
+  /// Element IDs in z-order (bottom to top).
   @override
   List<String> get layerOrder;
   @override
@@ -721,8 +824,10 @@ abstract class _ScrapnoteCanvasData implements ScrapnoteCanvasData {
   @override
   DateTime get modifiedAt;
 
+  /// Create a copy of ScrapnoteCanvasData
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ScrapnoteCanvasDataImplCopyWith<_$ScrapnoteCanvasDataImpl>
-  get copyWith => throw _privateConstructorUsedError;
+  _$$ScrapnoteCanvasDataImplCopyWith<_$ScrapnoteCanvasDataImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }

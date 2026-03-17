@@ -7,7 +7,7 @@ part of 'element_store.dart';
 // **************************************************************************
 
 String _$elementStoreNotifierHash() =>
-    r'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0';
+    r'882c58527f55f099a38bc841dc544a919e488fe8';
 
 /// Hive-backed persistent store for all ScrapElement instances.
 /// State is a flat list of all elements across all PDFs and types.

@@ -6,7 +6,7 @@ part of 'scrapnote_canvas_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$scrapnoteCanvasHash() => r'b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0';
+String _$scrapnoteCanvasHash() => r'558a94915d9411631504a090ec7f267af1e0c01c';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -33,9 +33,7 @@ abstract class _$ScrapnoteCanvas
     extends BuildlessAutoDisposeAsyncNotifier<ScrapnoteCanvasData> {
   late final String pdfPath;
 
-  FutureOr<ScrapnoteCanvasData> build(
-    String pdfPath,
-  );
+  FutureOr<ScrapnoteCanvasData> build(String pdfPath);
 }
 
 /// Per-PDF scrapnote canvas state with undo/redo and auto-save.
@@ -60,21 +58,15 @@ class ScrapnoteCanvasFamily extends Family<AsyncValue<ScrapnoteCanvasData>> {
   /// Keyed by the PDF file path (same key as DrawingStrokes provider).
   ///
   /// Copied from [ScrapnoteCanvas].
-  ScrapnoteCanvasProvider call(
-    String pdfPath,
-  ) {
-    return ScrapnoteCanvasProvider(
-      pdfPath,
-    );
+  ScrapnoteCanvasProvider call(String pdfPath) {
+    return ScrapnoteCanvasProvider(pdfPath);
   }
 
   @override
   ScrapnoteCanvasProvider getProviderOverride(
     covariant ScrapnoteCanvasProvider provider,
   ) {
-    return call(
-      provider.pdfPath,
-    );
+    return call(provider.pdfPath);
   }
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
@@ -96,27 +88,29 @@ class ScrapnoteCanvasFamily extends Family<AsyncValue<ScrapnoteCanvasData>> {
 /// Keyed by the PDF file path (same key as DrawingStrokes provider).
 ///
 /// Copied from [ScrapnoteCanvas].
-class ScrapnoteCanvasProvider extends AutoDisposeAsyncNotifierProviderImpl<
-    ScrapnoteCanvas, ScrapnoteCanvasData> {
+class ScrapnoteCanvasProvider
+    extends
+        AutoDisposeAsyncNotifierProviderImpl<
+          ScrapnoteCanvas,
+          ScrapnoteCanvasData
+        > {
   /// Per-PDF scrapnote canvas state with undo/redo and auto-save.
   /// Keyed by the PDF file path (same key as DrawingStrokes provider).
   ///
   /// Copied from [ScrapnoteCanvas].
-  ScrapnoteCanvasProvider(
-    String pdfPath,
-  ) : this._internal(
-          () => ScrapnoteCanvas()..pdfPath = pdfPath,
-          from: scrapnoteCanvasProvider,
-          name: r'scrapnoteCanvasProvider',
-          debugGetCreateSourceHash:
-              const bool.fromEnvironment('dart.vm.product')
-                  ? null
-                  : _$scrapnoteCanvasHash,
-          dependencies: ScrapnoteCanvasFamily._dependencies,
-          allTransitiveDependencies:
-              ScrapnoteCanvasFamily._allTransitiveDependencies,
-          pdfPath: pdfPath,
-        );
+  ScrapnoteCanvasProvider(String pdfPath)
+    : this._internal(
+        () => ScrapnoteCanvas()..pdfPath = pdfPath,
+        from: scrapnoteCanvasProvider,
+        name: r'scrapnoteCanvasProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$scrapnoteCanvasHash,
+        dependencies: ScrapnoteCanvasFamily._dependencies,
+        allTransitiveDependencies:
+            ScrapnoteCanvasFamily._allTransitiveDependencies,
+        pdfPath: pdfPath,
+      );
 
   ScrapnoteCanvasProvider._internal(
     super._createNotifier, {
@@ -134,9 +128,7 @@ class ScrapnoteCanvasProvider extends AutoDisposeAsyncNotifierProviderImpl<
   FutureOr<ScrapnoteCanvasData> runNotifierBuild(
     covariant ScrapnoteCanvas notifier,
   ) {
-    return notifier.build(
-      pdfPath,
-    );
+    return notifier.build(pdfPath);
   }
 
   @override
@@ -170,6 +162,7 @@ class ScrapnoteCanvasProvider extends AutoDisposeAsyncNotifierProviderImpl<
   int get hashCode {
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
     hash = _SystemHash.combine(hash, pdfPath.hashCode);
+
     return _SystemHash.finish(hash);
   }
 }
@@ -183,8 +176,11 @@ mixin ScrapnoteCanvasRef
 }
 
 class _ScrapnoteCanvasProviderElement
-    extends AutoDisposeAsyncNotifierProviderElement<
-        ScrapnoteCanvas, ScrapnoteCanvasData>
+    extends
+        AutoDisposeAsyncNotifierProviderElement<
+          ScrapnoteCanvas,
+          ScrapnoteCanvasData
+        >
     with ScrapnoteCanvasRef {
   _ScrapnoteCanvasProviderElement(super.provider);
 

@@ -1,29 +1,33 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import 'package:gma_app/constants/design_tokens.dart';
-import 'package:gma_app/features/scrapnote/models/element_model.dart';
-import 'package:gma_app/features/scrapnote/models/highlight_color.dart';
-import 'package:gma_app/features/scrapnote/providers/scrap_orchestrator_provider.dart';
 import 'package:gma_app/features/workspace/pages/providers/tab_provider.dart';
 import '../providers/pdf_document_provider.dart';
 
+/// Simple provider to track whether we're in asset-demo mode.
+final assetPdfModeProvider = StateProvider<bool>((ref) => false);
+
 /// PDF viewer screen that composes pdfrx PdfViewer with drawing overlays.
-///
-/// States:
-/// - Loading: CircularProgressIndicator
-/// - Error: Error message with retry button
-/// - Empty (no document): Placeholder UI
-/// - Loaded: PdfViewer with drawing overlay and text-selection highlight capture
 class PdfViewerScreen extends ConsumerWidget {
   const PdfViewerScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isAssetMode = ref.watch(assetPdfModeProvider);
     final docState = ref.watch(pdfDocumentNotifierProvider);
     final theme = ShadTheme.of(context);
+
+    // Asset demo mode — load bundled sample PDF directly
+    if (isAssetMode) {
+      return PdfViewer.asset(
+        'assets/sample.pdf',
+        params: const PdfViewerParams(),
+      );
+    }
 
     // Loading state
     if (docState.isLoading) {
@@ -72,95 +76,54 @@ class PdfViewerScreen extends ConsumerWidget {
 
     // Empty state (no document loaded)
     if (docState.document == null) {
-      return _PdfViewerEmpty(theme: theme);
+      return _PdfViewerEmpty(
+        theme: theme,
+        onOpenPdf: () => _pickAndLoadPdf(ref),
+        onLoadSample: () {
+          ref.read(assetPdfModeProvider.notifier).state = true;
+          ref.read(tabProviderProvider.notifier).addTab('assets/sample.pdf');
+        },
+      );
     }
 
-    // Loaded state: display PDF with drawing overlays and text selection
+    // Loaded state: display PDF with drawing overlays
     final notifier = ref.read(pdfDocumentNotifierProvider.notifier);
     final controller = notifier.controller;
-    final activeTab = ref.read(tabProviderProvider).activeTab;
 
     return PdfViewer.uri(
-      Uri.file(''), // Placeholder — actual document managed by controller
+      Uri.file(''),
       controller: controller,
-      params: PdfViewerParams(
-        textSelectionParams: PdfTextSelectionParams(
-          enabled: true,
-          onTextSelectionChange: (textSelection) async {
-            // Only act when text has been selected
-            if (!textSelection.hasSelectedText) return;
-
-            final pdfPath = activeTab?.path;
-            if (pdfPath == null) return;
-
-            // Retrieve all selected text ranges (may span multiple pages)
-            final ranges = await textSelection.getSelectedTextRanges();
-            if (ranges.isEmpty) return;
-
-            // Use the first range as the primary source for the highlight
-            final primaryRange = ranges.first;
-            final selectedText = ranges
-                .map((r) => r.text)
-                .join(' ')
-                .trim();
-
-            if (selectedText.isEmpty) return;
-
-            // Build a normalized (0-1) ElementRect from the primary range bounds.
-            // PdfRect uses PDF coordinates: origin bottom-left, Y grows upward.
-            // We convert to top-left origin with 0-1 normalization against page size.
-            final bounds = primaryRange.bounds;
-            // Page width/height is needed for normalization.
-            // Retrieve from the PdfDocument pages list via docState.
-            final doc = docState.document;
-            final pageIndex = primaryRange.pageNumber - 1;
-            ElementRect sourceRect;
-
-            if (doc != null && pageIndex >= 0 && pageIndex < doc.pages.length) {
-              final pdfPage = doc.pages[pageIndex];
-              final pageWidth = pdfPage.width;
-              final pageHeight = pdfPage.height;
-
-              sourceRect = ElementRect(
-                left: (bounds.left / pageWidth).clamp(0.0, 1.0),
-                // PDF Y origin is bottom-left; convert to top-origin
-                top: (1.0 - bounds.top / pageHeight).clamp(0.0, 1.0),
-                right: (bounds.right / pageWidth).clamp(0.0, 1.0),
-                bottom: (1.0 - bounds.bottom / pageHeight).clamp(0.0, 1.0),
-              );
-            } else {
-              // Fallback: use full-page rect when dimensions unavailable
-              sourceRect = const ElementRect(
-                left: 0.0,
-                top: 0.0,
-                right: 1.0,
-                bottom: 1.0,
-              );
-            }
-
-            // Resolve color from session state
-            final colorValue = ref.read(lastUsedHighlightColorProvider);
-
-            // Create the highlight element via the orchestrator (no modal dialog)
-            await ref.read(scrapOrchestratorProvider.notifier).createHighlight(
-                  pdfPath: pdfPath,
-                  selectedText: selectedText,
-                  pageNumber: primaryRange.pageNumber,
-                  sourceRect: sourceRect,
-                  colorValue: colorValue,
-                );
-          },
-        ),
-      ),
+      params: const PdfViewerParams(),
     );
   }
 }
 
+/// Pick a PDF file and load it into the viewer.
+Future<void> _pickAndLoadPdf(WidgetRef ref) async {
+  final result = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['pdf'],
+  );
+  if (result == null || result.files.isEmpty) return;
+
+  final path = result.files.single.path;
+  if (path == null) return;
+
+  ref.read(tabProviderProvider.notifier).addTab(path);
+  await ref.read(pdfDocumentNotifierProvider.notifier).loadDocument(path);
+}
+
 /// Empty state placeholder shown when no PDF is loaded.
 class _PdfViewerEmpty extends StatelessWidget {
-  const _PdfViewerEmpty({required this.theme});
+  const _PdfViewerEmpty({
+    required this.theme,
+    required this.onOpenPdf,
+    required this.onLoadSample,
+  });
 
   final ShadThemeData theme;
+  final VoidCallback onOpenPdf;
+  final VoidCallback onLoadSample;
 
   @override
   Widget build(BuildContext context) {
@@ -187,6 +150,30 @@ class _PdfViewerEmpty extends StatelessWidget {
               'Open a PDF file to start reading.',
               style: AppTypography.subheadline(
                 color: theme.colorScheme.mutedForeground,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.base),
+            ShadButton(
+              onPressed: onLoadSample,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.description, size: AppIconSize.sm),
+                  SizedBox(width: AppSpacing.xs),
+                  Text('Load Sample PDF'),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ShadButton.outline(
+              onPressed: onOpenPdf,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.folder_open, size: AppIconSize.sm),
+                  SizedBox(width: AppSpacing.xs),
+                  Text('Open PDF File'),
+                ],
               ),
             ),
           ],

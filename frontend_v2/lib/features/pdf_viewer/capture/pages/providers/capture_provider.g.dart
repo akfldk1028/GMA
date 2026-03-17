@@ -6,7 +6,7 @@ part of 'capture_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$captureNotifierHash() => r'capture_notifier_hash_placeholder';
+String _$captureNotifierHash() => r'bdb99d8ff3354cba488570ebdf57bbaa31d50c19';
 
 /// Notifier managing the capture mode lifecycle.
 ///
@@ -20,14 +20,14 @@ String _$captureNotifierHash() => r'capture_notifier_hash_placeholder';
 @ProviderFor(CaptureNotifier)
 final captureNotifierProvider =
     NotifierProvider<CaptureNotifier, CaptureState>.internal(
-  CaptureNotifier.new,
-  name: r'captureNotifierProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$captureNotifierHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+      CaptureNotifier.new,
+      name: r'captureNotifierProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$captureNotifierHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
 
 typedef _$CaptureNotifier = Notifier<CaptureState>;
 // ignore_for_file: type=lint
