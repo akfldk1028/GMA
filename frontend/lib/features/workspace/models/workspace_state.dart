@@ -11,6 +11,12 @@ enum SidebarMode {
   elementNavigator,
 }
 
+/// Which panel is currently focused (determines size ratio)
+enum FocusedPanel {
+  pdf,
+  scrapnote,
+}
+
 /// Panel size configuration (legacy, kept for test compatibility)
 @freezed
 class PanelSizes with _$PanelSizes {
@@ -40,11 +46,26 @@ class WorkspaceState with _$WorkspaceState {
     @Default(false) bool isFileBrowserOpen,
     @Default(false) bool isMarkerEditModalOpen,
     /// Whether the sticky note floating window is visible
-    @Default(true) bool isStickyNoteVisible,
+    @Default(false) bool isStickyNoteVisible,
     /// Whether the left page thumbnails panel is open
     @Default(true) bool isPageNavOpen,
     /// Whether the right live scraps panel is open
     @Default(true) bool isLiveScrapsOpen,
+    /// Which panel is focused (pdf or scrapnote) — controls size ratio
+    @Default(FocusedPanel.pdf) FocusedPanel focusedPanel,
+    /// Whether PDF and ScrapNote positions are swapped (left↔right)
+    @Default(false) bool isLayoutSwapped,
+    /// Set of currently selected scrap element IDs (for edit mode)
+    @Default({}) Set<String> selectedScrapIds,
+    /// Quick scrap mode — skip popup, create element immediately (슬라이드 10~12)
+    @Default(false) bool isQuickScrapMode,
+    /// Whether the scrap board popup is open
+    @Default(false) bool isScrapBoardOpen,
+    /// Pending scrap data for scrap board popup
+    int? pendingScrapPageNumber,
+    String? pendingScrapText,
+    String? pendingScrapImagePath,
+    @PdfRectConverter() PdfRect? pendingScrapTextRect,
     /// ID of the marker currently being edited in the modal (null = new marker)
     String? editingMarkerId,
     /// Pending marker data for the marker edit modal (from text selection)

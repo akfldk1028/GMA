@@ -20,7 +20,7 @@ import '../widgets/file_browser_drawer.dart';
 import '../widgets/note_editor_modal.dart';
 import '../widgets/pdf_tab_bar.dart';
 import '../widgets/scrap_board_popup.dart';
-import '../widgets/scrap_card_panel.dart';
+import '../widgets/workspace_canvas_panel.dart';
 import '../widgets/scrap_thumbnails_sidebar.dart';
 import '../widgets/sticky_note_widget.dart';
 import '../widgets/workspace_unified_header.dart';
@@ -478,14 +478,21 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       ),
     );
 
-    // Build ScrapNote panel
+    // Build ScrapNote canvas panel
     final scrapPanel = state.isLiveScrapsOpen
         ? Expanded(
             flex: scrapFlex,
             child: Listener(
               onPointerDown: (_) =>
                   notifier.setFocusedPanel(FocusedPanel.scrapnote),
-              child: ScrapCardPanel(noteId: state.currentNoteId),
+              child: WorkspaceCanvasPanel(
+                noteId: state.currentNoteId,
+                pdfPath: state.currentPdfPath,
+                pdfController: _pdfController,
+                onNavigateToPage: (page) {
+                  _pdfController.goToPage(pageNumber: page);
+                },
+              ),
             ),
           )
         : const SizedBox.shrink();

@@ -21,7 +21,12 @@ void main() async {
   await _cleanStaleLockFiles();
 
   // Open app settings box for theme persistence
-  await Hive.openBox('app_settings');
+  final appSettingsBox = await Hive.openBox('app_settings');
+  // Ensure light theme on first run or if corrupted
+  if (appSettingsBox.get('theme_mode') == null ||
+      appSettingsBox.get('theme_mode') == 'dark') {
+    await appSettingsBox.put('theme_mode', 'light');
+  }
 
   // Open pdf_registry box for PDF ID tracking
   await Hive.openBox<String>('pdf_registry');
@@ -31,6 +36,9 @@ void main() async {
 
   // Open note_folders box for folder structure
   await Hive.openBox<String>('note_folders');
+
+  // Open scrapnote_pages box for ScrapNote page management
+  await Hive.openBox<String>('scrapnote_pages');
 
   runApp(
     const ProviderScope(

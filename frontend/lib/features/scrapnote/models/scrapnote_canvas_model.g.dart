@@ -65,6 +65,9 @@ _$CanvasElementImpl _$$CanvasElementImplFromJson(Map<String, dynamic> json) =>
       colorValue: (json['colorValue'] as num?)?.toInt(),
       sourcePageNumber: (json['sourcePageNumber'] as num?)?.toInt(),
       sourcePdfPath: json['sourcePdfPath'] as String?,
+      sourceRect: const PdfRectConverter().fromJson(
+        json['sourceRect'] as Map<String, dynamic>?,
+      ),
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
 
@@ -81,6 +84,7 @@ Map<String, dynamic> _$$CanvasElementImplToJson(_$CanvasElementImpl instance) =>
       'colorValue': instance.colorValue,
       'sourcePageNumber': instance.sourcePageNumber,
       'sourcePdfPath': instance.sourcePdfPath,
+      'sourceRect': const PdfRectConverter().toJson(instance.sourceRect),
       'createdAt': instance.createdAt.toIso8601String(),
     };
 

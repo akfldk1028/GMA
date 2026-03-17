@@ -56,7 +56,7 @@ class ScrapCardPanel extends ConsumerWidget {
           if (isEditMode)
             _EditModeBar(
               selectedCount: selectedIds.length,
-              onDelete: () {
+              onDelete: () async {
                 final idsToDelete = selectedIds.toList();
                 for (final id in idsToDelete) {
                   // Remove from ElementStore
@@ -72,6 +72,12 @@ class ScrapCardPanel extends ConsumerWidget {
                       );
                     }
                   }
+                }
+                // Persist changes to disk (programmatic controller.text= doesn't auto-save)
+                if (noteId != null) {
+                  await ref
+                      .read(noteEditorProvider(noteId!).notifier)
+                      .saveContent(noteId!);
                 }
                 ref
                     .read(workspaceProviderProvider.notifier)
@@ -95,7 +101,7 @@ class ScrapCardPanel extends ConsumerWidget {
                 : ReorderableListView.builder(
                     padding: const EdgeInsets.all(8),
                     itemCount: elements.length,
-                    onReorder: (oldIndex, newIndex) {
+                    onReorder: (oldIndex, newIndex) async {
                       if (noteId == null) return;
                       // Adjust for ReorderableListView behavior
                       if (newIndex > oldIndex) newIndex--;
@@ -113,6 +119,10 @@ class ScrapCardPanel extends ConsumerWidget {
                           ids,
                         );
                       }
+                      // Persist to disk
+                      await ref
+                          .read(noteEditorProvider(noteId!).notifier)
+                          .saveContent(noteId!);
                     },
                     itemBuilder: (context, index) {
                       final element = elements[index];

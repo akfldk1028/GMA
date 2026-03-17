@@ -14,10 +14,14 @@ class CaptureElementWidget extends StatefulWidget {
   const CaptureElementWidget({
     super.key,
     required this.element,
+    this.onTap,
     this.onReposition,
   });
 
   final CanvasElement element;
+
+  /// Called when the user taps the element (single tap).
+  final VoidCallback? onTap;
 
   /// Called when the user drags the element after a long-press.
   /// Provides the element id and the new (x, y) position.
@@ -34,6 +38,7 @@ class _CaptureElementWidgetState extends State<CaptureElementWidget> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onTap: widget.onTap,
       onLongPressStart: (_) {
         setState(() => _isDragging = true);
       },

@@ -6,7 +6,7 @@ part of 'note_scrap_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$noteScrapHash() => r'd9fe72b01176afa899a4d55026fb05ea407fdc87';
+String _$noteScrapHash() => r'feeb741a349341570e86a233621ecbd5c90fa2c5';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -29,38 +29,50 @@ class _SystemHash {
   }
 }
 
-/// Bridge between note markdown content and ScrapCardPanel.
+/// Bridge between note markdown content and the ScrapNote canvas panel.
 ///
 /// Strategy:
 /// - If note has `::: scrapnote` block → read `@el` IDs from block (source of truth)
 /// - If no block → fallback to all elements for the current PDF from ElementStore
+///
+/// Sorting: by page number ascending, then by PDF Y-coordinate descending
+/// (PDF origin is bottom-left, Y increases upward — higher top = higher on page).
 ///
 /// Copied from [noteScrap].
 @ProviderFor(noteScrap)
 const noteScrapProvider = NoteScrapFamily();
 
-/// Bridge between note markdown content and ScrapCardPanel.
+/// Bridge between note markdown content and the ScrapNote canvas panel.
 ///
 /// Strategy:
 /// - If note has `::: scrapnote` block → read `@el` IDs from block (source of truth)
 /// - If no block → fallback to all elements for the current PDF from ElementStore
 ///
+/// Sorting: by page number ascending, then by PDF Y-coordinate descending
+/// (PDF origin is bottom-left, Y increases upward — higher top = higher on page).
+///
 /// Copied from [noteScrap].
 class NoteScrapFamily extends Family<List<ScrapElement>> {
-  /// Bridge between note markdown content and ScrapCardPanel.
+  /// Bridge between note markdown content and the ScrapNote canvas panel.
   ///
   /// Strategy:
   /// - If note has `::: scrapnote` block → read `@el` IDs from block (source of truth)
   /// - If no block → fallback to all elements for the current PDF from ElementStore
+  ///
+  /// Sorting: by page number ascending, then by PDF Y-coordinate descending
+  /// (PDF origin is bottom-left, Y increases upward — higher top = higher on page).
   ///
   /// Copied from [noteScrap].
   const NoteScrapFamily();
 
-  /// Bridge between note markdown content and ScrapCardPanel.
+  /// Bridge between note markdown content and the ScrapNote canvas panel.
   ///
   /// Strategy:
   /// - If note has `::: scrapnote` block → read `@el` IDs from block (source of truth)
   /// - If no block → fallback to all elements for the current PDF from ElementStore
+  ///
+  /// Sorting: by page number ascending, then by PDF Y-coordinate descending
+  /// (PDF origin is bottom-left, Y increases upward — higher top = higher on page).
   ///
   /// Copied from [noteScrap].
   NoteScrapProvider call(String noteId) {
@@ -87,19 +99,25 @@ class NoteScrapFamily extends Family<List<ScrapElement>> {
   String? get name => r'noteScrapProvider';
 }
 
-/// Bridge between note markdown content and ScrapCardPanel.
+/// Bridge between note markdown content and the ScrapNote canvas panel.
 ///
 /// Strategy:
 /// - If note has `::: scrapnote` block → read `@el` IDs from block (source of truth)
 /// - If no block → fallback to all elements for the current PDF from ElementStore
 ///
+/// Sorting: by page number ascending, then by PDF Y-coordinate descending
+/// (PDF origin is bottom-left, Y increases upward — higher top = higher on page).
+///
 /// Copied from [noteScrap].
 class NoteScrapProvider extends AutoDisposeProvider<List<ScrapElement>> {
-  /// Bridge between note markdown content and ScrapCardPanel.
+  /// Bridge between note markdown content and the ScrapNote canvas panel.
   ///
   /// Strategy:
   /// - If note has `::: scrapnote` block → read `@el` IDs from block (source of truth)
   /// - If no block → fallback to all elements for the current PDF from ElementStore
+  ///
+  /// Sorting: by page number ascending, then by PDF Y-coordinate descending
+  /// (PDF origin is bottom-left, Y increases upward — higher top = higher on page).
   ///
   /// Copied from [noteScrap].
   NoteScrapProvider(String noteId)

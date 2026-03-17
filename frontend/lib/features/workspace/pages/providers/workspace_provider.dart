@@ -18,7 +18,11 @@ import '../../../pdf_viewer/drawing/models/drawing_model.dart';
 import '../../../ocr/ocr_service.dart';
 import '../../../ocr/pages/providers/ocr_provider.dart';
 import '../../../scrapnote/models/element_model.dart';
+import '../../../scrapnote/models/scrapnote_canvas_model.dart';
+import '../../../scrapnote/pages/providers/scrapnote_canvas_provider.dart';
 import '../../../scrapnote/providers/element_store.dart';
+import '../../../scrapnote/providers/scrapnote_service_provider.dart';
+import '../../../scrapnote/services/scrap_insertion_service.dart';
 import '../../../scrapnote/utils/scrapnote_block_editor.dart';
 import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
 import '../../../scrapnote/providers/pdf_registry_provider.dart';
@@ -433,6 +437,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
         ref.read(elementStoreProvider.notifier).add(element);
 
         // Append @el reference to the ::: scrapnote block in note content
+        // and persist to disk (programmatic controller.text= doesn't trigger auto-save)
         if (currentNoteId != null) {
           final controller = ref.read(noteEditorProvider(currentNoteId));
           if (controller != null) {
@@ -441,7 +446,52 @@ class WorkspaceProvider extends _$WorkspaceProvider {
               element.id,
             );
             controller.text = updatedContent;
+
+            // Explicitly save to disk — auto-save only fires on user typing
+            await ref
+                .read(noteEditorProvider(currentNoteId).notifier)
+                .saveContent(currentNoteId);
           }
+        }
+
+        // Also create CanvasElement on the scrapnote canvas
+        try {
+          final service = await ref.read(scrapnoteServiceProvProvider.future);
+          final scrapnoteId = await service.getOrCreateScrapnote(
+            currentState.currentPdfPath!,
+          );
+
+          // Get existing elements for auto-positioning
+          final canvasData = ref
+              .read(scrapnoteCanvasStateProvider(scrapnoteId))
+              .valueOrNull;
+          final existingElements = canvasData?.elements ?? [];
+          final pos = ScrapInsertionService.calculateAutoPosition(
+            existingElements,
+          );
+
+          final canvasElement = CanvasElement(
+            id: marker.id,
+            type: capturedImagePath != null
+                ? CanvasElementType.capture
+                : CanvasElementType.highlight,
+            x: pos.x,
+            y: pos.y,
+            width: capturedImagePath != null ? 400 : 500,
+            height: capturedImagePath != null ? 300 : 80,
+            imagePath: capturedImagePath,
+            selectedText: selectedText,
+            colorValue: color.color.toARGB32(),
+            sourcePageNumber: pageNumber,
+            sourcePdfPath: currentState.currentPdfPath,
+            createdAt: DateTime.now(),
+          );
+
+          ref
+              .read(scrapnoteCanvasStateProvider(scrapnoteId).notifier)
+              .addElement(canvasElement);
+        } catch (e) {
+          debugPrint('Failed to create CanvasElement: $e');
         }
       } catch (e) {
         debugPrint('Failed to create ScrapElement: $e');

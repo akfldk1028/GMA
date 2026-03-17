@@ -144,8 +144,8 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           docState.documentRef!,
           controller: controller!,
           params: PdfViewerParams(
-            // 2-page facing layout on desktop only; mobile uses default single-page scroll
-            layoutPages: Responsive.isMobile(context) ? null : _facingPagesLayout,
+            // Facing-page layout: page 1 solo, then 2-3, 4-5, ...
+            layoutPages: _facingPagesLayout,
             // Disable text selection when drawing or capture mode is active
             textSelectionParams: anyOverlayActive
                 ? const PdfTextSelectionParams()

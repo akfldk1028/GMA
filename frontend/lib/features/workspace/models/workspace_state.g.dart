@@ -43,9 +43,26 @@ _$WorkspaceStateImpl _$$WorkspaceStateImplFromJson(Map<String, dynamic> json) =>
       isEditorModalOpen: json['isEditorModalOpen'] as bool? ?? false,
       isFileBrowserOpen: json['isFileBrowserOpen'] as bool? ?? false,
       isMarkerEditModalOpen: json['isMarkerEditModalOpen'] as bool? ?? false,
-      isStickyNoteVisible: json['isStickyNoteVisible'] as bool? ?? true,
+      isStickyNoteVisible: json['isStickyNoteVisible'] as bool? ?? false,
       isPageNavOpen: json['isPageNavOpen'] as bool? ?? true,
       isLiveScrapsOpen: json['isLiveScrapsOpen'] as bool? ?? true,
+      focusedPanel:
+          $enumDecodeNullable(_$FocusedPanelEnumMap, json['focusedPanel']) ??
+          FocusedPanel.pdf,
+      isLayoutSwapped: json['isLayoutSwapped'] as bool? ?? false,
+      selectedScrapIds:
+          (json['selectedScrapIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toSet() ??
+          const {},
+      isQuickScrapMode: json['isQuickScrapMode'] as bool? ?? false,
+      isScrapBoardOpen: json['isScrapBoardOpen'] as bool? ?? false,
+      pendingScrapPageNumber: (json['pendingScrapPageNumber'] as num?)?.toInt(),
+      pendingScrapText: json['pendingScrapText'] as String?,
+      pendingScrapImagePath: json['pendingScrapImagePath'] as String?,
+      pendingScrapTextRect: const PdfRectConverter().fromJson(
+        json['pendingScrapTextRect'] as Map<String, dynamic>?,
+      ),
       editingMarkerId: json['editingMarkerId'] as String?,
       pendingMarkerPageNumber: (json['pendingMarkerPageNumber'] as num?)
           ?.toInt(),
@@ -70,6 +87,17 @@ Map<String, dynamic> _$$WorkspaceStateImplToJson(
   'isStickyNoteVisible': instance.isStickyNoteVisible,
   'isPageNavOpen': instance.isPageNavOpen,
   'isLiveScrapsOpen': instance.isLiveScrapsOpen,
+  'focusedPanel': _$FocusedPanelEnumMap[instance.focusedPanel]!,
+  'isLayoutSwapped': instance.isLayoutSwapped,
+  'selectedScrapIds': instance.selectedScrapIds.toList(),
+  'isQuickScrapMode': instance.isQuickScrapMode,
+  'isScrapBoardOpen': instance.isScrapBoardOpen,
+  'pendingScrapPageNumber': instance.pendingScrapPageNumber,
+  'pendingScrapText': instance.pendingScrapText,
+  'pendingScrapImagePath': instance.pendingScrapImagePath,
+  'pendingScrapTextRect': const PdfRectConverter().toJson(
+    instance.pendingScrapTextRect,
+  ),
   'editingMarkerId': instance.editingMarkerId,
   'pendingMarkerPageNumber': instance.pendingMarkerPageNumber,
   'pendingMarkerText': instance.pendingMarkerText,
@@ -81,4 +109,9 @@ Map<String, dynamic> _$$WorkspaceStateImplToJson(
 const _$SidebarModeEnumMap = {
   SidebarMode.fileBrowser: 'fileBrowser',
   SidebarMode.elementNavigator: 'elementNavigator',
+};
+
+const _$FocusedPanelEnumMap = {
+  FocusedPanel.pdf: 'pdf',
+  FocusedPanel.scrapnote: 'scrapnote',
 };

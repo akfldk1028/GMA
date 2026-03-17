@@ -245,6 +245,28 @@ mixin _$WorkspaceState {
   /// Whether the right live scraps panel is open
   bool get isLiveScrapsOpen => throw _privateConstructorUsedError;
 
+  /// Which panel is focused (pdf or scrapnote) — controls size ratio
+  FocusedPanel get focusedPanel => throw _privateConstructorUsedError;
+
+  /// Whether PDF and ScrapNote positions are swapped (left↔right)
+  bool get isLayoutSwapped => throw _privateConstructorUsedError;
+
+  /// Set of currently selected scrap element IDs (for edit mode)
+  Set<String> get selectedScrapIds => throw _privateConstructorUsedError;
+
+  /// Quick scrap mode — skip popup, create element immediately (슬라이드 10~12)
+  bool get isQuickScrapMode => throw _privateConstructorUsedError;
+
+  /// Whether the scrap board popup is open
+  bool get isScrapBoardOpen => throw _privateConstructorUsedError;
+
+  /// Pending scrap data for scrap board popup
+  int? get pendingScrapPageNumber => throw _privateConstructorUsedError;
+  String? get pendingScrapText => throw _privateConstructorUsedError;
+  String? get pendingScrapImagePath => throw _privateConstructorUsedError;
+  @PdfRectConverter()
+  PdfRect? get pendingScrapTextRect => throw _privateConstructorUsedError;
+
   /// ID of the marker currently being edited in the modal (null = new marker)
   String? get editingMarkerId => throw _privateConstructorUsedError;
 
@@ -284,6 +306,15 @@ abstract class $WorkspaceStateCopyWith<$Res> {
     bool isStickyNoteVisible,
     bool isPageNavOpen,
     bool isLiveScrapsOpen,
+    FocusedPanel focusedPanel,
+    bool isLayoutSwapped,
+    Set<String> selectedScrapIds,
+    bool isQuickScrapMode,
+    bool isScrapBoardOpen,
+    int? pendingScrapPageNumber,
+    String? pendingScrapText,
+    String? pendingScrapImagePath,
+    @PdfRectConverter() PdfRect? pendingScrapTextRect,
     String? editingMarkerId,
     int? pendingMarkerPageNumber,
     String? pendingMarkerText,
@@ -320,6 +351,15 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
     Object? isStickyNoteVisible = null,
     Object? isPageNavOpen = null,
     Object? isLiveScrapsOpen = null,
+    Object? focusedPanel = null,
+    Object? isLayoutSwapped = null,
+    Object? selectedScrapIds = null,
+    Object? isQuickScrapMode = null,
+    Object? isScrapBoardOpen = null,
+    Object? pendingScrapPageNumber = freezed,
+    Object? pendingScrapText = freezed,
+    Object? pendingScrapImagePath = freezed,
+    Object? pendingScrapTextRect = freezed,
     Object? editingMarkerId = freezed,
     Object? pendingMarkerPageNumber = freezed,
     Object? pendingMarkerText = freezed,
@@ -375,6 +415,42 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
                 ? _value.isLiveScrapsOpen
                 : isLiveScrapsOpen // ignore: cast_nullable_to_non_nullable
                       as bool,
+            focusedPanel: null == focusedPanel
+                ? _value.focusedPanel
+                : focusedPanel // ignore: cast_nullable_to_non_nullable
+                      as FocusedPanel,
+            isLayoutSwapped: null == isLayoutSwapped
+                ? _value.isLayoutSwapped
+                : isLayoutSwapped // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            selectedScrapIds: null == selectedScrapIds
+                ? _value.selectedScrapIds
+                : selectedScrapIds // ignore: cast_nullable_to_non_nullable
+                      as Set<String>,
+            isQuickScrapMode: null == isQuickScrapMode
+                ? _value.isQuickScrapMode
+                : isQuickScrapMode // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isScrapBoardOpen: null == isScrapBoardOpen
+                ? _value.isScrapBoardOpen
+                : isScrapBoardOpen // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            pendingScrapPageNumber: freezed == pendingScrapPageNumber
+                ? _value.pendingScrapPageNumber
+                : pendingScrapPageNumber // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            pendingScrapText: freezed == pendingScrapText
+                ? _value.pendingScrapText
+                : pendingScrapText // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            pendingScrapImagePath: freezed == pendingScrapImagePath
+                ? _value.pendingScrapImagePath
+                : pendingScrapImagePath // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            pendingScrapTextRect: freezed == pendingScrapTextRect
+                ? _value.pendingScrapTextRect
+                : pendingScrapTextRect // ignore: cast_nullable_to_non_nullable
+                      as PdfRect?,
             editingMarkerId: freezed == editingMarkerId
                 ? _value.editingMarkerId
                 : editingMarkerId // ignore: cast_nullable_to_non_nullable
@@ -429,6 +505,15 @@ abstract class _$$WorkspaceStateImplCopyWith<$Res>
     bool isStickyNoteVisible,
     bool isPageNavOpen,
     bool isLiveScrapsOpen,
+    FocusedPanel focusedPanel,
+    bool isLayoutSwapped,
+    Set<String> selectedScrapIds,
+    bool isQuickScrapMode,
+    bool isScrapBoardOpen,
+    int? pendingScrapPageNumber,
+    String? pendingScrapText,
+    String? pendingScrapImagePath,
+    @PdfRectConverter() PdfRect? pendingScrapTextRect,
     String? editingMarkerId,
     int? pendingMarkerPageNumber,
     String? pendingMarkerText,
@@ -465,6 +550,15 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
     Object? isStickyNoteVisible = null,
     Object? isPageNavOpen = null,
     Object? isLiveScrapsOpen = null,
+    Object? focusedPanel = null,
+    Object? isLayoutSwapped = null,
+    Object? selectedScrapIds = null,
+    Object? isQuickScrapMode = null,
+    Object? isScrapBoardOpen = null,
+    Object? pendingScrapPageNumber = freezed,
+    Object? pendingScrapText = freezed,
+    Object? pendingScrapImagePath = freezed,
+    Object? pendingScrapTextRect = freezed,
     Object? editingMarkerId = freezed,
     Object? pendingMarkerPageNumber = freezed,
     Object? pendingMarkerText = freezed,
@@ -520,6 +614,42 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
             ? _value.isLiveScrapsOpen
             : isLiveScrapsOpen // ignore: cast_nullable_to_non_nullable
                   as bool,
+        focusedPanel: null == focusedPanel
+            ? _value.focusedPanel
+            : focusedPanel // ignore: cast_nullable_to_non_nullable
+                  as FocusedPanel,
+        isLayoutSwapped: null == isLayoutSwapped
+            ? _value.isLayoutSwapped
+            : isLayoutSwapped // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        selectedScrapIds: null == selectedScrapIds
+            ? _value._selectedScrapIds
+            : selectedScrapIds // ignore: cast_nullable_to_non_nullable
+                  as Set<String>,
+        isQuickScrapMode: null == isQuickScrapMode
+            ? _value.isQuickScrapMode
+            : isQuickScrapMode // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isScrapBoardOpen: null == isScrapBoardOpen
+            ? _value.isScrapBoardOpen
+            : isScrapBoardOpen // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        pendingScrapPageNumber: freezed == pendingScrapPageNumber
+            ? _value.pendingScrapPageNumber
+            : pendingScrapPageNumber // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        pendingScrapText: freezed == pendingScrapText
+            ? _value.pendingScrapText
+            : pendingScrapText // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        pendingScrapImagePath: freezed == pendingScrapImagePath
+            ? _value.pendingScrapImagePath
+            : pendingScrapImagePath // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        pendingScrapTextRect: freezed == pendingScrapTextRect
+            ? _value.pendingScrapTextRect
+            : pendingScrapTextRect // ignore: cast_nullable_to_non_nullable
+                  as PdfRect?,
         editingMarkerId: freezed == editingMarkerId
             ? _value.editingMarkerId
             : editingMarkerId // ignore: cast_nullable_to_non_nullable
@@ -554,15 +684,25 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     this.isEditorModalOpen = false,
     this.isFileBrowserOpen = false,
     this.isMarkerEditModalOpen = false,
-    this.isStickyNoteVisible = true,
+    this.isStickyNoteVisible = false,
     this.isPageNavOpen = true,
     this.isLiveScrapsOpen = true,
+    this.focusedPanel = FocusedPanel.pdf,
+    this.isLayoutSwapped = false,
+    final Set<String> selectedScrapIds = const {},
+    this.isQuickScrapMode = false,
+    this.isScrapBoardOpen = false,
+    this.pendingScrapPageNumber,
+    this.pendingScrapText,
+    this.pendingScrapImagePath,
+    @PdfRectConverter() this.pendingScrapTextRect,
     this.editingMarkerId,
     this.pendingMarkerPageNumber,
     this.pendingMarkerText,
     @PdfRectConverter() this.pendingMarkerTextRect,
   }) : _markers = markers,
-       _openPdfPaths = openPdfPaths;
+       _openPdfPaths = openPdfPaths,
+       _selectedScrapIds = selectedScrapIds;
 
   factory _$WorkspaceStateImpl.fromJson(Map<String, dynamic> json) =>
       _$$WorkspaceStateImplFromJson(json);
@@ -624,6 +764,49 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
   @JsonKey()
   final bool isLiveScrapsOpen;
 
+  /// Which panel is focused (pdf or scrapnote) — controls size ratio
+  @override
+  @JsonKey()
+  final FocusedPanel focusedPanel;
+
+  /// Whether PDF and ScrapNote positions are swapped (left↔right)
+  @override
+  @JsonKey()
+  final bool isLayoutSwapped;
+
+  /// Set of currently selected scrap element IDs (for edit mode)
+  final Set<String> _selectedScrapIds;
+
+  /// Set of currently selected scrap element IDs (for edit mode)
+  @override
+  @JsonKey()
+  Set<String> get selectedScrapIds {
+    if (_selectedScrapIds is EqualUnmodifiableSetView) return _selectedScrapIds;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableSetView(_selectedScrapIds);
+  }
+
+  /// Quick scrap mode — skip popup, create element immediately (슬라이드 10~12)
+  @override
+  @JsonKey()
+  final bool isQuickScrapMode;
+
+  /// Whether the scrap board popup is open
+  @override
+  @JsonKey()
+  final bool isScrapBoardOpen;
+
+  /// Pending scrap data for scrap board popup
+  @override
+  final int? pendingScrapPageNumber;
+  @override
+  final String? pendingScrapText;
+  @override
+  final String? pendingScrapImagePath;
+  @override
+  @PdfRectConverter()
+  final PdfRect? pendingScrapTextRect;
+
   /// ID of the marker currently being edited in the modal (null = new marker)
   @override
   final String? editingMarkerId;
@@ -639,7 +822,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
 
   @override
   String toString() {
-    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, openPdfPaths: $openPdfPaths, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
+    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, openPdfPaths: $openPdfPaths, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, focusedPanel: $focusedPanel, isLayoutSwapped: $isLayoutSwapped, selectedScrapIds: $selectedScrapIds, isQuickScrapMode: $isQuickScrapMode, isScrapBoardOpen: $isScrapBoardOpen, pendingScrapPageNumber: $pendingScrapPageNumber, pendingScrapText: $pendingScrapText, pendingScrapImagePath: $pendingScrapImagePath, pendingScrapTextRect: $pendingScrapTextRect, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
   }
 
   @override
@@ -672,6 +855,26 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
                 other.isPageNavOpen == isPageNavOpen) &&
             (identical(other.isLiveScrapsOpen, isLiveScrapsOpen) ||
                 other.isLiveScrapsOpen == isLiveScrapsOpen) &&
+            (identical(other.focusedPanel, focusedPanel) ||
+                other.focusedPanel == focusedPanel) &&
+            (identical(other.isLayoutSwapped, isLayoutSwapped) ||
+                other.isLayoutSwapped == isLayoutSwapped) &&
+            const DeepCollectionEquality().equals(
+              other._selectedScrapIds,
+              _selectedScrapIds,
+            ) &&
+            (identical(other.isQuickScrapMode, isQuickScrapMode) ||
+                other.isQuickScrapMode == isQuickScrapMode) &&
+            (identical(other.isScrapBoardOpen, isScrapBoardOpen) ||
+                other.isScrapBoardOpen == isScrapBoardOpen) &&
+            (identical(other.pendingScrapPageNumber, pendingScrapPageNumber) ||
+                other.pendingScrapPageNumber == pendingScrapPageNumber) &&
+            (identical(other.pendingScrapText, pendingScrapText) ||
+                other.pendingScrapText == pendingScrapText) &&
+            (identical(other.pendingScrapImagePath, pendingScrapImagePath) ||
+                other.pendingScrapImagePath == pendingScrapImagePath) &&
+            (identical(other.pendingScrapTextRect, pendingScrapTextRect) ||
+                other.pendingScrapTextRect == pendingScrapTextRect) &&
             (identical(other.editingMarkerId, editingMarkerId) ||
                 other.editingMarkerId == editingMarkerId) &&
             (identical(
@@ -687,7 +890,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     currentPdfPath,
     currentNoteId,
@@ -701,11 +904,20 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     isStickyNoteVisible,
     isPageNavOpen,
     isLiveScrapsOpen,
+    focusedPanel,
+    isLayoutSwapped,
+    const DeepCollectionEquality().hash(_selectedScrapIds),
+    isQuickScrapMode,
+    isScrapBoardOpen,
+    pendingScrapPageNumber,
+    pendingScrapText,
+    pendingScrapImagePath,
+    pendingScrapTextRect,
     editingMarkerId,
     pendingMarkerPageNumber,
     pendingMarkerText,
     pendingMarkerTextRect,
-  );
+  ]);
 
   /// Create a copy of WorkspaceState
   /// with the given fields replaced by the non-null parameter values.
@@ -738,6 +950,15 @@ abstract class _WorkspaceState implements WorkspaceState {
     final bool isStickyNoteVisible,
     final bool isPageNavOpen,
     final bool isLiveScrapsOpen,
+    final FocusedPanel focusedPanel,
+    final bool isLayoutSwapped,
+    final Set<String> selectedScrapIds,
+    final bool isQuickScrapMode,
+    final bool isScrapBoardOpen,
+    final int? pendingScrapPageNumber,
+    final String? pendingScrapText,
+    final String? pendingScrapImagePath,
+    @PdfRectConverter() final PdfRect? pendingScrapTextRect,
     final String? editingMarkerId,
     final int? pendingMarkerPageNumber,
     final String? pendingMarkerText,
@@ -779,6 +1000,37 @@ abstract class _WorkspaceState implements WorkspaceState {
   /// Whether the right live scraps panel is open
   @override
   bool get isLiveScrapsOpen;
+
+  /// Which panel is focused (pdf or scrapnote) — controls size ratio
+  @override
+  FocusedPanel get focusedPanel;
+
+  /// Whether PDF and ScrapNote positions are swapped (left↔right)
+  @override
+  bool get isLayoutSwapped;
+
+  /// Set of currently selected scrap element IDs (for edit mode)
+  @override
+  Set<String> get selectedScrapIds;
+
+  /// Quick scrap mode — skip popup, create element immediately (슬라이드 10~12)
+  @override
+  bool get isQuickScrapMode;
+
+  /// Whether the scrap board popup is open
+  @override
+  bool get isScrapBoardOpen;
+
+  /// Pending scrap data for scrap board popup
+  @override
+  int? get pendingScrapPageNumber;
+  @override
+  String? get pendingScrapText;
+  @override
+  String? get pendingScrapImagePath;
+  @override
+  @PdfRectConverter()
+  PdfRect? get pendingScrapTextRect;
 
   /// ID of the marker currently being edited in the modal (null = new marker)
   @override

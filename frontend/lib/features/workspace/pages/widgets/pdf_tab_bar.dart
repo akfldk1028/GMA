@@ -18,7 +18,8 @@ class PdfTabBar extends ConsumerWidget {
     if (ws == null) return const SizedBox.shrink();
 
     final openPdfs = ws.openPdfPaths;
-    if (openPdfs.length <= 1) return const SizedBox.shrink();
+    // Always show tab bar per 기획안 슬라이드 2 (even with 1 PDF)
+    if (openPdfs.isEmpty) return const SizedBox.shrink();
 
     final activePath = ws.currentPdfPath;
 

@@ -6,7 +6,7 @@ part of 'element_store.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$elementStoreHash() => r'5c0d0e593d68eab5744a750a20fe8b364480d693';
+String _$elementStoreHash() => r'bc1bc72e4163c0df1e9e63be5a54550683d3ae72';
 
 /// Persistent store for ScrapElements using Hive.
 /// Follows the same JSON-in-Box pattern as PdfRegistry.
