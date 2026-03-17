@@ -65,18 +65,45 @@ GMA/
 │   │       │   │       └── panel_control_bar.dart    # Swap, maximize buttons
 │   │       │   └── models/
 │   │       │
-│   │       ├── pdf_viewer/             # PDF rendering (NEW - SPEC-PDF-001, 10 files)
+│   │       ├── pdf_viewer/             # PDF rendering with highlight and capture (NEW - SPEC-PDF-001, 22 files)
 │   │       │   ├── models/
 │   │       │   │   └── pdf_document_state.dart          # PdfDocumentState (freezed)
 │   │       │   ├── pages/
 │   │       │   │   ├── providers/
-│   │       │   │   │   └── pdf_document_provider.dart   # Load/navigate/clear PDF
+│   │       │   │   │   ├── pdf_document_provider.dart   # Load/navigate/clear PDF
+│   │       │   │   │   ├── capture_provider.dart        # Capture mode state (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   │   ├── capture_provider.freezed.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   │   └── capture_provider.g.dart      # Generated (NEW - SPEC-SCRAPNOTE-002)
 │   │       │   │   ├── screens/
 │   │       │   │   │   └── pdf_viewer_screen.dart       # PdfViewer composition
 │   │       │   │   └── widgets/
-│   │       │   │       └── pdf_page_overlay.dart        # Drawing + text layers
-│   │       │   └── utils/
-│   │       │       └── pdf_text_extractor.dart          # Normalized coordinate conversion
+│   │       │   │       ├── pdf_page_overlay.dart        # Drawing + text layers
+│   │       │   │       ├── capture_overlay.dart         # Drag-to-select region overlay (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │       └── capture_page_overlay.dart    # pdfrx overlay builder (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   ├── utils/
+│   │       │   │   ├── pdf_text_extractor.dart          # Normalized coordinate conversion
+│   │       │   │   └── capture_service.dart             # PDF region to PNG rendering (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   ├── highlight/
+│   │       │   │   ├── models/
+│   │       │   │   │   ├── highlight_marker_data.dart   # Highlight rendering data (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   │   ├── highlight_marker_data.freezed.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   │   └── highlight_marker_data.g.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   ├── providers/
+│   │       │   │   │   ├── highlight_provider.dart      # Per-document highlight data (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   │   └── highlight_provider.g.dart    # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   └── widgets/
+│   │       │   │       └── highlight_overlay.dart       # PDF page highlight overlay (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   └── capture/
+│   │       │       ├── pages/
+│   │       │       │   ├── providers/
+│   │       │       │   │   ├── capture_provider.dart    # Capture mode state (NEW - SPEC-SCRAPNOTE-002)
+│   │       │       │   │   ├── capture_provider.freezed.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │       │   │   └── capture_provider.g.dart  # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │       ├── widgets/
+│   │       │       │   ├── capture_overlay.dart         # Drag-to-select region overlay (NEW - SPEC-SCRAPNOTE-002)
+│   │       │       │   └── capture_page_overlay.dart    # pdfrx overlay builder (NEW - SPEC-SCRAPNOTE-002)
+│   │       │       └── utils/
+│   │       │           └── capture_service.dart         # PDF region to PNG rendering (NEW - SPEC-SCRAPNOTE-002)
 │   │       │
 │   │       ├── drawing/                 # Drawing tools and overlay (NEW - SPEC-PDF-001, 10 files)
 │   │       │   ├── models/
@@ -98,31 +125,53 @@ GMA/
 │   │       │   └── utils/
 │   │       │       └── drawing_serializer.dart          # JSON persistence
 │   │       │
-│   │       ├── scrapnote/              # Pen-capable note canvas (28 files)
+│   │       ├── scrapnote/              # Pen-capable note canvas (47 files)
 │   │       │   ├── models/
 │   │       │   │   ├── scrapnote_model.dart        # @freezed Scrapnote document
 │   │       │   │   ├── card_model.dart             # Capture/Highlight card model
 │   │       │   │   ├── stroke_model.dart           # Drawing stroke data
-│   │       │   │   └── page_model.dart             # A4/infinite page definition
+│   │       │   │   ├── page_model.dart             # A4/infinite page definition
+│   │       │   │   ├── element_model.dart          # ScrapElement, ElementRect (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   ├── element_model.freezed.dart  # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   ├── element_model.g.dart        # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   ├── highlight_color.dart        # HighlightColors, LastUsedHighlightColor provider (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   ├── highlight_color.g.dart      # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   ├── scrapnote_canvas_model.dart # ScrapnoteCanvasData, CanvasElement (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   ├── scrapnote_canvas_model.freezed.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   └── scrapnote_canvas_model.g.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
 │   │       │   ├── pages/
 │   │       │   │   ├── providers/
 │   │       │   │   │   ├── scrapnote_provider.dart      # Scrapnote state
 │   │       │   │   │   ├── scrapnote_canvas_provider.dart # Canvas rendering
-│   │       │   │   │   └── scrapnote_provider.g.dart    # Generated
+│   │       │   │   │   ├── scrapnote_provider.g.dart    # Generated
+│   │       │   │   │   ├── scrapnote_canvas_provider.g.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
 │   │       │   │   ├── screens/
-│   │       │   │   │   └── scrapnote_panel.dart         # Embedded in workspace
+│   │       │   │   │   ├── scrapnote_panel.dart         # Embedded in workspace
+│   │       │   │   │   └── scrapnote_screen.dart        # Full-screen canvas view (NEW - SPEC-SCRAPNOTE-002)
 │   │       │   │   └── widgets/
 │   │       │   │       ├── canvas_renderer.dart         # Render pages
 │   │       │   │       ├── card_widget.dart             # Capture/Highlight card
 │   │       │   │       ├── page_container.dart          # Single A4 page
 │   │       │   │       ├── capture_card.dart            # Image card
 │   │       │   │       ├── highlight_card.dart          # Text card
-│   │       │   │       └── text_block_widget.dart       # Free text area
+│   │       │   │       ├── text_block_widget.dart       # Free text area
+│   │       │   │       ├── live_scraps_panel.dart       # Element list display (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │       ├── scrapnote_canvas.dart        # Canvas with drawing + elements (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │       └── confirm_scrap_popup.dart     # Floating confirmation popup (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   ├── providers/
+│   │       │   │   ├── element_store.dart          # Hive-backed element persistence (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   ├── element_store.g.dart        # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   ├── scrap_orchestrator_provider.dart # Central insertion orchestrator (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   └── scrap_orchestrator_provider.g.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
 │   │       │   ├── drawing/
 │   │       │   │   └── (shares tools from pdf_viewer)
+│   │       │   ├── services/
+│   │       │   │   ├── scrapnote_service.dart      # Scrapnote lifecycle management (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   └── scrap_insertion_service.dart # Element positioning and insertion (NEW - SPEC-SCRAPNOTE-002)
 │   │       │   └── utils/
 │   │       │       ├── stroke_serializer.dart       # JSON persistence
-│   │       │       └── page_layout_calculator.dart  # A4 dimensions
+│   │       │       ├── page_layout_calculator.dart  # A4 dimensions
+│   │       │       └── scrapnote_serializer.dart    # .gma JSON serialization (NEW - SPEC-SCRAPNOTE-002)
 │   │       │
 │   │       ├── sidebar/                 # Item navigator (8 files)
 │   │       │   ├── models/
@@ -171,7 +220,7 @@ GMA/
 │   │               └── screens/
 │   │                   └── splash_screen.dart
 │   │
-│   ├── test/                           # Test files (12 files)
+│   ├── test/                           # Test files (42 files)
 │   │   ├── e2e/                        # End-to-end tests (2 files)
 │   │   │   ├── capture_workflow_test.dart        # PDF capture → scrapnote
 │   │   │   └── highlight_workflow_test.dart      # PDF highlight → scrapnote
@@ -180,13 +229,20 @@ GMA/
 │   │   │   ├── scrapnote_persistence_test.dart
 │   │   │   ├── drawing_tools_test.dart
 │   │   │   └── panel_management_test.dart
-│   │   ├── features/                   # Unit tests (16 files)
-│   │   │   ├── pdf_viewer/             # PDF viewer tests (5 files)
+│   │   ├── features/                   # Unit tests (31 files)
+│   │   │   ├── pdf_viewer/             # PDF viewer tests (8 files)
 │   │   │   │   ├── pdf_document_state_test.dart
 │   │   │   │   ├── pdf_document_provider_test.dart
 │   │   │   │   ├── pdf_viewer_screen_test.dart
 │   │   │   │   ├── pdf_page_overlay_test.dart
-│   │   │   │   └── pdf_text_extractor_test.dart
+│   │   │   │   ├── pdf_text_extractor_test.dart
+│   │   │   │   ├── highlight/
+│   │   │   │   │   ├── highlight_marker_data_test.dart       # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │   │   ├── highlight_provider_test.dart          # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │   │   └── highlight_overlay_test.dart           # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │   └── capture/
+│   │   │   │       ├── capture_provider_test.dart            # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │       └── capture_service_test.dart             # (NEW - SPEC-SCRAPNOTE-002)
 │   │   │   ├── drawing/                # Drawing system tests (10 files)
 │   │   │   │   ├── drawing_model_test.dart
 │   │   │   │   ├── drawing_tool_handler_test.dart
@@ -199,9 +255,26 @@ GMA/
 │   │   │   │   ├── stroke_painter_test.dart
 │   │   │   │   └── drawing_serializer_test.dart
 │   │   │   ├── scrapnote/
-│   │   │   │   ├── card_model_test.dart
-│   │   │   │   ├── stroke_serializer_test.dart
-│   │   │   │   └── page_layout_test.dart
+│   │   │   │   ├── models/
+│   │   │   │   │   ├── element_model_test.dart                     # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │   │   ├── highlight_color_test.dart                  # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │   │   ├── scrapnote_canvas_model_test.dart           # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │   │   ├── card_model_test.dart
+│   │   │   │   │   └── (other model tests)
+│   │   │   │   ├── providers/
+│   │   │   │   │   ├── element_store_test.dart                    # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │   │   ├── scrap_orchestrator_provider_test.dart      # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │   │   └── (other provider tests)
+│   │   │   │   ├── utils/
+│   │   │   │   │   ├── scrapnote_serializer_test.dart             # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │   │   ├── stroke_serializer_test.dart
+│   │   │   │   │   └── page_layout_test.dart
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── scrap_insertion_service_test.dart          # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │   │   └── scrapnote_service_test.dart               # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │   └── widgets/
+│   │   │   │       ├── confirm_scrap_popup_test.dart              # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │       └── (other widget tests)
 │   │   │   └── workspace/
 │   │   │       └── workspace_provider_test.dart
 │   │   └── TEST_COVERAGE.md
@@ -313,6 +386,7 @@ GMA/
 - `app_settings`: Theme, layout preferences
 - `document_registry`: Metadata for PDFs and Scrapnotes
 - `workspace_state`: Panel dimensions, active documents
+- `element_store`: Scrapnote elements (captures, highlights, strokes) - NEW SPEC-SCRAPNOTE-002
 
 **Filesystem**:
 - `~/.local/share/gma_secplan/` (Linux/macOS)
@@ -342,11 +416,11 @@ This generates:
 
 ## Summary
 
-- **~150 Dart files**: Feature-first modular architecture
-- **13 feature modules**: workspace (core), pdf_viewer (NEW - SPEC-PDF-001), drawing (NEW - SPEC-PDF-001), scrapnote (core), sidebar, capture_confirmation, document_menu, file_system, settings, splash
-- **30 test files**: 2 E2E, 4 integration, 24 unit (15 new for pdf_viewer + drawing)
+- **~175 Dart files**: Feature-first modular architecture with enhanced scrapnote capabilities
+- **14 feature modules**: workspace (core), pdf_viewer (NEW - SPEC-PDF-001, enhanced with SPEC-SCRAPNOTE-002), drawing (NEW - SPEC-PDF-001), scrapnote (NEW - SPEC-SCRAPNOTE-002 with 21 new files including element management, highlight colors, canvas coordination, and services), sidebar, capture_confirmation, document_menu, file_system, settings, splash
+- **42 test files**: 2 E2E, 4 integration, 36 unit (15 for pdf_viewer + drawing, 21 new for scrapnote SPEC-SCRAPNOTE-002)
 - **App routes**: splash, workspace (main), settings
-- **3 Hive boxes**: app_settings, document_registry, workspace_state
+- **3 Hive boxes**: app_settings, document_registry, workspace_state, plus new Hive box for element_store (NEW - SPEC-SCRAPNOTE-002)
 - **Multi-platform support**: Android, iOS, Windows, macOS, Linux
-- **Design**: Dual-panel with auto-insertion, no Markdown/LaTeX, Samsung Notes-like A4 pages
+- **Design**: Dual-panel with auto-insertion, smart element orchestration, color-aware highlighting, Scrapnote canvas with live element panel, Samsung Notes-like A4 pages
 

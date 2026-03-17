@@ -3,16 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:gma_app/features/drawing/pages/providers/drawing_provider.dart';
 import 'package:gma_app/features/drawing/pages/widgets/drawing_canvas.dart';
+import 'package:gma_app/features/pdf_viewer/highlight/widgets/highlight_overlay.dart';
 
-// @MX:NOTE: PdfPageOverlay composes the drawing canvas layer onto a single
-// PDF page. It is used standalone (not via pdfrx's pageOverlaysBuilder) to
-// allow direct testing and embedding in custom page-level widgets.
+// @MX:NOTE: PdfPageOverlay composes multiple overlay layers onto a single
+// PDF page. Layer order (bottom to top): HighlightOverlay → DrawingCanvas.
+// It is used standalone (not via pdfrx's pageOverlaysBuilder) to allow direct
+// testing and embedding in custom page-level widgets.
 // For pdfrx integration, see DrawingOverlay.createOverlaysBuilder().
 
 /// A composable overlay widget for a single PDF page.
 ///
-/// Stacks a [DrawingCanvas] on top of the page area. Both the drawing layer
-/// and future text-selection highlight layer are children of a [Stack].
+/// Stacks a [HighlightOverlay] below a [DrawingCanvas] on top of the page
+/// area. Both layers are children of a [Stack].
 ///
 /// [pageWidth] and [pageHeight] define the rendered size of the PDF page,
 /// used to size the overlay correctly.
@@ -43,7 +45,16 @@ class PdfPageOverlay extends ConsumerWidget {
       height: pageHeight,
       child: Stack(
         children: [
-          // Drawing layer
+          // Highlight overlay layer (below drawing strokes, above PDF content)
+          Positioned.fill(
+            child: HighlightOverlay(
+              documentPath: documentPath,
+              pageNumber: pageNumber,
+              pageWidth: pageWidth,
+              pageHeight: pageHeight,
+            ),
+          ),
+          // Drawing layer (above highlights)
           Positioned.fill(
             child: DrawingCanvas(
               isActive: drawingMode.isActive,
@@ -64,7 +75,6 @@ class PdfPageOverlay extends ConsumerWidget {
               },
             ),
           ),
-          // Future: text selection highlight layer goes here
         ],
       ),
     );

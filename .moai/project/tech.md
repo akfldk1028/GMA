@@ -113,7 +113,7 @@ class Drawing extends _$Drawing {
 }
 ```
 
-### 4. Scrapnote Canvas: A4 Pages with Drawing
+### 4. Scrapnote Canvas: A4 Pages with Drawing and Element Management (SPEC-SCRAPNOTE-002)
 
 **Page Model**:
 - Default: A4 fixed pages (210mm × 297mm)
@@ -124,6 +124,7 @@ class Drawing extends _$Drawing {
 - Strokes: Free pen drawing data (normalized 0-1 coordinates)
 - Cards: Capture (image) and Highlight (text) cards with positioning
 - Text blocks: Free text areas with editable content
+- Elements: Unified element model with ScrapElement for tracking all insertions (NEW - SPEC-SCRAPNOTE-002)
 
 **Drawing on Scrapnote**:
 - Shared pen/highlighter/eraser tools
@@ -136,14 +137,25 @@ class Drawing extends _$Drawing {
 - Card widgets for inserted content
 - Stroke painter for drawing strokes
 - Page break at A4 boundary (optional)
+- Live Scraps Panel showing all elements with real-time updates (NEW - SPEC-SCRAPNOTE-002)
 
-### 5. PDF Coordinate System: Normalized (0-1)
+**Element Management (NEW - SPEC-SCRAPNOTE-002)**:
+- ScrapElement and ElementRect models for unified element tracking
+- Hive-backed element_store for persistent element data
+- ScrapOrchestrator for centralized insertion orchestration
+- Confirm popup for element insertion feedback
+- Full-screen scrapnote_screen for dedicated canvas view
+- Canvas state including undo/redo support
+- Color-aware highlighting with HighlightColors constants and LastUsedHighlightColor provider
+
+### 5. PDF Coordinate System: Normalized (0-1) with Highlight and Capture (SPEC-SCRAPNOTE-002)
 
 **All coordinate operations use 0-1 range**:
 - PDF text selection: `textRect` normalized to page dimensions
 - Drawing strokes: `point.dx` and `point.dy` in range [0, 1]
 - Region captures: Bounding box stored as normalized coordinates
 - Text highlight: Stored with normalized position on page
+- Highlight overlays: HighlightMarkerData with color and position information (NEW - SPEC-SCRAPNOTE-002)
 
 **Benefits**:
 - Resolution independent (works across screen sizes)
@@ -154,7 +166,10 @@ class Drawing extends _$Drawing {
 **Implementation**:
 - `pdf_viewer/utils/coordinate_converter.dart` handles conversion
 - `DrawingModel` stores strokes with normalized points
-- `CaptureRegion` bounding box in normalized coordinates
+- `pdf_viewer/capture/utils/capture_service.dart` handles PDF region to PNG rendering (NEW - SPEC-SCRAPNOTE-002)
+- `pdf_viewer/highlight/models/highlight_marker_data.dart` (NEW - SPEC-SCRAPNOTE-002)
+- `pdf_viewer/highlight/providers/highlight_provider.dart` for per-document highlight data (NEW - SPEC-SCRAPNOTE-002)
+- `pdf_viewer/highlight/widgets/highlight_overlay.dart` for rendering highlights on page (NEW - SPEC-SCRAPNOTE-002)
 
 ### 6. Drawing System: Normalized Strokes with perfect_freehand
 
@@ -194,9 +209,9 @@ class Drawing extends _$Drawing {
 - Handles pressure sensitivity (if available)
 - Produces consistent output across devices
 
-### 7. Scrapnote Persistence: Custom JSON Format
+### 7. Scrapnote Persistence: Enhanced .gma JSON Format (SPEC-SCRAPNOTE-002)
 
-**File Format**: `.scrapnote` files (actually JSON with metadata)
+**File Format**: `.gma` files (enhanced JSON with element management and color metadata)
 
 **Structure**:
 ```dart
@@ -232,15 +247,37 @@ class Drawing extends _$Drawing {
       textBlocks: [...]
     }
   ],
+  elements: [
+    {
+      id: UUID,
+      type: "capture" | "highlight" | "stroke",
+      rect: {left, top, right, bottom},
+      label: "C-1" | "H-1" | "P-1",
+      highlightColor: 0xFFYYYYYY,  // (NEW - SPEC-SCRAPNOTE-002)
+      createdAt: ISO datetime
+    }
+  ],
+  highlightColorPreferences: {
+    lastUsedColor: 0xFFYYYYYY  // (NEW - SPEC-SCRAPNOTE-002)
+  },
   createdAt: ISO datetime,
   modifiedAt: ISO datetime
 }
 ```
 
 **Persistence**:
-- Saved to filesystem in documents directory
-- Serialized using `json_serializable` codegen
-- Hive stores document metadata in registry
+- Saved to filesystem in documents directory with `.gma` extension
+- Serialized using `json_serializable` codegen with new scrapnote_serializer (NEW - SPEC-SCRAPNOTE-002)
+- Hive stores document metadata in registry and element_store (NEW - SPEC-SCRAPNOTE-002)
+- Element orchestration via scrap_orchestrator_provider (NEW - SPEC-SCRAPNOTE-002)
+
+**New Features (SPEC-SCRAPNOTE-002)**:
+- Element-based management with ScrapElement and ElementRect models
+- Highlight color tracking with LastUsedHighlightColor provider
+- Centralized insertion orchestration via ScrapOrchestrator
+- Live element panel in canvas showing all elements with live updates
+- Floating confirmation popup for element insertion
+- Element store with Hive backing for persistent element data
 
 ### 8. Sidebar Navigator: Item References
 
