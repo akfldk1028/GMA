@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../file_manager/models/note_metadata_model.dart';
 import '../../../workspace/pages/providers/workspace_provider.dart';
-import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
+
 import '../../providers/home_state_provider.dart';
 
 class NoteCard extends ConsumerStatefulWidget {
@@ -36,10 +36,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       await ref
           .read(workspaceProviderProvider.notifier)
           .loadPdf(widget.note.linkedPdfPath!);
-      if (!mounted) return;
-      await ref
-          .read(pdfDocumentProvider.notifier)
-          .loadFromFile(widget.note.linkedPdfPath!);
       if (!mounted) return;
     }
     context.go('/workspace');

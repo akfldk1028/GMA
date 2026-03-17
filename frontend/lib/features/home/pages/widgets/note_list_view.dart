@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../file_manager/models/note_metadata_model.dart';
 import '../../../workspace/pages/providers/workspace_provider.dart';
-import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
+
 import '../../providers/home_note_list_provider.dart';
 import '../../providers/home_state_provider.dart';
 import 'note_grid_view.dart';
@@ -77,9 +77,6 @@ class _NoteListTile extends ConsumerWidget {
               await ref
                   .read(workspaceProviderProvider.notifier)
                   .loadPdf(note.linkedPdfPath!);
-              await ref
-                  .read(pdfDocumentProvider.notifier)
-                  .loadFromFile(note.linkedPdfPath!);
             }
             if (context.mounted) context.go('/workspace');
           },

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
@@ -15,13 +16,21 @@ part 'file_manager_provider.g.dart';
 class FileManager extends _$FileManager {
   @override
   Future<List<NoteMetadata>> build() async {
-    return _scanNotesDirectory();
+    debugPrint('[FileManager.build] scanning notes directory');
+    final results = await _scanNotesDirectory();
+    debugPrint('[FileManager.build] found ${results.length} notes');
+    return results;
   }
 
   /// Manually refresh the notes list
   Future<void> refresh() async {
+    debugPrint('[FileManager.refresh] refreshing notes list');
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async => _scanNotesDirectory());
+    state = await AsyncValue.guard(() async {
+      final results = await _scanNotesDirectory();
+      debugPrint('[FileManager.refresh] found ${results.length} notes');
+      return results;
+    });
   }
 
   /// Scans the notes directory recursively for .md files and parses metadata
@@ -158,6 +167,7 @@ class CreateNoteMutation extends _$CreateNoteMutation {
     required String title,
     String? linkedPdfPath,
   }) async {
+    debugPrint('[CreateNoteMutation.call] title: $title, linkedPdfPath: $linkedPdfPath');
     state = const AsyncLoading();
     try {
       final notesRoot = await ref.read(notesRootDirectoryProvider.future);
@@ -185,6 +195,9 @@ class CreateNoteMutation extends _$CreateNoteMutation {
         ..writeln('---')
         ..writeln()
         ..writeln('# $title')
+        ..writeln()
+        ..writeln('::: scrapnote Scraps')
+        ..writeln(':::')
         ..writeln();
 
       // Write the file
@@ -201,12 +214,15 @@ class CreateNoteMutation extends _$CreateNoteMutation {
         previewText: '# $title',
       );
 
-      // Refresh the file manager to pick up the new note
-      await ref.read(fileManagerProvider.notifier).refresh();
-
+      debugPrint('[CreateNoteMutation.call] created note: ${metadata.id}');
       state = AsyncData(metadata);
+
+      // Refresh file manager AFTER setting state to avoid "Future already completed"
+      ref.read(fileManagerProvider.notifier).refresh();
+
       return metadata;
     } catch (e, st) {
+      debugPrint('[CreateNoteMutation.call] FAILED: $e');
       state = AsyncError(e, st);
       rethrow;
     }
@@ -220,6 +236,7 @@ class DeleteNoteMutation extends _$DeleteNoteMutation {
   FutureOr<bool?> build() => null;
 
   Future<bool> call({required String filePath}) async {
+    debugPrint('[DeleteNoteMutation.call] soft-deleting: $filePath');
     state = const AsyncLoading();
     try {
       final file = File(filePath);
@@ -233,11 +250,13 @@ class DeleteNoteMutation extends _$DeleteNoteMutation {
         'deletedAt': DateTime.now().toIso8601String(),
       });
       await file.writeAsString(updated, flush: true);
+      debugPrint('[DeleteNoteMutation.call] soft-deleted successfully: $filePath');
 
       await ref.read(fileManagerProvider.notifier).refresh();
       state = const AsyncData(true);
       return true;
     } catch (e, st) {
+      debugPrint('[DeleteNoteMutation.call] FAILED: $e');
       state = AsyncError(e, st);
       rethrow;
     }
@@ -280,10 +299,16 @@ class PermanentDeleteMutation extends _$PermanentDeleteMutation {
   FutureOr<bool?> build() => null;
 
   Future<bool> call({required String filePath}) async {
+    debugPrint('[PermanentDeleteMutation.call] permanently deleting: $filePath');
     state = const AsyncLoading();
     try {
       final file = File(filePath);
-      if (await file.exists()) await file.delete();
+      if (await file.exists()) {
+        debugPrint('[PermanentDeleteMutation.call] file exists, deleting...');
+        await file.delete();
+      } else {
+        debugPrint('[PermanentDeleteMutation.call] file not found: $filePath');
+      }
       await ref.read(fileManagerProvider.notifier).refresh();
       state = const AsyncData(true);
       return true;

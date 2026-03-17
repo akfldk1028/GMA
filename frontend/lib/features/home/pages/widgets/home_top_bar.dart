@@ -106,7 +106,6 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
         }
 
         await ref.read(workspaceProviderProvider.notifier).loadPdf(pdfPath);
-        await ref.read(pdfDocumentProvider.notifier).loadFromFile(pdfPath);
         if (mounted) context.go('/workspace');
       }
     } catch (e) {

@@ -19,6 +19,7 @@ import '../../../ocr/ocr_service.dart';
 import '../../../ocr/pages/providers/ocr_provider.dart';
 import '../../../scrapnote/models/element_model.dart';
 import '../../../scrapnote/providers/element_store.dart';
+import '../../../scrapnote/utils/scrapnote_block_editor.dart';
 import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
 import '../../../scrapnote/providers/pdf_registry_provider.dart';
 import '../../models/pdf_marker_model.dart';
@@ -48,8 +49,17 @@ class WorkspaceProvider extends _$WorkspaceProvider {
   /// Also loads the document into pdfDocumentProvider for rendering.
   /// Auto-creates a linked note if no note is currently open.
   Future<void> loadPdf(String pdfPath) async {
-    final currentState = state.valueOrNull;
-    if (currentState == null) return;
+    debugPrint('[WorkspaceProvider.loadPdf] pdfPath: $pdfPath');
+    var currentState = state.valueOrNull;
+    if (currentState == null) {
+      try {
+        currentState = await future;
+      } catch (_) {
+        currentState = const WorkspaceState();
+        state = AsyncData(currentState);
+      }
+    }
+    debugPrint('[WorkspaceProvider.loadPdf] currentNoteId: ${currentState.currentNoteId}, currentPdfPath: ${currentState.currentPdfPath}');
 
     final isAsset = pdfPath.startsWith('assets/');
 
@@ -88,6 +98,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
 
     // Auto-create a linked note if none is currently open (skip on web for assets)
     if (currentState.currentNoteId == null && !isAsset) {
+      debugPrint('[WorkspaceProvider.loadPdf] no note open, auto-creating for: $pdfPath');
       await _autoCreateNote(pdfPath);
     }
 
@@ -141,8 +152,17 @@ class WorkspaceProvider extends _$WorkspaceProvider {
   /// Load a note into the workspace
   /// Optionally loads the note content from filesystem if available
   Future<String?> loadNote(String noteId) async {
-    final currentState = state.valueOrNull;
-    if (currentState == null) return null;
+    debugPrint('[WorkspaceProvider.loadNote] noteId: $noteId');
+    var currentState = state.valueOrNull;
+    if (currentState == null) {
+      try {
+        currentState = await future;
+      } catch (_) {
+        currentState = const WorkspaceState();
+        state = AsyncData(currentState);
+      }
+    }
+    debugPrint('[WorkspaceProvider.loadNote] previousNoteId: ${currentState.currentNoteId}');
 
     // Update workspace state with current note ID
     state = AsyncData(
@@ -152,6 +172,14 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     // Load note content from filesystem using NoteStorageService
     final noteStorage = ref.read(noteStorageServiceProvider);
     final content = await noteStorage.loadNote(noteId: noteId);
+    debugPrint('[WorkspaceProvider.loadNote] loaded content length: ${content?.length ?? 0}');
+
+    // Ensure ::: scrapnote block exists in loaded note
+    if (content != null && !ScrapnoteBlockEditor.hasBlock(content)) {
+      debugPrint('[WorkspaceProvider.loadNote] adding ::: scrapnote block to existing note');
+      final updated = ScrapnoteBlockEditor.ensureBlock(content);
+      await noteStorage.saveNoteImmediate(noteId: noteId, content: updated);
+    }
 
     return content;
   }
@@ -160,13 +188,14 @@ class WorkspaceProvider extends _$WorkspaceProvider {
   /// Directly creates file instead of using CreateNoteMutation to avoid
   /// Riverpod "Future already completed" bug.
   Future<String?> _autoCreateNote(String pdfPath) async {
+    debugPrint('[WorkspaceProvider._autoCreateNote] pdfPath: $pdfPath');
     try {
       final pdfName = p.basenameWithoutExtension(pdfPath);
       final notesDir = await ref.read(notesRootDirectoryProvider.future);
       final noteUuid = const Uuid().v4();
       final noteFile = File('${notesDir.path}/$noteUuid.md');
 
-      // Write frontmatter + initial content
+      // Write frontmatter + initial content with scrapnote block
       final now = DateTime.now();
       final content = StringBuffer()
         ..writeln('---')
@@ -177,15 +206,20 @@ class WorkspaceProvider extends _$WorkspaceProvider {
         ..writeln('---')
         ..writeln()
         ..writeln('# $pdfName')
+        ..writeln()
+        ..writeln('::: scrapnote Scraps')
+        ..writeln(':::')
         ..writeln();
       await noteFile.writeAsString(content.toString());
 
       // Load the note into workspace and refresh file manager
+      debugPrint('[WorkspaceProvider._autoCreateNote] created noteUuid: $noteUuid, loading...');
       await loadNote(noteUuid);
+      debugPrint('[WorkspaceProvider._autoCreateNote] refreshing fileManager');
       ref.read(fileManagerProvider.notifier).refresh();
       return noteUuid;
     } catch (e) {
-      debugPrint('Auto-create note failed: $e');
+      debugPrint('[WorkspaceProvider._autoCreateNote] FAILED: $e');
       return null;
     }
   }
@@ -309,6 +343,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     PdfRect? textRect,
     String? capturedImagePath,
   }) async {
+    debugPrint('[WorkspaceProvider.createMarker] page: $pageNumber, color: ${color.name}, text: ${selectedText != null ? selectedText.substring(0, selectedText.length.clamp(0, 50)) : null}, hasImage: ${capturedImagePath != null}');
     final currentState = state.valueOrNull;
     if (currentState == null) {
       throw Exception('Workspace state not initialized');
@@ -338,8 +373,11 @@ class WorkspaceProvider extends _$WorkspaceProvider {
 
     // Insert marker into note editor. Auto-create note if none is open.
     var currentNoteId = state.valueOrNull?.currentNoteId;
+    debugPrint('[WorkspaceProvider.createMarker] currentNoteId: $currentNoteId, currentPdfPath: ${currentState.currentPdfPath}');
     if (currentNoteId == null && currentState.currentPdfPath != null) {
+      debugPrint('[WorkspaceProvider.createMarker] no note open, auto-creating...');
       currentNoteId = await _autoCreateNote(currentState.currentPdfPath!);
+      debugPrint('[WorkspaceProvider.createMarker] auto-created noteId: $currentNoteId');
     }
     if (currentNoteId != null) {
       if (capturedImagePath != null) {
@@ -393,6 +431,18 @@ class WorkspaceProvider extends _$WorkspaceProvider {
         );
 
         ref.read(elementStoreProvider.notifier).add(element);
+
+        // Append @el reference to the ::: scrapnote block in note content
+        if (currentNoteId != null) {
+          final controller = ref.read(noteEditorProvider(currentNoteId));
+          if (controller != null) {
+            final updatedContent = ScrapnoteBlockEditor.appendElement(
+              controller.text,
+              element.id,
+            );
+            controller.text = updatedContent;
+          }
+        }
       } catch (e) {
         debugPrint('Failed to create ScrapElement: $e');
       }
@@ -533,6 +583,24 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     await box.put('panel_sizes', sizes.toJson());
   }
 
+  // ─── Layout control ─────────────────────────────────────
+
+  /// Set which panel is focused (determines size ratio)
+  void setFocusedPanel(FocusedPanel panel) {
+    debugPrint('[WorkspaceProvider.setFocusedPanel] panel: ${panel.name}');
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(focusedPanel: panel));
+  }
+
+  /// Swap PDF and ScrapNote positions (left↔right)
+  void swapLayout() {
+    debugPrint('[WorkspaceProvider.swapLayout] current isLayoutSwapped: ${state.valueOrNull?.isLayoutSwapped}');
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(isLayoutSwapped: !s.isLayoutSwapped));
+  }
+
   // ─── Modal / Drawer control ──────────────────────────────
 
   /// Open the markdown editor modal
@@ -561,6 +629,83 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     final s = state.valueOrNull;
     if (s == null) return;
     state = AsyncData(s.copyWith(isFileBrowserOpen: false));
+  }
+
+  /// Toggle quick scrap mode (skip popup, create instantly)
+  void toggleQuickScrapMode() {
+    debugPrint('[WorkspaceProvider.toggleQuickScrapMode] current: ${state.valueOrNull?.isQuickScrapMode}');
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(isQuickScrapMode: !s.isQuickScrapMode));
+  }
+
+  // ─── Scrap selection control ─────────────────────────────
+
+  /// Toggle selection of a scrap element
+  void toggleScrapSelection(String elementId) {
+    debugPrint('[WorkspaceProvider.toggleScrapSelection] elementId: $elementId');
+    final s = state.valueOrNull;
+    if (s == null) return;
+    final ids = Set<String>.from(s.selectedScrapIds);
+    if (ids.contains(elementId)) {
+      ids.remove(elementId);
+      debugPrint('[WorkspaceProvider.toggleScrapSelection] removed, count: ${ids.length}');
+    } else {
+      ids.add(elementId);
+      debugPrint('[WorkspaceProvider.toggleScrapSelection] added, count: ${ids.length}');
+    }
+    state = AsyncData(s.copyWith(selectedScrapIds: ids));
+  }
+
+  /// Clear all scrap selections
+  void clearScrapSelection() {
+    debugPrint('[WorkspaceProvider.clearScrapSelection] clearing ${state.valueOrNull?.selectedScrapIds.length ?? 0} selections');
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(selectedScrapIds: {}));
+  }
+
+  /// Select specific scrap IDs
+  void setScrapSelection(Set<String> ids) {
+    debugPrint('[WorkspaceProvider.setScrapSelection] ids: ${ids.length}');
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(selectedScrapIds: ids));
+  }
+
+  // ─── Scrap Board Popup control ──────────────────────────
+
+  /// Open the scrap board popup after capture/highlight
+  void openScrapBoard({
+    required int pageNumber,
+    String? selectedText,
+    String? imagePath,
+    PdfRect? textRect,
+  }) {
+    debugPrint('[WorkspaceProvider.openScrapBoard] page: $pageNumber, text: ${selectedText != null ? selectedText.substring(0, selectedText.length.clamp(0, 50)) : null}, hasImage: ${imagePath != null}');
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(
+      isScrapBoardOpen: true,
+      pendingScrapPageNumber: pageNumber,
+      pendingScrapText: selectedText,
+      pendingScrapImagePath: imagePath,
+      pendingScrapTextRect: textRect,
+    ));
+  }
+
+  /// Close the scrap board popup
+  void closeScrapBoard() {
+    debugPrint('[WorkspaceProvider.closeScrapBoard] closing');
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(
+      isScrapBoardOpen: false,
+      pendingScrapPageNumber: null,
+      pendingScrapText: null,
+      pendingScrapImagePath: null,
+      pendingScrapTextRect: null,
+    ));
   }
 
   /// Open the marker edit modal for a new marker from text selection
