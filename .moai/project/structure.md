@@ -1,426 +1,443 @@
 # GMA Project Structure
 
-## Directory Hierarchy
+## Directory Hierarchy Overview
 
 ```
 GMA/
-├── .moai/                               # MoAI configuration and project metadata
+├── .moai/                                    # MoAI framework configuration and project metadata
 │   ├── config/
 │   │   ├── sections/
-│   │   │   ├── workflow.yaml           # Workflow configuration
-│   │   │   ├── quality.yaml            # Development mode (TDD) and quality gates
-│   │   │   ├── user.yaml               # User preferences
-│   │   │   └── language.yaml           # Language settings (English)
-│   │   └── project.json                # Project metadata
-│   ├── project/                        # Generated documentation
-│   │   ├── product.md                  # Product overview
-│   │   ├── structure.md                # This file
-│   │   ├── tech.md                     # Technology stack
+│   │   │   ├── workflow.yaml                # Workflow and execution configuration
+│   │   │   ├── quality.yaml                 # Development mode and quality gates
+│   │   │   ├── user.yaml                    # User preferences and settings
+│   │   │   └── language.yaml                # Language configuration (English)
+│   │   └── project.json                     # Project metadata and settings
+│   ├── project/                             # Generated project documentation
+│   │   ├── product.md                       # Product overview and features
+│   │   ├── structure.md                     # This file
+│   │   ├── tech.md                          # Technology stack and architecture
 │   │   └── codemaps/
-│   │       ├── overview.md             # Architecture overview
-│   │       ├── modules.md              # Feature module descriptions
-│   │       ├── dependencies.md         # Dependency graph
-│   │       ├── entry-points.md         # Application entry points
-│   │       └── data-flow.md            # Data flow diagrams
-│   └── specs/                          # SPEC documents from /moai plan
+│   │       ├── overview.md                  # Architecture overview diagrams
+│   │       ├── modules.md                   # Feature module descriptions
+│   │       ├── dependencies.md              # Module dependency graphs
+│   │       ├── entry-points.md              # Application entry points
+│   │       └── data-flow.md                 # Data flow and state management
+│   └── specs/                               # SPEC documents from /moai plan
+│       ├── SPEC-SP-000/                     # Apple HIG Design System (Planned)
+│       ├── SPEC-SCRAPNOTE-001/              # Pen-Based Scrapnote Canvas (Implemented)
+│       ├── SPEC-SP-001/                     # SecPlan Workspace Transformation (Completed)
+│       ├── SPEC-PDF-001/                    # PDF Viewer and Drawing System (Completed)
+│       └── SPEC-SCRAPNOTE-002/              # Auto-Insertion Pipeline and Visual Highlight (Implemented)
 │
-├── frontend_v2/                        # Flutter application (GMA SecPlan v2)
-│   ├── lib/
-│   │   ├── main.dart                   # Entry point (Hive init, ProviderScope)
-│   │   ├── app.dart                    # ShadApp router + theme configuration
-│   │   ├── common_widgets/             # Shared widgets across features
-│   │   │   ├── dual_panel_layout.dart  # Left/right panel container with divider
-│   │   │   ├── header_bar.dart         # Top header with title and controls
-│   │   │   ├── drawing_toolbar.dart    # Shared drawing tools (pen, highlighter, eraser)
-│   │   │   └── responsive.dart         # Responsive layout utilities
-│   │   ├── constants/
-│   │   │   ├── app_colors.dart         # ShadCN color palette
-│   │   │   ├── app_theme.dart          # Light/dark theme definitions
-│   │   │   └── ui_constants.dart       # Layout, spacing, sizing
-│   │   ├── routing/
-│   │   │   └── app_router.dart         # GoRouter with routes for workspace, note, etc.
-│   │   ├── utils/
-│   │   │   ├── file_system_provider.dart # Local file system access
-│   │   │   ├── document_storage_service.dart # PDF and Note CRUD
-│   │   │   └── coordinate_converter.dart   # Normalized 0-1 coordinate transforms
+├── frontend_v2/                             # Flutter application (GMA SecPlan v2)
+│   │
+│   ├── lib/                                 # Source code directory (60 non-generated files)
+│   │   ├── main.dart                        # Application entry point (Hive initialization, ProviderScope setup)
+│   │   ├── app.dart                         # ShadApp router configuration and theme setup
 │   │   │
-│   │   └── features/                   # Feature-first modules (11 features, ~120 files)
+│   │   ├── constants/                       # Design system constants (5 files)
+│   │   │   ├── app_colors.dart              # ShadCN color palette and color definitions
+│   │   │   ├── app_theme.dart               # Light and dark theme configurations
+│   │   │   ├── app_typography.dart          # Font definitions and text styles
+│   │   │   ├── app_spacing.dart             # Spacing and padding constants
+│   │   │   └── design_tokens.dart           # Design tokens and breakpoints
+│   │   │
+│   │   ├── routing/                         # Navigation and routing (1 file)
+│   │   │   └── app_router.dart              # GoRouter configuration with routes for workspace, dashboard, file_manager
+│   │   │
+│   │   ├── utils/                           # Utility functions and helpers (1 file + generated)
+│   │   │   └── file_system_provider.dart    # Local file system access and platform-specific paths
+│   │   │   └── file_system_provider.g.dart  # Generated Riverpod provider
+│   │   │
+│   │   ├── common_widgets/                  # Shared UI components across features (available but minimal)
+│   │   │   └── (shared components and layouts)
+│   │   │
+│   │   └── features/                        # Feature-first modular architecture (7 feature modules, ~86 lib files)
 │   │       │
-│   │       ├── workspace/              # ⭐ Main dual-panel editor (25 files)
+│   │       ├── workspace/                   # Main dual-panel editor orchestration (16 lib files)
 │   │       │   ├── models/
-│   │       │   │   ├── workspace_state.dart      # Dual-panel state
-│   │       │   │   └── panel_layout_model.dart   # Panel config (swap, resize, maximize)
+│   │       │   │   ├── secplan_state.dart                  # Main workspace state container
+│   │       │   │   ├── secplan_state.freezed.dart          # Generated immutable state
+│   │       │   │   ├── open_pdf_tab.dart                   # PDF tab data model
+│   │       │   │   ├── open_pdf_tab.freezed.dart           # Generated immutable model
+│   │       │   │   └── open_pdf_tab.g.dart                 # Generated JSON serialization
 │   │       │   ├── pages/
 │   │       │   │   ├── providers/
-│   │       │   │   │   ├── workspace_provider.dart   # Main orchestrator
-│   │       │   │   │   ├── panel_layout_provider.dart # Panel state
-│   │       │   │   │   └── workspace_provider.g.dart # Generated
+│   │       │   │   │   ├── panel_provider.dart             # Left/right panel state and layout
+│   │       │   │   │   ├── panel_provider.g.dart           # Generated Riverpod provider
+│   │       │   │   │   ├── tab_provider.dart               # PDF tab management (open/close/switch)
+│   │       │   │   │   └── tab_provider.g.dart             # Generated Riverpod provider
 │   │       │   │   ├── screens/
-│   │       │   │   │   └── workspace_screen.dart     # Dual-panel layout
+│   │       │   │   │   └── workspace_screen.dart           # Main dual-panel layout screen composition
 │   │       │   │   └── widgets/
-│   │       │   │       ├── workspace_header.dart     # Title, controls, menu
-│   │       │   │       ├── panel_divider.dart        # Resize divider
-│   │       │   │       ├── left_panel_container.dart # PDF viewer wrapper
-│   │       │   │       ├── right_panel_container.dart # Scrapnote wrapper
-│   │       │   │       └── panel_control_bar.dart    # Swap, maximize buttons
-│   │       │   └── models/
+│   │       │   │       ├── panel_divider.dart              # Draggable center divider for resizing
+│   │       │   │       ├── panel_manager.dart              # Panel swap, maximize, restore logic
+│   │       │   │       ├── kebab_menu.dart                 # Three-dot menu for document actions
+│   │       │   │       ├── pdf_tab_bar.dart                # Tab bar for multiple open PDFs
+│   │       │   │       ├── secplan_header.dart             # Header bar with title and controls
+│   │       │   │       └── scrapnote_panel.dart            # Right panel container for scrapnote
 │   │       │
-│   │       ├── pdf_viewer/             # PDF rendering with highlight and capture (NEW - SPEC-PDF-001, 22 files)
+│   │       ├── pdf_viewer/                  # PDF rendering, highlighting, and capture (20 lib files)
 │   │       │   ├── models/
-│   │       │   │   └── pdf_document_state.dart          # PdfDocumentState (freezed)
+│   │       │   │   ├── pdf_document_state.dart             # PDF document state container
+│   │       │   │   ├── pdf_document_state.freezed.dart     # Generated immutable state
+│   │       │   │   └── pdf_document_state.g.dart           # Generated JSON serialization
 │   │       │   ├── pages/
 │   │       │   │   ├── providers/
-│   │       │   │   │   ├── pdf_document_provider.dart   # Load/navigate/clear PDF
-│   │       │   │   │   ├── capture_provider.dart        # Capture mode state (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   │   ├── capture_provider.freezed.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   │   └── capture_provider.g.dart      # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   │   ├── pdf_document_provider.dart      # Load, navigate, and clear PDF
+│   │       │   │   │   ├── pdf_document_provider.g.dart    # Generated Riverpod provider
+│   │       │   │   │   ├── highlight_provider.dart         # Per-document highlight data storage
+│   │       │   │   │   └── highlight_provider.g.dart       # Generated Riverpod provider
 │   │       │   │   ├── screens/
-│   │       │   │   │   └── pdf_viewer_screen.dart       # PdfViewer composition
+│   │       │   │   │   └── pdf_viewer_screen.dart          # PDF viewer composition and layout
 │   │       │   │   └── widgets/
-│   │       │   │       ├── pdf_page_overlay.dart        # Drawing + text layers
-│   │       │   │       ├── capture_overlay.dart         # Drag-to-select region overlay (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │       └── capture_page_overlay.dart    # pdfrx overlay builder (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │       └── pdf_page_overlay.dart           # Drawing and text layers on PDF pages
 │   │       │   ├── utils/
-│   │       │   │   ├── pdf_text_extractor.dart          # Normalized coordinate conversion
-│   │       │   │   └── capture_service.dart             # PDF region to PNG rendering (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   ├── highlight/
+│   │       │   │   ├── pdf_text_extractor.dart             # Text extraction and coordinate normalization
+│   │       │   │   └── pdf_reader_utils.dart               # PDF document utilities
+│   │       │   ├── highlight/                              # Text highlighting system (6 files)
 │   │       │   │   ├── models/
-│   │       │   │   │   ├── highlight_marker_data.dart   # Highlight rendering data (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   │   ├── highlight_marker_data.freezed.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   │   └── highlight_marker_data.g.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   │   ├── highlight_marker_data.dart      # Highlight marker data structure
+│   │       │   │   │   ├── highlight_marker_data.freezed.dart # Generated immutable model
+│   │       │   │   │   └── highlight_marker_data.g.dart    # Generated JSON serialization
 │   │       │   │   ├── providers/
-│   │       │   │   │   ├── highlight_provider.dart      # Per-document highlight data (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   │   └── highlight_provider.g.dart    # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   │   ├── highlight_provider.dart         # Highlight state per document
+│   │       │   │   │   └── highlight_provider.g.dart       # Generated Riverpod provider
 │   │       │   │   └── widgets/
-│   │       │   │       └── highlight_overlay.dart       # PDF page highlight overlay (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   └── capture/
+│   │       │   │       └── highlight_overlay.dart          # Visual highlight rendering on PDF
+│   │       │   └── capture/                                # Region capture system (8 files)
 │   │       │       ├── pages/
 │   │       │       │   ├── providers/
-│   │       │       │   │   ├── capture_provider.dart    # Capture mode state (NEW - SPEC-SCRAPNOTE-002)
-│   │       │       │   │   ├── capture_provider.freezed.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
-│   │       │       │   │   └── capture_provider.g.dart  # Generated (NEW - SPEC-SCRAPNOTE-002)
-│   │       │       ├── widgets/
-│   │       │       │   ├── capture_overlay.dart         # Drag-to-select region overlay (NEW - SPEC-SCRAPNOTE-002)
-│   │       │       │   └── capture_page_overlay.dart    # pdfrx overlay builder (NEW - SPEC-SCRAPNOTE-002)
+│   │       │       │   │   ├── capture_provider.dart       # Capture mode and region selection state
+│   │       │       │   │   ├── capture_provider.freezed.dart # Generated immutable state
+│   │       │       │   │   └── capture_provider.g.dart     # Generated Riverpod provider
+│   │       │       │   └── widgets/
+│   │       │       │       ├── capture_overlay.dart        # Drag-to-select region overlay
+│   │       │       │       └── capture_page_overlay.dart   # pdfrx overlay builder
 │   │       │       └── utils/
-│   │       │           └── capture_service.dart         # PDF region to PNG rendering (NEW - SPEC-SCRAPNOTE-002)
+│   │       │           └── capture_service.dart            # PDF region to PNG rendering
 │   │       │
-│   │       ├── drawing/                 # Drawing tools and overlay (NEW - SPEC-PDF-001, 10 files)
+│   │       ├── scrapnote/                   # Scrapnote canvas and note management (21 lib files)
 │   │       │   ├── models/
-│   │       │   │   └── drawing_model.dart               # DrawingStroke, StrokePoint, DrawingData
-│   │       │   ├── tools/
-│   │       │   │   ├── drawing_tool_handler.dart        # Abstract tool plugin interface
-│   │       │   │   ├── pen_tool.dart                    # Opaque pressure-sensitive strokes
-│   │       │   │   ├── highlighter_tool.dart            # Semi-transparent wide strokes
-│   │       │   │   ├── eraser_tool.dart                 # Hit-test stroke removal
-│   │       │   │   └── tool_registry.dart               # Dynamic tool registration
+│   │       │   │   ├── element_model.dart                  # Card and element data model
+│   │       │   │   ├── element_model.freezed.dart          # Generated immutable model
+│   │       │   │   ├── element_model.g.dart                # Generated JSON serialization
+│   │       │   │   ├── highlight_color.dart                # Highlight color enumeration
+│   │       │   │   ├── highlight_color.g.dart              # Generated JSON serialization
+│   │       │   │   ├── scrapnote_canvas_model.dart         # Canvas and page data structure
+│   │       │   │   ├── scrapnote_canvas_model.freezed.dart # Generated immutable model
+│   │       │   │   └── scrapnote_canvas_model.g.dart       # Generated JSON serialization
 │   │       │   ├── pages/
 │   │       │   │   ├── providers/
-│   │       │   │   │   └── drawing_provider.dart        # Drawing mode + strokes + undo/redo
-│   │       │   │   └── widgets/
-│   │       │   │       ├── drawing_canvas.dart          # Pointer input capture
-│   │       │   │       ├── drawing_overlay.dart         # Per-page overlay builder
-│   │       │   │       ├── drawing_toolbar.dart         # Panel-aware toolbar
-│   │       │   │       └── stroke_painter.dart          # CustomPainter rendering
-│   │       │   └── utils/
-│   │       │       └── drawing_serializer.dart          # JSON persistence
-│   │       │
-│   │       ├── scrapnote/              # Pen-capable note canvas (47 files)
-│   │       │   ├── models/
-│   │       │   │   ├── scrapnote_model.dart        # @freezed Scrapnote document
-│   │       │   │   ├── card_model.dart             # Capture/Highlight card model
-│   │       │   │   ├── stroke_model.dart           # Drawing stroke data
-│   │       │   │   ├── page_model.dart             # A4/infinite page definition
-│   │       │   │   ├── element_model.dart          # ScrapElement, ElementRect (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   ├── element_model.freezed.dart  # Generated (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   ├── element_model.g.dart        # Generated (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   ├── highlight_color.dart        # HighlightColors, LastUsedHighlightColor provider (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   ├── highlight_color.g.dart      # Generated (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   ├── scrapnote_canvas_model.dart # ScrapnoteCanvasData, CanvasElement (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   ├── scrapnote_canvas_model.freezed.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   └── scrapnote_canvas_model.g.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   ├── pages/
-│   │       │   │   ├── providers/
-│   │       │   │   │   ├── scrapnote_provider.dart      # Scrapnote state
-│   │       │   │   │   ├── scrapnote_canvas_provider.dart # Canvas rendering
-│   │       │   │   │   ├── scrapnote_provider.g.dart    # Generated
-│   │       │   │   │   ├── scrapnote_canvas_provider.g.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   │   ├── scrapnote_canvas_provider.dart  # Canvas state and operations
+│   │       │   │   │   └── scrapnote_canvas_provider.g.dart # Generated Riverpod provider
 │   │       │   │   ├── screens/
-│   │       │   │   │   ├── scrapnote_panel.dart         # Embedded in workspace
-│   │       │   │   │   └── scrapnote_screen.dart        # Full-screen canvas view (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   │   └── scrapnote_screen.dart           # Main scrapnote canvas screen
 │   │       │   │   └── widgets/
-│   │       │   │       ├── canvas_renderer.dart         # Render pages
-│   │       │   │       ├── card_widget.dart             # Capture/Highlight card
-│   │       │   │       ├── page_container.dart          # Single A4 page
-│   │       │   │       ├── capture_card.dart            # Image card
-│   │       │   │       ├── highlight_card.dart          # Text card
-│   │       │   │       ├── text_block_widget.dart       # Free text area
-│   │       │   │       ├── live_scraps_panel.dart       # Element list display (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │       ├── scrapnote_canvas.dart        # Canvas with drawing + elements (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │       └── confirm_scrap_popup.dart     # Floating confirmation popup (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │       ├── scrapnote_canvas.dart           # Canvas rendering and interaction
+│   │       │   │       ├── live_scraps_panel.dart          # Live preview of scrapnote items
+│   │       │   │       └── confirm_scrap_popup.dart        # Confirmation dialog for inserts
 │   │       │   ├── providers/
-│   │       │   │   ├── element_store.dart          # Hive-backed element persistence (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   ├── element_store.g.dart        # Generated (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   ├── scrap_orchestrator_provider.dart # Central insertion orchestrator (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   └── scrap_orchestrator_provider.g.dart # Generated (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   ├── drawing/
-│   │       │   │   └── (shares tools from pdf_viewer)
+│   │       │   │   ├── element_store.dart                  # Global card registry (Hive-backed)
+│   │       │   │   ├── element_store.g.dart                # Generated Riverpod provider
+│   │       │   │   ├── scrap_orchestrator_provider.dart    # Card insertion and positioning logic
+│   │       │   │   └── scrap_orchestrator_provider.g.dart  # Generated Riverpod provider
 │   │       │   ├── services/
-│   │       │   │   ├── scrapnote_service.dart      # Scrapnote lifecycle management (NEW - SPEC-SCRAPNOTE-002)
-│   │       │   │   └── scrap_insertion_service.dart # Element positioning and insertion (NEW - SPEC-SCRAPNOTE-002)
+│   │       │   │   ├── scrapnote_service.dart              # File I/O and persistence
+│   │       │   │   └── scrap_insertion_service.dart        # Card insertion business logic
 │   │       │   └── utils/
-│   │       │       ├── stroke_serializer.dart       # JSON persistence
-│   │       │       ├── page_layout_calculator.dart  # A4 dimensions
-│   │       │       └── scrapnote_serializer.dart    # .gma JSON serialization (NEW - SPEC-SCRAPNOTE-002)
+│   │       │       └── scrapnote_serializer.dart           # JSON serialization and deserialization
 │   │       │
-│   │       ├── sidebar/                 # Item navigator (8 files)
+│   │       ├── drawing/                     # Drawing tools and stroke system (15 lib files)
 │   │       │   ├── models/
-│   │       │   │   └── sidebar_item_model.dart     # C-n, H-n, P-n items
+│   │       │   │   ├── drawing_model.dart                  # Stroke data structure
+│   │       │   │   ├── drawing_model.freezed.dart          # Generated immutable model
+│   │       │   │   └── drawing_model.g.dart                # Generated JSON serialization
 │   │       │   ├── pages/
 │   │       │   │   ├── providers/
-│   │       │   │   │   └── sidebar_provider.dart   # Filter state
+│   │       │   │   │   ├── drawing_provider.dart           # Drawing state and tool selection
+│   │       │   │   │   └── drawing_provider.g.dart         # Generated Riverpod provider
 │   │       │   │   └── widgets/
-│   │       │   │       ├── sidebar_panel.dart      # Left sidebar container
-│   │       │   │       ├── filter_tabs.dart        # All/Capture/Highlight/Pen
-│   │       │   │       ├── item_list.dart          # Item grid
-│   │       │   │       └── item_thumbnail.dart     # Item preview
+│   │       │   │       ├── drawing_canvas.dart             # Canvas for drawing operations
+│   │       │   │       ├── drawing_overlay.dart            # Drawing overlay composition
+│   │       │   │       ├── drawing_toolbar.dart            # Tool selection UI (pen, highlighter, eraser)
+│   │       │   │       └── stroke_painter.dart             # Custom painter for stroke rendering
+│   │       │   ├── tools/
+│   │       │   │   ├── drawing_tool_handler.dart           # Base tool handler interface
+│   │       │   │   ├── pen_tool.dart                       # Pen drawing implementation
+│   │       │   │   ├── highlighter_tool.dart               # Highlighter implementation with transparency
+│   │       │   │   ├── eraser_tool.dart                    # Eraser implementation
+│   │       │   │   └── tool_registry.dart                  # Tool registry and factory
 │   │       │   └── utils/
-│   │       │       └── item_reference_parser.dart
+│   │       │       └── drawing_serializer.dart             # Stroke serialization and deserialization
 │   │       │
-│   │       ├── capture_confirmation/   # Capture popup (3 files)
+│   │       ├── sidebar/                     # Item navigator and filtering (3 lib files)
 │   │       │   ├── models/
-│   │       │   │   └── capture_preview_model.dart
-│   │       │   └── widgets/
-│   │       │       └── capture_popup.dart
-│   │       │
-│   │       ├── document_menu/          # Kebab menu (4 files)
-│   │       │   ├── providers/
-│   │       │   │   └── menu_provider.dart
-│   │       │   └── widgets/
-│   │       │       └── document_menu.dart
-│   │       │
-│   │       ├── file_system/            # Document storage (6 files)
-│   │       │   ├── models/
-│   │       │   │   └── document_metadata_model.dart
-│   │       │   ├── providers/
-│   │       │   │   ├── document_store_provider.dart
-│   │       │   │   └── file_system_provider.dart
-│   │       │   └── services/
-│   │       │       └── document_file_service.dart
-│   │       │
-│   │       ├── settings/               # App settings (2 files)
+│   │       │   │   └── (sidebar data models if any)
 │   │       │   ├── pages/
-│   │       │   │   └── screens/
-│   │       │   │       └── settings_screen.dart
-│   │       │   └── providers/
-│   │       │       └── settings_provider.dart
+│   │       │   │   ├── providers/
+│   │       │   │   │   ├── sidebar_provider.dart           # Sidebar item state and filtering
+│   │       │   │   │   └── sidebar_provider.g.dart         # Generated Riverpod provider
+│   │       │   │   └── widgets/
+│   │       │   │       └── item_sidebar.dart               # Sidebar UI with filter tabs
 │   │       │
-│   │       └── splash/                 # Initialization (1 file)
-│   │           └── pages/
-│   │               └── screens/
-│   │                   └── splash_screen.dart
+│   │       ├── dashboard/                   # Landing page (1 lib file)
+│   │       │   └── pages/
+│   │       │       └── screens/
+│   │       │           └── dashboard_screen.dart           # Dashboard and file browser screen
+│   │       │
+│   │       └── file_manager/                # File operations (placeholder, 6 lib files available)
+│   │           ├── models/
+│   │           │   └── (file manager data models)
+│   │           ├── pages/
+│   │           │   ├── providers/
+│   │           │   │   └── (file manager providers)
+│   │           │   ├── screens/
+│   │           │   │   └── (file manager screens)
+│   │           │   └── widgets/
+│   │           │       └── (file manager widgets)
 │   │
-│   ├── test/                           # Test files (42 files)
-│   │   ├── e2e/                        # End-to-end tests (2 files)
-│   │   │   ├── capture_workflow_test.dart        # PDF capture → scrapnote
-│   │   │   └── highlight_workflow_test.dart      # PDF highlight → scrapnote
-│   │   ├── integration/                # Integration tests (4 files)
-│   │   │   ├── pdf_to_scrapnote_test.dart
-│   │   │   ├── scrapnote_persistence_test.dart
-│   │   │   ├── drawing_tools_test.dart
-│   │   │   └── panel_management_test.dart
-│   │   ├── features/                   # Unit tests (31 files)
-│   │   │   ├── pdf_viewer/             # PDF viewer tests (8 files)
-│   │   │   │   ├── pdf_document_state_test.dart
-│   │   │   │   ├── pdf_document_provider_test.dart
-│   │   │   │   ├── pdf_viewer_screen_test.dart
-│   │   │   │   ├── pdf_page_overlay_test.dart
-│   │   │   │   ├── pdf_text_extractor_test.dart
+│   ├── test/                                # Test suite (34 test files)
+│   │   ├── widget_test.dart                 # Widget test example
+│   │   ├── constants/
+│   │   │   ├── app_colors_test.dart         # Color constant tests
+│   │   │   ├── app_typography_test.dart     # Typography tests
+│   │   │   ├── app_spacing_test.dart        # Spacing constant tests
+│   │   │   └── app_theme_test.dart          # Theme configuration tests
+│   │   ├── features/
+│   │   │   ├── workspace/
+│   │   │   │   └── (workspace feature tests)
+│   │   │   ├── pdf_viewer/
+│   │   │   │   ├── models/
+│   │   │   │   │   └── pdf_document_state_test.dart
+│   │   │   │   ├── pages/
+│   │   │   │   │   ├── providers/
+│   │   │   │   │   │   └── pdf_document_provider_test.dart
+│   │   │   │   │   ├── screens/
+│   │   │   │   │   │   └── pdf_viewer_screen_test.dart
+│   │   │   │   │   └── widgets/
+│   │   │   │   │       └── pdf_page_overlay_test.dart
+│   │   │   │   ├── utils/
+│   │   │   │   │   └── pdf_text_extractor_test.dart
 │   │   │   │   ├── highlight/
-│   │   │   │   │   ├── highlight_marker_data_test.dart       # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   │   │   ├── highlight_provider_test.dart          # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   │   │   └── highlight_overlay_test.dart           # (NEW - SPEC-SCRAPNOTE-002)
+│   │   │   │   │   ├── models/
+│   │   │   │   │   │   └── highlight_marker_data_test.dart
+│   │   │   │   │   ├── providers/
+│   │   │   │   │   │   └── highlight_provider_test.dart
+│   │   │   │   │   └── widgets/
+│   │   │   │   │       └── highlight_overlay_test.dart
 │   │   │   │   └── capture/
-│   │   │   │       ├── capture_provider_test.dart            # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   │       └── capture_service_test.dart             # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   ├── drawing/                # Drawing system tests (10 files)
-│   │   │   │   ├── drawing_model_test.dart
-│   │   │   │   ├── drawing_tool_handler_test.dart
-│   │   │   │   ├── pen_tool_test.dart
-│   │   │   │   ├── highlighter_tool_test.dart
-│   │   │   │   ├── eraser_tool_test.dart
-│   │   │   │   ├── tool_registry_test.dart
-│   │   │   │   ├── drawing_provider_test.dart
-│   │   │   │   ├── drawing_canvas_test.dart
-│   │   │   │   ├── stroke_painter_test.dart
-│   │   │   │   └── drawing_serializer_test.dart
+│   │   │   │       ├── pages/
+│   │   │   │       │   ├── providers/
+│   │   │   │       │   │   └── capture_provider_test.dart
+│   │   │   │       └── utils/
+│   │   │   │           └── capture_service_test.dart
 │   │   │   ├── scrapnote/
 │   │   │   │   ├── models/
-│   │   │   │   │   ├── element_model_test.dart                     # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   │   │   ├── highlight_color_test.dart                  # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   │   │   ├── scrapnote_canvas_model_test.dart           # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   │   │   ├── card_model_test.dart
-│   │   │   │   │   └── (other model tests)
+│   │   │   │   │   ├── element_model_test.dart
+│   │   │   │   │   ├── highlight_color_test.dart
+│   │   │   │   │   └── scrapnote_canvas_model_test.dart
 │   │   │   │   ├── providers/
-│   │   │   │   │   ├── element_store_test.dart                    # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   │   │   ├── scrap_orchestrator_provider_test.dart      # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   │   │   └── (other provider tests)
-│   │   │   │   ├── utils/
-│   │   │   │   │   ├── scrapnote_serializer_test.dart             # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   │   │   ├── stroke_serializer_test.dart
-│   │   │   │   │   └── page_layout_test.dart
+│   │   │   │   │   ├── element_store_test.dart
+│   │   │   │   │   └── scrap_orchestrator_provider_test.dart
+│   │   │   │   ├── pages/
+│   │   │   │   │   └── widgets/
+│   │   │   │   │       └── confirm_scrap_popup_test.dart
 │   │   │   │   ├── services/
-│   │   │   │   │   ├── scrap_insertion_service_test.dart          # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   │   │   └── scrapnote_service_test.dart               # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   │   └── widgets/
-│   │   │   │       ├── confirm_scrap_popup_test.dart              # (NEW - SPEC-SCRAPNOTE-002)
-│   │   │   │       └── (other widget tests)
-│   │   │   └── workspace/
-│   │   │       └── workspace_provider_test.dart
-│   │   └── TEST_COVERAGE.md
+│   │   │   │   │   ├── scrap_insertion_service_test.dart
+│   │   │   │   │   └── scrapnote_service_test.dart
+│   │   │   │   └── utils/
+│   │   │   │       └── scrapnote_serializer_test.dart
+│   │   │   ├── drawing/
+│   │   │   │   ├── models/
+│   │   │   │   │   └── drawing_model_test.dart
+│   │   │   │   ├── tools/
+│   │   │   │   │   ├── tool_registry_test.dart
+│   │   │   │   │   ├── highlighter_tool_test.dart
+│   │   │   │   │   ├── pen_tool_test.dart
+│   │   │   │   │   └── eraser_tool_test.dart
+│   │   │   │   ├── pages/
+│   │   │   │   │   ├── providers/
+│   │   │   │   │   │   └── drawing_provider_test.dart
+│   │   │   │   │   └── widgets/
+│   │   │   │   │       ├── stroke_painter_test.dart
+│   │   │   │   │       ├── drawing_canvas_test.dart
+│   │   │   │   │       └── drawing_toolbar_test.dart
+│   │   │   │   └── utils/
+│   │   │   │       └── drawing_serializer_test.dart
+│   │   │   ├── sidebar/
+│   │   │   │   └── (sidebar feature tests)
+│   │   │   └── file_manager/
+│   │   │       └── (file manager feature tests)
 │   │
-│   ├── android/                        # Android platform
-│   │   ├── app/
-│   │   │   └── src/
-│   │   │       ├── main/
-│   │   │       │   ├── AndroidManifest.xml
-│   │   │       │   ├── kotlin/MainActivity.kt
-│   │   │       │   └── res/
-│   │   │       ├── debug/
-│   │   │       └── profile/
-│   │   └── settings.gradle.kts
+│   ├── assets/
+│   │   └── sample.pdf                       # Sample PDF for testing
 │   │
-│   ├── ios/                           # iOS platform
-│   │   ├── Runner.xcworkspace/
-│   │   ├── Runner.xcodeproj/
-│   │   ├── Runner/
-│   │   │   ├── Info.plist
-│   │   │   ├── AppDelegate.swift
-│   │   │   └── Assets.xcassets/
-│   │   └── Podfile
+│   ├── android/                             # Android platform configuration
+│   ├── ios/                                 # iOS platform configuration
+│   ├── macos/                               # macOS platform configuration
+│   ├── windows/                             # Windows platform configuration
+│   ├── linux/                               # Linux platform configuration
+│   ├── web/                                 # Web platform configuration
 │   │
-│   ├── macos/                         # macOS platform
-│   │   ├── Runner.xcworkspace/
-│   │   ├── Runner.xcodeproj/
-│   │   └── Runner/
-│   │
-│   ├── windows/                       # Windows platform
-│   │   ├── runner/
-│   │   │   ├── main.cpp
-│   │   │   └── flutter_window.cpp
-│   │   └── CMakeLists.txt
-│   │
-│   ├── linux/                         # Linux platform
-│   │   ├── flutter/
-│   │   └── CMakeLists.txt
-│   │
-│   ├── web/                           # Web platform
-│   │   ├── index.html
-│   │   └── manifest.json
-│   │
-│   ├── pubspec.yaml                   # Dependencies (22 packages)
-│   ├── pubspec.lock                   # Lock file
-│   ├── analysis_options.yaml           # Dart linting rules
-│   ├── CLAUDE.md                       # Agent development guide
-│   ├── README.md                       # Project readme (GMA SecPlan)
-│   └── .metadata
+│   ├── pubspec.yaml                         # Dart package dependencies and configuration
+│   ├── pubspec.lock                         # Locked dependency versions
+│   ├── analysis_options.yaml                # Dart linter configuration
+│   └── .dart_tool/                          # Generated build artifacts
 │
-├── docs/                               # Documentation (human-readable)
-│   ├── secplan/
-│   │   ├── SPEC-SECPLAN.md            # GMA SecPlan feature specification
-│   │   └── ARCHITECTURE.md            # Dual-panel architecture guide
-│   ├── layout/                        # UI layout documentation
-│   │   ├── 01-dual-panel-layout.md
-│   │   ├── 02-header-bar.md
-│   │   ├── 03-pdf-panel.md
-│   │   ├── 04-scrapnote-panel.md
-│   │   ├── 05-sidebar-navigator.md
-│   │   ├── 06-drawing-toolbar.md
-│   │   └── README.md
-│   └── development/
-│       └── IMPLEMENTATION_GUIDE.md
-│
-├── .claude/                            # Claude Code configuration
-│   ├── agents/                         # Custom agents
-│   ├── skills/                         # Custom skills
-│   │   └── moai-*.md                  # MoAI foundation skills
-│   ├── rules/
-│   │   └── moai/                      # MoAI rules
-│   │       ├── core/
-│   │       ├── development/
-│   │       ├── languages/
-│   │       └── workflow/
-│   ├── hooks/                         # Event hooks
-│   └── commands/                      # Custom slash commands
-│
-└── .git/                              # Git repository
-
+├── frontend/                                # Previous version (v1) - deprecated
+├── docs/                                    # Additional documentation (if any)
+└── (other project files)
 ```
 
-## Key File Locations
+## File Count Summary
 
-### For Common Development Tasks
+| Category | Count | Purpose |
+|----------|-------|---------|
+| **Source Files** (lib/) | 60 | Non-generated Dart source code |
+| **Generated Files** | 26 | .freezed.dart and .g.dart files |
+| **Test Files** | 34 | Test suite for all features |
+| **Feature Modules** | 7 | workspace, pdf_viewer, scrapnote, drawing, sidebar, dashboard, file_manager |
+| **Total Dart Files** | 120+ | All Dart files in lib/ and test/ |
 
-**Modify workspace layout**: `/mnt/d/project/GMA/frontend_v2/lib/features/workspace/pages/screens/workspace_screen.dart`
+## Feature Module Organization
 
-**Adjust dual-panel behavior**: `frontend_v2/lib/features/workspace/pages/providers/workspace_provider.dart`
+### workspace/ (16 files)
+Main orchestrator for dual-panel layout, panel management (swap/resize/maximize), and PDF tab bar. Coordinates between pdf_viewer and scrapnote features. Entry point for most user interactions.
 
-**Implement drawing tool**:
-1. Create tool: `frontend_v2/lib/features/pdf_viewer/drawing/tools/your_tool.dart`
-2. Extend existing tool pattern
-3. Used by both PDF viewer and Scrapnote
+### pdf_viewer/ (20 files)
+PDF document rendering, page navigation, text extraction, and drawing overlay. Includes sub-modules for highlighting and capture functionality. Manages per-document state with providers.
 
-**Add capture workflow**:
-1. Extend capture region model: `frontend_v2/lib/features/pdf_viewer/models/capture_region_model.dart`
-2. Update capture provider: `frontend_v2/lib/features/pdf_viewer/pages/providers/capture_provider.dart`
-3. Insert into scrapnote in workspace_provider
+### scrapnote/ (21 files)
+Canvas implementation for note-taking with A4 page or infinite scroll modes. Handles card insertion from PDF captures/highlights, stroke persistence, and card positioning. Core auto-insertion logic.
 
-**Add scrapnote feature**:
-1. Create model: `frontend_v2/lib/features/scrapnote/models/` with `@freezed` annotation
-2. Add provider: `frontend_v2/lib/features/scrapnote/pages/providers/{name}_provider.dart`
-3. Add widget: `frontend_v2/lib/features/scrapnote/pages/widgets/{name}_widget.dart`
+### drawing/ (15 files)
+Tool system for pen, highlighter, and eraser. Stroke data model and serialization. Tool registry and handler abstraction. Used by both PDF viewer and scrapnote features.
 
-### Data Persistence Locations
+### sidebar/ (3 files)
+Item navigator for C-n (Capture), H-n (Highlight), and P-n (Pen) references. Filtering by type and document. Navigation back to source locations.
 
-**Hive boxes**:
-- `app_settings`: Theme, layout preferences
-- `document_registry`: Metadata for PDFs and Scrapnotes
-- `workspace_state`: Panel dimensions, active documents
-- `element_store`: Scrapnote elements (captures, highlights, strokes) - NEW SPEC-SCRAPNOTE-002
+### dashboard/ (1 file)
+Landing page with file browser and recent document list. Entry point for application after splash screen.
 
-**Filesystem**:
-- `~/.local/share/gma_secplan/` (Linux/macOS)
-- `%APPDATA%\gma_secplan\` (Windows)
-- Contains: documents/, scrapnotes/, trash/, `.config/workspace.json`
+### file_manager/ (6 files available)
+Placeholder structure for file operations (create, open, save, delete, rename). Ready for implementation.
 
-### Configuration Files
+## Key File Locations for Common Tasks
 
-- `.moai/config/sections/quality.yaml`: Development mode (TDD), coverage targets
-- `.moai/config/sections/language.yaml`: Language settings (English)
-- `frontend/analysis_options.yaml`: Dart linting rules
-- `frontend/pubspec.yaml`: Dependencies and build configuration
+### Running the Application
+- **Entry Point**: `/mnt/d/project/GMA/frontend_v2/lib/main.dart`
+- **App Configuration**: `/mnt/d/project/GMA/frontend_v2/lib/app.dart`
+- **Router Setup**: `/mnt/d/project/GMA/frontend_v2/lib/routing/app_router.dart`
 
-## Code Generation Artifacts
+### Modifying Design System
+- **Colors**: `/mnt/d/project/GMA/frontend_v2/lib/constants/app_colors.dart`
+- **Typography**: `/mnt/d/project/GMA/frontend_v2/lib/constants/app_typography.dart`
+- **Spacing**: `/mnt/d/project/GMA/frontend_v2/lib/constants/app_spacing.dart`
+- **Theme**: `/mnt/d/project/GMA/frontend_v2/lib/constants/app_theme.dart`
+- **Design Tokens**: `/mnt/d/project/GMA/frontend_v2/lib/constants/design_tokens.dart`
 
-After modifying `@freezed` models or `@riverpod` providers, run:
+### Adding Drawing Features
+- **Tool System**: `/mnt/d/project/GMA/frontend_v2/lib/features/drawing/tools/`
+- **Tool Handlers**: `/mnt/d/project/GMA/frontend_v2/lib/features/drawing/tools/drawing_tool_handler.dart`
+- **Tool Registry**: `/mnt/d/project/GMA/frontend_v2/lib/features/drawing/tools/tool_registry.dart`
+- **Stroke Model**: `/mnt/d/project/GMA/frontend_v2/lib/features/drawing/models/drawing_model.dart`
 
+### Modifying PDF Functionality
+- **PDF State**: `/mnt/d/project/GMA/frontend_v2/lib/features/pdf_viewer/models/pdf_document_state.dart`
+- **PDF Provider**: `/mnt/d/project/GMA/frontend_v2/lib/features/pdf_viewer/pages/providers/pdf_document_provider.dart`
+- **PDF Screen**: `/mnt/d/project/GMA/frontend_v2/lib/features/pdf_viewer/pages/screens/pdf_viewer_screen.dart`
+- **Text Extraction**: `/mnt/d/project/GMA/frontend_v2/lib/features/pdf_viewer/utils/pdf_text_extractor.dart`
+
+### Working with Scrapnote Canvas
+- **Canvas Model**: `/mnt/d/project/GMA/frontend_v2/lib/features/scrapnote/models/scrapnote_canvas_model.dart`
+- **Canvas Provider**: `/mnt/d/project/GMA/frontend_v2/lib/features/scrapnote/pages/providers/scrapnote_canvas_provider.dart`
+- **Canvas Widget**: `/mnt/d/project/GMA/frontend_v2/lib/features/scrapnote/pages/widgets/scrapnote_canvas.dart`
+- **Serialization**: `/mnt/d/project/GMA/frontend_v2/lib/features/scrapnote/utils/scrapnote_serializer.dart`
+
+### Data Persistence
+- **File System Access**: `/mnt/d/project/GMA/frontend_v2/lib/utils/file_system_provider.dart`
+- **Hive Configuration**: `pubspec.yaml` (hive_flutter dependency)
+- **Scrapnote File I/O**: `/mnt/d/project/GMA/frontend_v2/lib/features/scrapnote/services/scrapnote_service.dart`
+
+### Testing
+- **Test Directory**: `/mnt/d/project/GMA/frontend_v2/test/`
+- **Widget Tests**: `/mnt/d/project/GMA/frontend_v2/test/widget_test.dart`
+- **Feature Tests**: `/mnt/d/project/GMA/frontend_v2/test/features/` (organized by feature)
+
+## Code Generation Instructions
+
+### Generate All Code
 ```bash
-cd frontend
-dart run build_runner build --delete-conflicting-outputs
+cd frontend_v2
+flutter pub get
+flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
-This generates:
-- `*.freezed.dart` from `@freezed` classes
-- `*.g.dart` from json_serializable and riverpod_generator
-- `app_router.g.dart` from go_router
+### Watch Mode (Continuous Generation)
+```bash
+cd frontend_v2
+flutter pub run build_runner watch
+```
 
-## Summary
+### Generated File Types
 
-- **~175 Dart files**: Feature-first modular architecture with enhanced scrapnote capabilities
-- **14 feature modules**: workspace (core), pdf_viewer (NEW - SPEC-PDF-001, enhanced with SPEC-SCRAPNOTE-002), drawing (NEW - SPEC-PDF-001), scrapnote (NEW - SPEC-SCRAPNOTE-002 with 21 new files including element management, highlight colors, canvas coordination, and services), sidebar, capture_confirmation, document_menu, file_system, settings, splash
-- **42 test files**: 2 E2E, 4 integration, 36 unit (15 for pdf_viewer + drawing, 21 new for scrapnote SPEC-SCRAPNOTE-002)
-- **App routes**: splash, workspace (main), settings
-- **3 Hive boxes**: app_settings, document_registry, workspace_state, plus new Hive box for element_store (NEW - SPEC-SCRAPNOTE-002)
-- **Multi-platform support**: Android, iOS, Windows, macOS, Linux
-- **Design**: Dual-panel with auto-insertion, smart element orchestration, color-aware highlighting, Scrapnote canvas with live element panel, Samsung Notes-like A4 pages
+| File Pattern | Generator | Purpose |
+|--------------|-----------|---------|
+| `*.freezed.dart` | freezed | Immutable model code generation |
+| `*.g.dart` | json_serializable + riverpod_generator | JSON serialization and Riverpod providers |
 
+### Troubleshooting Generation Issues
+- Delete `.dart_tool/` and run `flutter clean && flutter pub get`
+- Check for analyzer errors with `flutter analyze`
+- Ensure pubspec.yaml specifies correct versions for code generators
+- Run with `--delete-conflicting-outputs` flag if conflicts occur
+
+## Data Persistence Architecture
+
+### Hive Storage (Key-Value Database)
+- Located in: Platform-specific app directory via path_provider
+- Used for: Settings, registries, cached data
+- Boxes:
+  - workspace_settings: Panel layout, app preferences
+  - element_store: Card registry (captures, highlights)
+  - (Additional boxes as needed)
+
+### File System Storage
+- Note Files: Custom JSON format stored in app documents directory
+- PDF Files: Read as-is from filesystem
+- Captured Images: PNG files in app cache directory
+- Strokes: Embedded in scrapnote JSON format
+
+### JSON Serialization
+- Framework: json_annotation + json_serializable
+- Usage: All freezed models include JSON serialization
+- Format: Dart object → JSON via `toJson()` → File storage
+
+## Platform-Specific Configuration
+
+### Android
+- Configuration: `android/app/build.gradle`
+- Min SDK: Supports current Android versions
+- Permissions: File access, camera (for capture)
+
+### iOS
+- Configuration: `ios/Runner.xcodeproj`
+- Min iOS: Version based on Flutter requirements
+- Permissions: File access, camera
+
+### macOS
+- Configuration: `macos/Runner.xcodeproj`
+- Features: Entitlements for file access
+
+### Windows
+- Configuration: `windows/CMakeLists.txt`
+- Build: MSVC compiler
+
+### Linux
+- Configuration: `linux/CMakeLists.txt`
+- Dependencies: GTK3 and other system libraries
+
+### Web
+- Configuration: `web/index.html`
+- Limitations: Sandboxed file system access
