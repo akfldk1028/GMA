@@ -1,3 +1,4 @@
+import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import '../models/scrapnote_canvas_model.dart';
@@ -18,6 +19,17 @@ class ScrapnoteService {
   }) async {
     final filePath =
         ScrapnoteSerializer.buildFilePath(scrapnotesDir, pdfPath);
+
+    // Validate resolved path is within the expected scrapnotes directory
+    // to prevent directory traversal attacks.
+    final normalizedBase = p.normalize(p.absolute(scrapnotesDir));
+    final normalizedFile = p.normalize(p.absolute(filePath));
+    if (!p.isWithin(normalizedBase, normalizedFile)) {
+      throw ArgumentError(
+        'Invalid pdfPath: resolved file path escapes the scrapnotes directory.',
+      );
+    }
+
     final existing = await ScrapnoteSerializer.load(filePath: filePath);
     if (existing != null) return existing;
 

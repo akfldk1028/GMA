@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -8,6 +9,9 @@ import '../models/element_model.dart';
 part 'element_store.g.dart';
 
 const _boxName = 'element_store';
+
+/// Maximum allowed size for a single JSON element entry (10 MB).
+const _maxElementJsonSize = 10 * 1024 * 1024;
 
 // @MX:ANCHOR: Primary element persistence provider — accessed by ScrapOrchestrator, LiveScrapsPanel
 // @MX:REASON: fan_in >= 3 callers across scrapnote UI and orchestration layers
@@ -25,11 +29,27 @@ class ElementStoreNotifier extends _$ElementStoreNotifier {
     for (final key in box.keys) {
       final raw = box.get(key);
       if (raw is String) {
+        if (raw.length > _maxElementJsonSize) {
+          debugPrint(
+            'ElementStore: skipping key "$key" — exceeds max size '
+            '(${raw.length} bytes)',
+          );
+          continue;
+        }
         try {
-          final map = jsonDecode(raw) as Map<String, dynamic>;
-          elements.add(ScrapElement.fromJson(map));
-        } catch (_) {
-          // Skip malformed entries
+          final decoded = jsonDecode(raw);
+          if (decoded is! Map<String, dynamic>) {
+            debugPrint(
+              'ElementStore: skipping key "$key" — expected JSON object, '
+              'got ${decoded.runtimeType}',
+            );
+            continue;
+          }
+          elements.add(ScrapElement.fromJson(decoded));
+        } on FormatException catch (e) {
+          debugPrint('ElementStore: malformed JSON for key "$key": $e');
+        } on TypeError catch (e) {
+          debugPrint('ElementStore: type error for key "$key": $e');
         }
       }
     }

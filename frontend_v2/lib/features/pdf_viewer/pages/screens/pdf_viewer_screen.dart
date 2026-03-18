@@ -89,9 +89,10 @@ class PdfViewerScreen extends ConsumerWidget {
     // Loaded state: display PDF with drawing overlays
     final notifier = ref.read(pdfDocumentNotifierProvider.notifier);
     final controller = notifier.controller;
+    final filePath = notifier.filePath ?? '';
 
     return PdfViewer.uri(
-      Uri.file(''),
+      Uri.file(filePath),
       controller: controller,
       params: const PdfViewerParams(),
     );

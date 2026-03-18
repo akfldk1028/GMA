@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 
 import '../models/drawing_model.dart';
@@ -49,7 +50,8 @@ class DrawingSerializer {
       }
 
       return pageStrokes;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Failed to load drawing data: $e');
       return {};
     }
   }

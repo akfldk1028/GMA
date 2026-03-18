@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -10,6 +11,7 @@ part 'pdf_document_provider.g.dart';
 @Riverpod(keepAlive: true)
 class PdfDocumentNotifier extends _$PdfDocumentNotifier {
   PdfViewerController? _controller;
+  String? _filePath;
 
   @override
   PdfDocumentState build() {
@@ -17,6 +19,7 @@ class PdfDocumentNotifier extends _$PdfDocumentNotifier {
 
     ref.onDispose(() {
       _controller = null;
+      _filePath = null;
     });
 
     return const PdfDocumentState();
@@ -25,6 +28,9 @@ class PdfDocumentNotifier extends _$PdfDocumentNotifier {
   /// Get the active PdfViewerController for use in PdfViewer widget.
   PdfViewerController? get controller => _controller;
 
+  /// Get the file path of the currently loaded document.
+  String? get filePath => _filePath;
+
   /// Load a PDF document from a file path.
   Future<void> loadDocument(String path) async {
     state = state.copyWith(isLoading: true, error: null);
@@ -32,6 +38,7 @@ class PdfDocumentNotifier extends _$PdfDocumentNotifier {
     try {
       final doc = await PdfDocument.openFile(path);
       final totalPages = doc.pages.length;
+      _filePath = path;
 
       state = state.copyWith(
         document: doc,
@@ -51,18 +58,20 @@ class PdfDocumentNotifier extends _$PdfDocumentNotifier {
 
   /// Navigate to a specific page.
   void goToPage(int page) {
-    final clampedPage = page < 1 ? 1 : page;
+    final clampedPage = page.clamp(1, state.totalPages < 1 ? 1 : state.totalPages);
     state = state.copyWith(currentPage: clampedPage);
     // Guard: controller.goToPage requires an attached widget state
     try {
       _controller?.goToPage(pageNumber: clampedPage);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('PDF controller error: $e');
       // Controller not yet attached to a widget — state already updated above
     }
   }
 
   /// Clear the current document and reset state.
   void clearDocument() {
+    _filePath = null;
     state = const PdfDocumentState();
   }
 }

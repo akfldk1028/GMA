@@ -25,6 +25,11 @@ class ScrapnoteScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          // TODO(U2): currentPageNumber is hardcoded to 1. To fix this properly,
+          // the scrapnote view needs access to a page-tracking provider that
+          // reflects the current page of the associated PDF. This requires
+          // coordination with the PDF viewer state (e.g. pdfDocumentNotifierProvider)
+          // when the scrapnote is linked to an open PDF document.
           DrawingToolbar(
             activeDocumentPath: pdfPath,
             currentPageNumber: 1,

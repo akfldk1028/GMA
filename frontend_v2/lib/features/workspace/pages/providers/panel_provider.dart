@@ -8,6 +8,17 @@ part 'panel_provider.g.dart';
 
 const _boxName = 'workspace_settings';
 const _keyPrefix = 'panel_';
+const _maxKeyLength = 100;
+
+/// Sanitize a user-controlled string for safe use as a Hive box key.
+/// Replaces non-alphanumeric characters (except dots, dashes, underscores)
+/// with underscores and truncates to [_maxKeyLength].
+String _sanitizeHiveKey(String raw) {
+  final sanitized = raw.replaceAll(RegExp(r'[^a-zA-Z0-9._\-]'), '_');
+  return sanitized.length > _maxKeyLength
+      ? sanitized.substring(0, _maxKeyLength)
+      : sanitized;
+}
 
 // @MX:ANCHOR: Primary panel state provider — accessed by PanelManager, SecPlanHeader, and KebabMenu
 // @MX:REASON: fan_in >= 3 callers across workspace UI layer
@@ -47,7 +58,7 @@ class PanelProvider extends _$PanelProvider {
   }
 
   Future<void> loadForDocument(String pdfPath) async {
-    final key = _keyPrefix + p.basename(pdfPath);
+    final key = _keyPrefix + _sanitizeHiveKey(p.basename(pdfPath));
     final box = await _openBox();
     final stored = box.get(key);
     if (stored is Map) {

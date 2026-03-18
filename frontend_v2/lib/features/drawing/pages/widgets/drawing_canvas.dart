@@ -169,6 +169,36 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
     final eraserRadius = widget.strokeSize * 2 / size.width;
 
     for (final stroke in widget.strokes) {
+      // AABB pre-filter: skip strokes whose bounding box does not overlap the
+      // eraser area. This is a cheap O(1) rejection before the expensive
+      // per-point hit-test inside isStrokeHit.
+      if (stroke.points.isNotEmpty) {
+        var minX = stroke.points.first.x;
+        var maxX = minX;
+        var minY = stroke.points.first.y;
+        var maxY = minY;
+        for (final p in stroke.points) {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        }
+        // Expand bounding box by stroke half-width in normalized coords
+        final halfWidth = stroke.size / 2 / size.width;
+        minX -= halfWidth;
+        maxX += halfWidth;
+        minY -= halfWidth;
+        maxY += halfWidth;
+
+        // Reject if eraser circle does not overlap the expanded bounding box
+        if (nx + eraserRadius < minX ||
+            nx - eraserRadius > maxX ||
+            ny + eraserRadius < minY ||
+            ny - eraserRadius > maxY) {
+          continue;
+        }
+      }
+
       if (tool.isStrokeHit(
         stroke: stroke,
         pointerX: nx,

@@ -41,6 +41,9 @@ class DrawingMode extends _$DrawingMode {
 class DrawingStrokes extends _$DrawingStrokes {
   Timer? _saveTimer;
 
+  // Maximum number of undo entries retained to bound memory usage.
+  static const int _maxUndoSize = 50;
+
   @override
   Future<DrawingData> build(String documentPath) async {
     ref.onDispose(() {
@@ -60,11 +63,13 @@ class DrawingStrokes extends _$DrawingStrokes {
     if (current == null) return;
 
     final page = stroke.pageNumber;
-    final pageStrokes = Map<int, List<DrawingStroke>>.from(current.pageStrokes);
-    pageStrokes[page] = [...(pageStrokes[page] ?? []), stroke];
+    // Shallow copy: share unchanged page lists, only create a new list for the
+    // affected page. Avoids a full deep copy of the entire map on every stroke.
+    final newPageStrokes = {...current.pageStrokes};
+    newPageStrokes[page] = [...(current.pageStrokes[page] ?? []), stroke];
 
     state = AsyncData(DrawingData(
-      pageStrokes: pageStrokes,
+      pageStrokes: newPageStrokes,
       undoStack: [], // Clear redo stack on new stroke
     ));
 
@@ -76,13 +81,14 @@ class DrawingStrokes extends _$DrawingStrokes {
     final current = state.valueOrNull;
     if (current == null) return;
 
-    final pageStrokes = Map<int, List<DrawingStroke>>.from(current.pageStrokes);
-    final strokes = List<DrawingStroke>.from(pageStrokes[pageNumber] ?? []);
+    // Shallow copy: only rebuild the list for the affected page.
+    final newPageStrokes = {...current.pageStrokes};
+    final strokes = List<DrawingStroke>.from(newPageStrokes[pageNumber] ?? []);
     strokes.removeWhere((s) => s.id == strokeId);
-    pageStrokes[pageNumber] = strokes;
+    newPageStrokes[pageNumber] = strokes;
 
     state = AsyncData(DrawingData(
-      pageStrokes: pageStrokes,
+      pageStrokes: newPageStrokes,
       undoStack: current.undoStack,
     ));
 
@@ -93,16 +99,23 @@ class DrawingStrokes extends _$DrawingStrokes {
     final current = state.valueOrNull;
     if (current == null) return;
 
-    final pageStrokes = Map<int, List<DrawingStroke>>.from(current.pageStrokes);
-    final strokes = List<DrawingStroke>.from(pageStrokes[pageNumber] ?? []);
+    // Shallow copy: only rebuild the list for the affected page.
+    final newPageStrokes = {...current.pageStrokes};
+    final strokes = List<DrawingStroke>.from(newPageStrokes[pageNumber] ?? []);
     if (strokes.isEmpty) return;
 
     final removed = strokes.removeLast();
-    pageStrokes[pageNumber] = strokes;
+    newPageStrokes[pageNumber] = strokes;
+
+    // Cap undo stack at _maxUndoSize to prevent unbounded memory growth.
+    List<DrawingStroke> newUndoStack = [...current.undoStack, removed];
+    if (newUndoStack.length >= _maxUndoSize) {
+      newUndoStack = newUndoStack.sublist(newUndoStack.length - _maxUndoSize);
+    }
 
     state = AsyncData(DrawingData(
-      pageStrokes: pageStrokes,
-      undoStack: [...current.undoStack, removed],
+      pageStrokes: newPageStrokes,
+      undoStack: newUndoStack,
     ));
 
     _autoSave();
@@ -119,11 +132,15 @@ class DrawingStrokes extends _$DrawingStrokes {
     if (idx == -1) return;
 
     final restored = undoStack.removeAt(idx);
-    final pageStrokes = Map<int, List<DrawingStroke>>.from(current.pageStrokes);
-    pageStrokes[pageNumber] = [...(pageStrokes[pageNumber] ?? []), restored];
+    // Shallow copy: only rebuild the list for the affected page.
+    final newPageStrokes = {...current.pageStrokes};
+    newPageStrokes[pageNumber] = [
+      ...(current.pageStrokes[pageNumber] ?? []),
+      restored,
+    ];
 
     state = AsyncData(DrawingData(
-      pageStrokes: pageStrokes,
+      pageStrokes: newPageStrokes,
       undoStack: undoStack,
     ));
 
