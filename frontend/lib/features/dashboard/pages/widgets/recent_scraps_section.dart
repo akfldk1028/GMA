@@ -19,6 +19,8 @@ class RecentScrapsSection extends ConsumerWidget {
         return AppColors.success;
       case ElementType.drawing:
         return AppColors.warning;
+      case ElementType.lasso:
+        return AppColors.success;
     }
   }
 

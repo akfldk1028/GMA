@@ -32,7 +32,12 @@ class LiveScrapsPanel extends ConsumerWidget {
           .read(pdfRegistryProvProvider.notifier)
           .getIdByPath(workspaceState!.currentPdfPath!);
       if (pdfId != null) {
-        elements = ref.read(elementStoreProvider.notifier).getByPdfId(pdfId);
+        elements = ref
+            .read(elementStoreProvider.notifier)
+            .getByPdfId(pdfId)
+            .where((e) =>
+                e.type == ElementType.capture || e.type == ElementType.lasso)
+            .toList();
       }
     }
 
@@ -200,6 +205,8 @@ class _ElementCard extends StatelessWidget {
         return AppColors.success;
       case ElementType.drawing:
         return AppColors.warning;
+      case ElementType.lasso:
+        return AppColors.success;
     }
   }
 
@@ -211,6 +218,8 @@ class _ElementCard extends StatelessWidget {
         return Icons.image_rounded;
       case ElementType.drawing:
         return Icons.brush_rounded;
+      case ElementType.lasso:
+        return Icons.gesture_rounded;
     }
   }
 

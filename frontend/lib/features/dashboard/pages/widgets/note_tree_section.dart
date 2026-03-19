@@ -201,12 +201,14 @@ class _VisualTree extends ConsumerWidget {
         ElementType.highlight => Icons.highlight_rounded,
         ElementType.capture => Icons.crop_rounded,
         ElementType.drawing => Icons.draw_rounded,
+        ElementType.lasso => Icons.gesture_rounded,
       };
 
   Color _elColor(ElementType t) => switch (t) {
         ElementType.highlight => AppColors.primary,
         ElementType.capture => AppColors.success,
         ElementType.drawing => AppColors.warning,
+        ElementType.lasso => AppColors.success,
       };
 
   String _elLabel(ScrapElement el) {

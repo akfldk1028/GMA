@@ -32,6 +32,8 @@ class _ScrapCardState extends State<ScrapCard> {
         return AppColors.success;
       case ElementType.drawing:
         return AppColors.warning;
+      case ElementType.lasso:
+        return AppColors.success;
     }
   }
 
@@ -43,6 +45,8 @@ class _ScrapCardState extends State<ScrapCard> {
         return Icons.image_rounded;
       case ElementType.drawing:
         return Icons.brush_rounded;
+      case ElementType.lasso:
+        return Icons.gesture_rounded;
     }
   }
 
@@ -54,6 +58,8 @@ class _ScrapCardState extends State<ScrapCard> {
         return 'Capture';
       case ElementType.drawing:
         return 'Drawing';
+      case ElementType.lasso:
+        return 'Lasso';
     }
   }
 

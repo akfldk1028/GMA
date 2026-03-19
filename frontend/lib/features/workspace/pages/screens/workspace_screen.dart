@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../common_widgets/responsive.dart';
+import '../../../../utils/file_system_provider.dart';
 import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
 import '../../../pdf_viewer/pages/screens/pdf_viewer_screen.dart';
 import '../../../scrapnote/pages/widgets/confirm_scrap_popup.dart';
@@ -47,6 +48,9 @@ class WorkspaceScreen extends ConsumerStatefulWidget {
 
 class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   late final PdfViewerController _pdfController;
+  final GlobalKey<WorkspaceCanvasPanelState> _canvasKey =
+      GlobalKey<WorkspaceCanvasPanelState>();
+  List<String>? _canvasOrder;
 
   @override
   void initState() {
@@ -192,13 +196,20 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     }
 
     final text = memo.isNotEmpty ? memo : state.pendingScrapText;
+    // pendingScrapImagePath may be a full absolute path (for popup preview).
+    // createMarker expects a filename only — extract basename if absolute.
+    final rawImagePath = state.pendingScrapImagePath;
+    final imagePath = rawImagePath != null && p.isAbsolute(rawImagePath)
+        ? p.basename(rawImagePath)
+        : rawImagePath;
     debugPrint('[WorkspaceScreen._confirmScrapCreation] creating marker on page $pageNumber with text: ${text != null ? text.substring(0, text.length.clamp(0, 50)) : null}');
     await ref.read(workspaceProviderProvider.notifier).createMarker(
           pageNumber: pageNumber,
           color: MarkerColor.green,
           selectedText: text,
           textRect: state.pendingScrapTextRect,
-          capturedImagePath: state.pendingScrapImagePath,
+          capturedImagePath: imagePath,
+          elementTypeOverride: state.pendingScrapElementType,
         );
   }
 
@@ -460,9 +471,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     final notifier = ref.read(workspaceProviderProvider.notifier);
     final isFocusPdf = state.focusedPanel == FocusedPanel.pdf;
 
-    // Flex ratios based on focused panel
-    final pdfFlex = isFocusPdf ? 3 : 2;
-    final scrapFlex = isFocusPdf ? 1 : 2;
+    // Always 1:1 layout (PDF and scrap panel equal width)
+    const pdfFlex = 1;
+    const scrapFlex = 1;
 
     // Build PDF viewer (Listener instead of GestureDetector to not block scroll)
     final pdfViewer = Expanded(
@@ -486,11 +497,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               onPointerDown: (_) =>
                   notifier.setFocusedPanel(FocusedPanel.scrapnote),
               child: WorkspaceCanvasPanel(
+                key: _canvasKey,
                 noteId: state.currentNoteId,
                 pdfPath: state.currentPdfPath,
-                pdfController: _pdfController,
                 onNavigateToPage: (page) {
                   _pdfController.goToPage(pageNumber: page);
+                },
+                onOrderChanged: (ids) {
+                  setState(() => _canvasOrder = ids);
                 },
               ),
             ),
@@ -536,6 +550,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                           onPageTap: (page) {
                             _pdfController.goToPage(pageNumber: page);
                           },
+                          onElementTap: (id) {
+                            _canvasKey.currentState?.scrollToElement(id);
+                          },
+                          capturesDir: ref
+                              .watch(capturesDirectoryProvider)
+                              .valueOrNull
+                              ?.path,
+                          canvasOrder: _canvasOrder,
                         ),
 
                       // Center + Right: PDF and ScrapNote (swappable)

@@ -6,21 +6,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
-import '../../../../common_widgets/responsive.dart';
 import '../../../../constants/marker_colors.dart';
 import '../../../../utils/file_system_provider.dart';
 import '../../../ocr/ocr_service.dart';
 import '../../../ocr/pages/providers/ocr_provider.dart';
 import '../../../scrapnote/models/element_model.dart';
-import '../../../scrapnote/models/scrapnote_canvas_model.dart';
-import '../../../scrapnote/pages/providers/scrapnote_canvas_provider.dart';
-import '../../../scrapnote/providers/element_store.dart';
-import '../../../scrapnote/providers/pdf_registry_provider.dart';
-import '../../../scrapnote/providers/scrap_insertion_provider.dart';
-import '../../../scrapnote/services/scrap_insertion_service.dart';
 import '../../../workspace/pages/providers/workspace_provider.dart';
 import '../../capture/pages/providers/capture_provider.dart';
+import '../../capture/pages/providers/lasso_provider.dart';
 import '../../capture/pages/widgets/capture_overlay.dart';
+import '../../capture/pages/widgets/lasso_overlay.dart';
 import '../../drawing/models/drawing_model.dart';
 import '../../drawing/pages/providers/drawing_provider.dart';
 import '../../drawing/pages/widgets/drawing_overlay.dart';
@@ -125,17 +120,30 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       return _buildEmptyState(context);
     }
 
-    // Mutual exclusion: drawing ON → capture OFF
+    // Mutual exclusion: drawing ON → capture/lasso OFF
     ref.listen(drawingModeProvider, (prev, next) {
       if (next.isActive) {
         ref.read(captureModeProvider.notifier).setActive(false);
+        ref.read(lassoModeProvider.notifier).setActive(false);
+      }
+    });
+    ref.listen(captureModeProvider, (prev, next) {
+      if (next) {
+        ref.read(lassoModeProvider.notifier).setActive(false);
+      }
+    });
+    ref.listen(lassoModeProvider, (prev, next) {
+      if (next) {
+        ref.read(captureModeProvider.notifier).setActive(false);
+        ref.read(drawingModeProvider.notifier).setActive(false);
       }
     });
 
-    // Watch drawing mode and capture mode for conditional text selection
+    // Watch drawing mode, capture mode, lasso mode for conditional text selection
     final drawingMode = ref.watch(drawingModeProvider);
     final captureMode = ref.watch(captureModeProvider);
-    final anyOverlayActive = drawingMode.isActive || captureMode;
+    final lassoMode = ref.watch(lassoModeProvider);
+    final anyOverlayActive = drawingMode.isActive || captureMode || lassoMode;
 
     return Stack(
       children: [
@@ -180,6 +188,10 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                   ),
                   const SizedBox(width: 6),
                   _buildCaptureButton(context),
+                  const SizedBox(width: 6),
+                  _buildLassoButton(context),
+                  const SizedBox(width: 6),
+                  _buildQuickModeButton(context),
                 ],
               ),
             ),
@@ -189,7 +201,16 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           Positioned(
             top: 8,
             right: 8,
-            child: _buildCaptureButton(context),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildCaptureButton(context),
+                const SizedBox(width: 6),
+                _buildLassoButton(context),
+                const SizedBox(width: 6),
+                _buildQuickModeButton(context),
+              ],
+            ),
           ),
         // Page navigation controls
         _buildNavigationControls(controller),
@@ -230,49 +251,30 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     }
   }
 
-  /// Build text selection action buttons (Add Marker + Add Scrap).
+  /// Build text selection action button (Add Marker only).
   Widget _buildAddMarkerButton() {
     return Positioned(
       top: 60,
       right: 16,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ShadButton(
-            onPressed: () {
-              if (_selectedPageNumber == null) return;
-              widget.onAddMarkerPressed?.call(
-                pageNumber: _selectedPageNumber!,
-                selectedText: _selectedText,
-                textRect: _selectedTextRect,
-              );
-              _clearSelection();
-            },
-            size: ShadButtonSize.sm,
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.bookmark_add, size: 16),
-                SizedBox(width: 6),
-                Text('Add Marker'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 6),
-          ShadButton.outline(
-            onPressed: () => _handleAddScrap(),
-            size: ShadButtonSize.sm,
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.auto_awesome_mosaic_rounded, size: 16),
-                SizedBox(width: 6),
-                Text('Add Scrap'),
-              ],
-            ),
-          ),
-        ],
+      child: ShadButton(
+        onPressed: () {
+          if (_selectedPageNumber == null) return;
+          widget.onAddMarkerPressed?.call(
+            pageNumber: _selectedPageNumber!,
+            selectedText: _selectedText,
+            textRect: _selectedTextRect,
+          );
+          _clearSelection();
+        },
+        size: ShadButtonSize.sm,
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.bookmark_add, size: 16),
+            SizedBox(width: 6),
+            Text('Add Marker'),
+          ],
+        ),
       ),
     );
   }
@@ -286,88 +288,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     });
   }
 
-  /// Add selected text as a scrap element to the element store.
-  Future<void> _handleAddScrap() async {
-    if (_selectedPageNumber == null || _selectedText == null) return;
-
-    final workspaceState =
-        ref.read(workspaceProviderProvider).valueOrNull;
-    if (workspaceState?.currentPdfPath == null) return;
-
-    final pdfId = ref
-        .read(pdfRegistryProvProvider.notifier)
-        .getIdByPath(workspaceState!.currentPdfPath!);
-    if (pdfId == null) return;
-
-    final element = ScrapElement(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
-      pdfId: pdfId,
-      pageNumber: _selectedPageNumber!,
-      type: ElementType.highlight,
-      selectedText: _selectedText,
-      rect: _selectedTextRect,
-      createdAt: DateTime.now(),
-    );
-
-    ref.read(elementStoreProvider.notifier).add(element);
-
-    // Also add a CanvasElement to the scrapnote canvas so it appears visually.
-    _addElementToCanvas(
-      pdfId: pdfId,
-      elementId: element.id,
-      selectedText: _selectedText,
-      pageNumber: _selectedPageNumber!,
-      pdfPath: workspaceState.currentPdfPath!,
-    );
-
-    _clearSelection();
-  }
-
-  /// Adds a [CanvasElement] to the [ScrapnoteCanvasState] for the given [pdfId].
-  ///
-  /// The element's Y position is calculated by stacking below existing elements
-  /// (max(y + height) + 20px gap), so new scraps appear below previous ones.
-  void _addElementToCanvas({
-    required String pdfId,
-    required String elementId,
-    required String? selectedText,
-    required int pageNumber,
-    required String pdfPath,
-  }) {
-    final canvasState =
-        ref.read(scrapnoteCanvasStateProvider(pdfId)).valueOrNull;
-
-    double nextY = 20.0;
-    if (canvasState != null && canvasState.elements.isNotEmpty) {
-      // Calculate the bottom edge of the lowest existing element
-      double maxBottom = 0;
-      for (final e in canvasState.elements) {
-        final bottom = e.y + e.height;
-        if (bottom > maxBottom) maxBottom = bottom;
-      }
-      nextY = maxBottom + 20.0;
-    }
-
-    final canvasElement = CanvasElement(
-      id: elementId,
-      type: CanvasElementType.highlight,
-      x: 20.0,
-      y: nextY,
-      width: 300.0,
-      height: 80.0,
-      selectedText: selectedText,
-      sourcePageNumber: pageNumber,
-      sourcePdfPath: pdfPath,
-      createdAt: DateTime.now(),
-    );
-
-    ref
-        .read(scrapnoteCanvasStateProvider(pdfId).notifier)
-        .addElement(canvasElement);
-  }
 
 
-  /// Build combined page overlays (drawing + capture).
+  /// Build combined page overlays (drawing + capture + lasso).
   PdfPageOverlaysBuilder _buildCombinedOverlays(WidgetRef ref) {
     final drawingBuilder = DrawingOverlay.createOverlaysBuilder(
       noteId: widget.noteId!,
@@ -377,11 +300,18 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     final captureBuilder = CaptureOverlay.createOverlaysBuilder(
       ref: ref,
       onCaptureCompleted: _handleCaptureCompleted,
+      noteId: widget.noteId,
+    );
+    final lassoBuilder = LassoOverlay.createOverlaysBuilder(
+      ref: ref,
+      onLassoCaptureCompleted: _handleLassoCaptureCompleted,
+      noteId: widget.noteId,
     );
     return (BuildContext context, Rect pageRectInViewer, PdfPage page) {
       return [
         ...drawingBuilder(context, pageRectInViewer, page),
         ...captureBuilder(context, pageRectInViewer, page),
+        ...lassoBuilder(context, pageRectInViewer, page),
       ];
     };
   }
@@ -389,6 +319,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   /// Handle completed capture — insert image into note with context text.
   /// When OCR is enabled and native text extraction yields nothing,
   /// falls back to local LLM OCR on the captured image.
+  ///
+  /// Quick scrap mode: skip popup, create instantly.
+  /// Normal mode: open ScrapBoard popup via workspace state.
   Future<void> _handleCaptureCompleted({
     required int pageNumber,
     required String filename,
@@ -430,55 +363,116 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         normalizedRect.bottom,
       );
 
-      // Build full image path for proposal preview
+      final workspaceState = ref.read(workspaceProviderProvider).valueOrNull;
+      final workspaceNotifier = ref.read(workspaceProviderProvider.notifier);
+
+      // Quick scrap mode: skip popup, create instantly
+      if (workspaceState?.isQuickScrapMode == true) {
+        await workspaceNotifier.createMarker(
+          pageNumber: pageNumber,
+          color: MarkerColor.yellow,
+          capturedImagePath: filename,
+          selectedText: extractedText,
+          textRect: pdfRect,
+        );
+        return;
+      }
+
+      // Normal mode: open ScrapBoard popup
       final capturesDir = await ref.read(capturesDirectoryProvider.future);
       final fullImagePath = '${capturesDir.path}/$filename';
-
-      // Show confirm popup via ScrapInsertionService
-      final workspaceState = ref.read(workspaceProviderProvider).valueOrNull;
-      final service = ref.read(scrapInsertionServiceProvider);
-      final result = await service.proposeCapture(CaptureProposal(
-        imagePath: fullImagePath,
-        sourcePageNumber: pageNumber,
-        sourcePdfPath: workspaceState?.currentPdfPath ?? '',
-      ));
-
-      if (result != InsertionResult.accepted) return;
-
-      // User accepted — create marker and scrap element
-      final workspaceNotifier = ref.read(workspaceProviderProvider.notifier);
-      await workspaceNotifier.createMarker(
+      workspaceNotifier.openScrapBoard(
         pageNumber: pageNumber,
-        color: MarkerColor.yellow,
-        capturedImagePath: filename,
         selectedText: extractedText,
+        imagePath: fullImagePath,
         textRect: pdfRect,
       );
-
-      // Also add as scrap element
-      if (workspaceState?.currentPdfPath != null) {
-        final pdfId = ref
-            .read(pdfRegistryProvProvider.notifier)
-            .getIdByPath(workspaceState!.currentPdfPath!);
-        if (pdfId != null) {
-          ref.read(elementStoreProvider.notifier).add(ScrapElement(
-                id: DateTime.now().microsecondsSinceEpoch.toString(),
-                pdfId: pdfId,
-                pageNumber: pageNumber,
-                type: ElementType.capture,
-                selectedText: extractedText,
-                imagePath: filename,
-                rect: pdfRect,
-                createdAt: DateTime.now(),
-              ));
-        }
-      }
     } catch (e) {
       if (mounted) {
         ShadToaster.of(context).show(
           ShadToast.destructive(
             title: const Text('Error'),
             description: Text('Failed to insert capture: $e'),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Handle completed lasso capture — similar to rect capture but with lasso type.
+  ///
+  /// Quick scrap mode: skip popup, create instantly.
+  /// Normal mode: open ScrapBoard popup via workspace state.
+  Future<void> _handleLassoCaptureCompleted({
+    required int pageNumber,
+    required String filename,
+    required Rect normalizedRect,
+    required List<Offset> lassoPoints,
+  }) async {
+    try {
+      var extractedText =
+          await _extractTextFromRect(pageNumber, normalizedRect);
+
+      // OCR fallback
+      if ((extractedText == null || extractedText.trim().isEmpty)) {
+        final ocrSettings = await ref.read(ocrSettingsProvider.future);
+        if (ocrSettings.isEnabled) {
+          try {
+            final capturesDir =
+                await ref.read(capturesDirectoryProvider.future);
+            final imagePath = '${capturesDir.path}/$filename';
+            extractedText = await OcrService.recognizeFile(
+              imagePath,
+              backendId: ocrSettings.backendId,
+              baseUrl: ocrSettings.ollamaUrl,
+              model: ocrSettings.modelName,
+            );
+          } catch (ocrError) {
+            debugPrint('OCR fallback failed: $ocrError');
+          }
+        }
+      }
+
+      final pdfRect = await _normalizedToPdfRect(
+        pageNumber,
+        normalizedRect.left,
+        normalizedRect.top,
+        normalizedRect.right,
+        normalizedRect.bottom,
+      );
+
+      final workspaceState = ref.read(workspaceProviderProvider).valueOrNull;
+      final workspaceNotifier = ref.read(workspaceProviderProvider.notifier);
+
+      // Quick scrap mode: skip popup, create instantly
+      if (workspaceState?.isQuickScrapMode == true) {
+        await workspaceNotifier.createMarker(
+          pageNumber: pageNumber,
+          color: MarkerColor.yellow,
+          capturedImagePath: filename,
+          selectedText: extractedText,
+          textRect: pdfRect,
+          elementTypeOverride: ElementType.lasso,
+        );
+        return;
+      }
+
+      // Normal mode: open ScrapBoard popup
+      final capturesDir = await ref.read(capturesDirectoryProvider.future);
+      final fullImagePath = '${capturesDir.path}/$filename';
+      workspaceNotifier.openScrapBoard(
+        pageNumber: pageNumber,
+        selectedText: extractedText,
+        imagePath: fullImagePath,
+        textRect: pdfRect,
+        elementType: ElementType.lasso,
+      );
+    } catch (e) {
+      if (mounted) {
+        ShadToaster.of(context).show(
+          ShadToast.destructive(
+            title: const Text('Error'),
+            description: Text('Failed to insert lasso capture: $e'),
           ),
         );
       }
@@ -611,8 +605,8 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           onTap: () {
             final captureNotifier = ref.read(captureModeProvider.notifier);
             if (!isActive) {
-              // Turn off drawing when entering capture mode
               ref.read(drawingModeProvider.notifier).setActive(false);
+              ref.read(lassoModeProvider.notifier).setActive(false);
             }
             captureNotifier.toggle();
           },
@@ -630,6 +624,104 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
               size: 18,
               color: isActive
                   ? theme.colorScheme.primary
+                  : theme.colorScheme.mutedForeground,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build the lasso toggle button.
+  Widget _buildLassoButton(BuildContext context) {
+    final theme = ShadTheme.of(context);
+    final isActive = ref.watch(lassoModeProvider);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.border),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.foreground.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Tooltip(
+        message: isActive ? 'Exit Lasso' : 'Lasso Capture',
+        child: InkWell(
+          onTap: () {
+            final lassoNotifier = ref.read(lassoModeProvider.notifier);
+            if (!isActive) {
+              ref.read(drawingModeProvider.notifier).setActive(false);
+              ref.read(captureModeProvider.notifier).setActive(false);
+            }
+            lassoNotifier.toggle();
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isActive
+                  ? theme.colorScheme.primary.withValues(alpha: 0.15)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.gesture,
+              size: 18,
+              color: isActive
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.mutedForeground,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build the quick scrap mode toggle button.
+  Widget _buildQuickModeButton(BuildContext context) {
+    final theme = ShadTheme.of(context);
+    final isQuick = ref.watch(workspaceProviderProvider).valueOrNull?.isQuickScrapMode ?? false;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.border),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.foreground.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Tooltip(
+        message: isQuick ? 'Quick Mode ON' : 'Quick Mode OFF',
+        child: InkWell(
+          onTap: () =>
+              ref.read(workspaceProviderProvider.notifier).toggleQuickScrapMode(),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isQuick
+                  ? Colors.amber.withValues(alpha: 0.15)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.bolt,
+              size: 18,
+              color: isQuick
+                  ? Colors.amber.shade700
                   : theme.colorScheme.mutedForeground,
             ),
           ),

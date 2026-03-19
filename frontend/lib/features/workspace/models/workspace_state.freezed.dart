@@ -267,6 +267,10 @@ mixin _$WorkspaceState {
   @PdfRectConverter()
   PdfRect? get pendingScrapTextRect => throw _privateConstructorUsedError;
 
+  /// Element type override for pending scrap (e.g. lasso vs capture)
+  ElementType? get pendingScrapElementType =>
+      throw _privateConstructorUsedError;
+
   /// ID of the marker currently being edited in the modal (null = new marker)
   String? get editingMarkerId => throw _privateConstructorUsedError;
 
@@ -315,6 +319,7 @@ abstract class $WorkspaceStateCopyWith<$Res> {
     String? pendingScrapText,
     String? pendingScrapImagePath,
     @PdfRectConverter() PdfRect? pendingScrapTextRect,
+    ElementType? pendingScrapElementType,
     String? editingMarkerId,
     int? pendingMarkerPageNumber,
     String? pendingMarkerText,
@@ -360,6 +365,7 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
     Object? pendingScrapText = freezed,
     Object? pendingScrapImagePath = freezed,
     Object? pendingScrapTextRect = freezed,
+    Object? pendingScrapElementType = freezed,
     Object? editingMarkerId = freezed,
     Object? pendingMarkerPageNumber = freezed,
     Object? pendingMarkerText = freezed,
@@ -451,6 +457,10 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
                 ? _value.pendingScrapTextRect
                 : pendingScrapTextRect // ignore: cast_nullable_to_non_nullable
                       as PdfRect?,
+            pendingScrapElementType: freezed == pendingScrapElementType
+                ? _value.pendingScrapElementType
+                : pendingScrapElementType // ignore: cast_nullable_to_non_nullable
+                      as ElementType?,
             editingMarkerId: freezed == editingMarkerId
                 ? _value.editingMarkerId
                 : editingMarkerId // ignore: cast_nullable_to_non_nullable
@@ -514,6 +524,7 @@ abstract class _$$WorkspaceStateImplCopyWith<$Res>
     String? pendingScrapText,
     String? pendingScrapImagePath,
     @PdfRectConverter() PdfRect? pendingScrapTextRect,
+    ElementType? pendingScrapElementType,
     String? editingMarkerId,
     int? pendingMarkerPageNumber,
     String? pendingMarkerText,
@@ -559,6 +570,7 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
     Object? pendingScrapText = freezed,
     Object? pendingScrapImagePath = freezed,
     Object? pendingScrapTextRect = freezed,
+    Object? pendingScrapElementType = freezed,
     Object? editingMarkerId = freezed,
     Object? pendingMarkerPageNumber = freezed,
     Object? pendingMarkerText = freezed,
@@ -650,6 +662,10 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
             ? _value.pendingScrapTextRect
             : pendingScrapTextRect // ignore: cast_nullable_to_non_nullable
                   as PdfRect?,
+        pendingScrapElementType: freezed == pendingScrapElementType
+            ? _value.pendingScrapElementType
+            : pendingScrapElementType // ignore: cast_nullable_to_non_nullable
+                  as ElementType?,
         editingMarkerId: freezed == editingMarkerId
             ? _value.editingMarkerId
             : editingMarkerId // ignore: cast_nullable_to_non_nullable
@@ -687,7 +703,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     this.isStickyNoteVisible = false,
     this.isPageNavOpen = true,
     this.isLiveScrapsOpen = true,
-    this.focusedPanel = FocusedPanel.pdf,
+    this.focusedPanel = FocusedPanel.scrapnote,
     this.isLayoutSwapped = false,
     final Set<String> selectedScrapIds = const {},
     this.isQuickScrapMode = false,
@@ -696,6 +712,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     this.pendingScrapText,
     this.pendingScrapImagePath,
     @PdfRectConverter() this.pendingScrapTextRect,
+    this.pendingScrapElementType,
     this.editingMarkerId,
     this.pendingMarkerPageNumber,
     this.pendingMarkerText,
@@ -807,6 +824,10 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
   @PdfRectConverter()
   final PdfRect? pendingScrapTextRect;
 
+  /// Element type override for pending scrap (e.g. lasso vs capture)
+  @override
+  final ElementType? pendingScrapElementType;
+
   /// ID of the marker currently being edited in the modal (null = new marker)
   @override
   final String? editingMarkerId;
@@ -822,7 +843,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
 
   @override
   String toString() {
-    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, openPdfPaths: $openPdfPaths, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, focusedPanel: $focusedPanel, isLayoutSwapped: $isLayoutSwapped, selectedScrapIds: $selectedScrapIds, isQuickScrapMode: $isQuickScrapMode, isScrapBoardOpen: $isScrapBoardOpen, pendingScrapPageNumber: $pendingScrapPageNumber, pendingScrapText: $pendingScrapText, pendingScrapImagePath: $pendingScrapImagePath, pendingScrapTextRect: $pendingScrapTextRect, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
+    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, openPdfPaths: $openPdfPaths, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, focusedPanel: $focusedPanel, isLayoutSwapped: $isLayoutSwapped, selectedScrapIds: $selectedScrapIds, isQuickScrapMode: $isQuickScrapMode, isScrapBoardOpen: $isScrapBoardOpen, pendingScrapPageNumber: $pendingScrapPageNumber, pendingScrapText: $pendingScrapText, pendingScrapImagePath: $pendingScrapImagePath, pendingScrapTextRect: $pendingScrapTextRect, pendingScrapElementType: $pendingScrapElementType, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
   }
 
   @override
@@ -875,6 +896,11 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
                 other.pendingScrapImagePath == pendingScrapImagePath) &&
             (identical(other.pendingScrapTextRect, pendingScrapTextRect) ||
                 other.pendingScrapTextRect == pendingScrapTextRect) &&
+            (identical(
+                  other.pendingScrapElementType,
+                  pendingScrapElementType,
+                ) ||
+                other.pendingScrapElementType == pendingScrapElementType) &&
             (identical(other.editingMarkerId, editingMarkerId) ||
                 other.editingMarkerId == editingMarkerId) &&
             (identical(
@@ -913,6 +939,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     pendingScrapText,
     pendingScrapImagePath,
     pendingScrapTextRect,
+    pendingScrapElementType,
     editingMarkerId,
     pendingMarkerPageNumber,
     pendingMarkerText,
@@ -959,6 +986,7 @@ abstract class _WorkspaceState implements WorkspaceState {
     final String? pendingScrapText,
     final String? pendingScrapImagePath,
     @PdfRectConverter() final PdfRect? pendingScrapTextRect,
+    final ElementType? pendingScrapElementType,
     final String? editingMarkerId,
     final int? pendingMarkerPageNumber,
     final String? pendingMarkerText,
@@ -1031,6 +1059,10 @@ abstract class _WorkspaceState implements WorkspaceState {
   @override
   @PdfRectConverter()
   PdfRect? get pendingScrapTextRect;
+
+  /// Element type override for pending scrap (e.g. lasso vs capture)
+  @override
+  ElementType? get pendingScrapElementType;
 
   /// ID of the marker currently being edited in the modal (null = new marker)
   @override

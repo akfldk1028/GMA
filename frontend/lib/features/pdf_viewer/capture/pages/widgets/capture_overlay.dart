@@ -4,6 +4,8 @@ import 'package:pdfrx/pdfrx.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../../utils/file_system_provider.dart';
+import '../../../drawing/models/drawing_model.dart';
+import '../../../drawing/pages/providers/drawing_provider.dart';
 import '../providers/capture_provider.dart';
 import '../../utils/capture_service.dart';
 
@@ -23,6 +25,7 @@ class CaptureOverlay {
   static PdfPageOverlaysBuilder createOverlaysBuilder({
     required WidgetRef ref,
     required OnCaptureCompleted onCaptureCompleted,
+    String? noteId,
   }) {
     return (BuildContext context, Rect pageRectInViewer, PdfPage page) {
       return [
@@ -30,6 +33,7 @@ class CaptureOverlay {
           page: page,
           pageNumber: page.pageNumber,
           onCaptureCompleted: onCaptureCompleted,
+          noteId: noteId,
         ),
       ];
     };
@@ -42,11 +46,13 @@ class _CapturePageOverlay extends ConsumerStatefulWidget {
     required this.page,
     required this.pageNumber,
     required this.onCaptureCompleted,
+    this.noteId,
   });
 
   final PdfPage page;
   final int pageNumber;
   final OnCaptureCompleted onCaptureCompleted;
+  final String? noteId;
 
   @override
   ConsumerState<_CapturePageOverlay> createState() =>
@@ -92,11 +98,20 @@ class _CapturePageOverlayState extends ConsumerState<_CapturePageOverlay> {
       final capturesDir = await ref.read(capturesDirectoryProvider.future);
       if (!mounted) return;
 
+      // Get drawing strokes for this page to composite into capture
+      List<DrawingStroke>? pageStrokes;
+      if (widget.noteId != null) {
+        final drawingData =
+            ref.read(drawingStrokesProvider(widget.noteId!)).valueOrNull;
+        pageStrokes = drawingData?.pageStrokes[widget.pageNumber];
+      }
+
       final filename = await CaptureService.captureArea(
         page: widget.page,
         normalizedRect: rect,
         capturesDir: capturesDir.path,
         pageNumber: widget.pageNumber,
+        drawingStrokes: pageStrokes,
       );
       if (!mounted) return;
 

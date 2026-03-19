@@ -28,17 +28,22 @@ List<ScrapElement> noteScrap(NoteScrapRef ref, String noteId) {
   // Watch note state (file-based) to catch disk saves from createMarker
   ref.watch(noteStateProvider(noteId));
 
-  // Read live controller text (may have unsaved @el references)
+  // Read live controller text (may have unsaved @el references),
+  // or fall back to file-based note state for when editor is not open.
   final controller = ref.watch(noteEditorProvider(noteId));
-  final content = controller?.text;
+  final noteState = ref.watch(noteStateProvider(noteId)).valueOrNull;
+  final content = controller?.text ?? noteState?.content;
 
   // If note has ::: scrapnote block with @el references, use those as source of truth
   if (content != null && content.isNotEmpty && ScrapnoteBlockEditor.hasBlock(content)) {
     final ids = ScrapnoteBlockEditor.getElementIds(content);
     debugPrint('[noteScrapProvider] block found, ${ids.length} element IDs');
     if (ids.isNotEmpty) {
-      final elements = elementStore.getByIds(ids);
-      _sortByPdfPosition(elements);
+      final elements = elementStore.getByIds(ids)
+          .where((e) => e.type == ElementType.capture || e.type == ElementType.lasso)
+          .toList();
+      // Preserve @el order from block (user-defined via drag reorder).
+      // Only sort by PDF position in fallback path below.
       return elements;
     }
     // Block exists but empty → fall through to ElementStore fallback
@@ -52,8 +57,27 @@ List<ScrapElement> noteScrap(NoteScrapRef ref, String noteId) {
   final pdfId = ref.read(pdfRegistryProvProvider.notifier).getIdByPath(pdfPath);
   if (pdfId == null) return [];
 
-  final elements = elementStore.getByPdfId(pdfId);
-  debugPrint('[noteScrapProvider] fallback: ${elements.length} elements for pdfId $pdfId');
+  final elements = elementStore.getByPdfId(pdfId)
+      .where((e) => e.type == ElementType.capture || e.type == ElementType.lasso)
+      .toList();
+  debugPrint('[noteScrapProvider] fallback: ${elements.length} capture/lasso elements for pdfId $pdfId');
+
+  // Trigger async backfill so next rebuild uses block path instead of fallback.
+  // syncElementsToBlock invalidates noteStateProvider when it writes,
+  // which triggers noteEditorProvider → this provider rebuild automatically.
+  // Do NOT call invalidateSelf() here — it causes infinite loop when sync is no-op.
+  if (elements.isNotEmpty && noteId.isNotEmpty) {
+    Future.microtask(() async {
+      try {
+        await ref
+            .read(workspaceProviderProvider.notifier)
+            .syncElementsToBlock(noteId);
+      } catch (e) {
+        debugPrint('[noteScrapProvider] backfill failed: $e');
+      }
+    });
+  }
+
   _sortByPdfPosition(elements);
   return elements;
 }

@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'dart:convert';
+
 import 'app.dart';
 import 'package:flutter/foundation.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
@@ -32,7 +34,13 @@ void main() async {
   await Hive.openBox<String>('pdf_registry');
 
   // Open element_store box for ScrapElement persistence
-  await Hive.openBox<String>('element_store');
+  final elementBox = await Hive.openBox<String>('element_store');
+
+  // Migration: fix drawing elements that were incorrectly saved as capture
+  await _migrateDrawingElements(elementBox);
+
+  // Open scrap_annotations box for scrap drawing annotations
+  await Hive.openBox<String>('scrap_annotations');
 
   // Open note_folders box for folder structure
   await Hive.openBox<String>('note_folders');
@@ -45,6 +53,33 @@ void main() async {
       child: GmaApp(),
     ),
   );
+}
+
+/// Fix drawing elements that were incorrectly saved as ElementType.capture.
+///
+/// Before the fix, createDrawingMarker rendered strokes to PNG and passed
+/// capturedImagePath to createMarker, which classified them as capture.
+/// Stroke PNGs have "_stroke_" in the filename; real captures don't.
+Future<void> _migrateDrawingElements(Box<String> box) async {
+  int fixed = 0;
+  for (final key in box.keys) {
+    final raw = box.get(key);
+    if (raw == null) continue;
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      final type = map['type'] as String?;
+      final imagePath = map['imagePath'] as String?;
+      // Drawing strokes rendered to PNG have "_stroke_" in filename
+      if (type == 'capture' && imagePath != null && imagePath.contains('_stroke_')) {
+        map['type'] = 'drawing';
+        box.put(key, jsonEncode(map));
+        fixed++;
+      }
+    } catch (_) {}
+  }
+  if (fixed > 0) {
+    debugPrint('[Migration] Fixed $fixed drawing elements (capture → drawing)');
+  }
 }
 
 /// Delete stale .lock files from Hive storage directory.

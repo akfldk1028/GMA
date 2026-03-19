@@ -48,7 +48,7 @@ _$WorkspaceStateImpl _$$WorkspaceStateImplFromJson(Map<String, dynamic> json) =>
       isLiveScrapsOpen: json['isLiveScrapsOpen'] as bool? ?? true,
       focusedPanel:
           $enumDecodeNullable(_$FocusedPanelEnumMap, json['focusedPanel']) ??
-          FocusedPanel.pdf,
+          FocusedPanel.scrapnote,
       isLayoutSwapped: json['isLayoutSwapped'] as bool? ?? false,
       selectedScrapIds:
           (json['selectedScrapIds'] as List<dynamic>?)
@@ -62,6 +62,10 @@ _$WorkspaceStateImpl _$$WorkspaceStateImplFromJson(Map<String, dynamic> json) =>
       pendingScrapImagePath: json['pendingScrapImagePath'] as String?,
       pendingScrapTextRect: const PdfRectConverter().fromJson(
         json['pendingScrapTextRect'] as Map<String, dynamic>?,
+      ),
+      pendingScrapElementType: $enumDecodeNullable(
+        _$ElementTypeEnumMap,
+        json['pendingScrapElementType'],
       ),
       editingMarkerId: json['editingMarkerId'] as String?,
       pendingMarkerPageNumber: (json['pendingMarkerPageNumber'] as num?)
@@ -98,6 +102,8 @@ Map<String, dynamic> _$$WorkspaceStateImplToJson(
   'pendingScrapTextRect': const PdfRectConverter().toJson(
     instance.pendingScrapTextRect,
   ),
+  'pendingScrapElementType':
+      _$ElementTypeEnumMap[instance.pendingScrapElementType],
   'editingMarkerId': instance.editingMarkerId,
   'pendingMarkerPageNumber': instance.pendingMarkerPageNumber,
   'pendingMarkerText': instance.pendingMarkerText,
@@ -114,4 +120,11 @@ const _$SidebarModeEnumMap = {
 const _$FocusedPanelEnumMap = {
   FocusedPanel.pdf: 'pdf',
   FocusedPanel.scrapnote: 'scrapnote',
+};
+
+const _$ElementTypeEnumMap = {
+  ElementType.highlight: 'highlight',
+  ElementType.capture: 'capture',
+  ElementType.drawing: 'drawing',
+  ElementType.lasso: 'lasso',
 };

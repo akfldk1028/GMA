@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:pdfrx/pdfrx.dart';
+import '../../scrapnote/models/element_model.dart';
 import 'pdf_marker_model.dart';
 
 part 'workspace_state.freezed.dart';
@@ -52,7 +53,7 @@ class WorkspaceState with _$WorkspaceState {
     /// Whether the right live scraps panel is open
     @Default(true) bool isLiveScrapsOpen,
     /// Which panel is focused (pdf or scrapnote) — controls size ratio
-    @Default(FocusedPanel.pdf) FocusedPanel focusedPanel,
+    @Default(FocusedPanel.scrapnote) FocusedPanel focusedPanel,
     /// Whether PDF and ScrapNote positions are swapped (left↔right)
     @Default(false) bool isLayoutSwapped,
     /// Set of currently selected scrap element IDs (for edit mode)
@@ -66,6 +67,8 @@ class WorkspaceState with _$WorkspaceState {
     String? pendingScrapText,
     String? pendingScrapImagePath,
     @PdfRectConverter() PdfRect? pendingScrapTextRect,
+    /// Element type override for pending scrap (e.g. lasso vs capture)
+    ElementType? pendingScrapElementType,
     /// ID of the marker currently being edited in the modal (null = new marker)
     String? editingMarkerId,
     /// Pending marker data for the marker edit modal (from text selection)

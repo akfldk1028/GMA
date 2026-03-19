@@ -14,6 +14,8 @@ import '../../../../utils/note_storage_service.dart';
 import '../../../content_bridge/stroke_render_service.dart';
 import '../../../file_manager/pages/providers/file_manager_provider.dart';
 import '../../../note_editor/pages/providers/note_editor_provider.dart';
+import '../../../note_editor/pages/providers/note_provider.dart';
+import '../../../scrapnote/providers/note_scrap_provider.dart';
 import '../../../pdf_viewer/drawing/models/drawing_model.dart';
 import '../../../ocr/ocr_service.dart';
 import '../../../ocr/pages/providers/ocr_provider.dart';
@@ -21,6 +23,7 @@ import '../../../scrapnote/models/element_model.dart';
 import '../../../scrapnote/models/scrapnote_canvas_model.dart';
 import '../../../scrapnote/pages/providers/scrapnote_canvas_provider.dart';
 import '../../../scrapnote/providers/element_store.dart';
+import '../../../scrapnote/providers/scrap_annotation_provider.dart';
 import '../../../scrapnote/providers/scrapnote_service_provider.dart';
 import '../../../scrapnote/services/scrap_insertion_service.dart';
 import '../../../scrapnote/utils/scrapnote_block_editor.dart';
@@ -179,13 +182,87 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     debugPrint('[WorkspaceProvider.loadNote] loaded content length: ${content?.length ?? 0}');
 
     // Ensure ::: scrapnote block exists in loaded note
+    var latestContent = content;
     if (content != null && !ScrapnoteBlockEditor.hasBlock(content)) {
       debugPrint('[WorkspaceProvider.loadNote] adding ::: scrapnote block to existing note');
-      final updated = ScrapnoteBlockEditor.ensureBlock(content);
-      await noteStorage.saveNoteImmediate(noteId: noteId, content: updated);
+      latestContent = ScrapnoteBlockEditor.ensureBlock(content);
+      await noteStorage.saveNoteImmediate(noteId: noteId, content: latestContent!);
     }
 
-    return content;
+    // Backfill: sync existing Hive elements into ::: scrapnote block
+    await syncElementsToBlock(noteId);
+
+    return latestContent;
+  }
+
+  /// Sync existing Hive elements into the ::: scrapnote block of a note.
+  ///
+  /// Reads the note from disk, looks up all elements for the current PDF,
+  /// and appends any missing @el references to the block. No-op if all
+  /// elements are already referenced.
+  Future<void> syncElementsToBlock(String noteId) async {
+    final noteStorage = ref.read(noteStorageServiceProvider);
+    final content = await noteStorage.loadNote(noteId: noteId);
+    if (content == null || content.isEmpty) return;
+
+    // Need current PDF to find elements
+    final currentState = state.valueOrNull;
+    final pdfPath = currentState?.currentPdfPath;
+    if (pdfPath == null) return;
+
+    final pdfId = ref.read(pdfRegistryProvProvider.notifier).getIdByPath(pdfPath);
+    if (pdfId == null) return;
+
+    // Get all elements for this PDF from Hive
+    final elements = ref.read(elementStoreProvider.notifier).getByPdfId(pdfId);
+    if (elements.isEmpty) return;
+
+    // Get IDs already in the block
+    final existingIds = ScrapnoteBlockEditor.getElementIds(content).toSet();
+
+    // Find missing elements
+    final missingElements = elements.where((e) => !existingIds.contains(e.id)).toList();
+    if (missingElements.isEmpty) {
+      debugPrint('[syncElementsToBlock] all ${elements.length} elements already in block');
+      return;
+    }
+
+    // Append missing elements to block
+    var updated = content;
+    for (final el in missingElements) {
+      updated = ScrapnoteBlockEditor.appendElement(updated, el.id);
+    }
+
+    // Save to disk
+    await noteStorage.saveNoteImmediate(noteId: noteId, content: updated);
+    debugPrint('[syncElementsToBlock] backfilled ${missingElements.length} elements into block');
+
+    // Immediately update controller text so noteScrapProvider sees @el IDs
+    // on its next synchronous rebuild (invalidate alone is async and too late)
+    final controller = ref.read(noteEditorProvider(noteId));
+    if (controller != null && controller.text != updated) {
+      controller.text = updated;
+    }
+    // Also invalidate noteStateProvider to keep disk↔provider in sync
+    ref.invalidate(noteStateProvider(noteId));
+  }
+
+  /// Append a single element ID to the note's ::: scrapnote block.
+  /// Used by the import dialog to add cross-PDF scraps.
+  Future<void> appendElementToBlock(String noteId, String elementId) async {
+    final noteStorage = ref.read(noteStorageServiceProvider);
+    final content = await noteStorage.loadNote(noteId: noteId);
+    if (content == null) return;
+
+    final updated = ScrapnoteBlockEditor.appendElement(content, elementId);
+    await noteStorage.saveNoteImmediate(noteId: noteId, content: updated);
+
+    // Update live controller if available
+    final controller = ref.read(noteEditorProvider(noteId));
+    if (controller != null && controller.text != updated) {
+      controller.text = updated;
+    }
+    ref.invalidate(noteStateProvider(noteId));
   }
 
   /// Auto-create a note linked to the given PDF. Returns the note ID or null.
@@ -346,6 +423,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     String? selectedText,
     PdfRect? textRect,
     String? capturedImagePath,
+    ElementType? elementTypeOverride,
   }) async {
     debugPrint('[WorkspaceProvider.createMarker] page: $pageNumber, color: ${color.name}, text: ${selectedText != null ? selectedText.substring(0, selectedText.length.clamp(0, 50)) : null}, hasImage: ${capturedImagePath != null}');
     final currentState = state.valueOrNull;
@@ -415,7 +493,9 @@ class WorkspaceProvider extends _$WorkspaceProvider {
             .register(currentState.currentPdfPath!);
 
         final ElementType elementType;
-        if (capturedImagePath != null) {
+        if (elementTypeOverride != null) {
+          elementType = elementTypeOverride;
+        } else if (capturedImagePath != null) {
           elementType = ElementType.capture;
         } else if (color == MarkerColor.pen) {
           elementType = ElementType.drawing;
@@ -436,21 +516,39 @@ class WorkspaceProvider extends _$WorkspaceProvider {
 
         ref.read(elementStoreProvider.notifier).add(element);
 
-        // Append @el reference to the ::: scrapnote block in note content
-        // and persist to disk (programmatic controller.text= doesn't trigger auto-save)
+        // Append @el reference to the ::: scrapnote block.
+        // Prefer controller text (has unsaved insertMarker changes),
+        // fall back to disk when controller is null (editor not yet built).
         if (currentNoteId != null) {
           final controller = ref.read(noteEditorProvider(currentNoteId));
-          if (controller != null) {
+          final baseContent = controller?.text;
+
+          if (baseContent != null && baseContent.isNotEmpty) {
+            // Controller available — append to live text, save, notify chain
             final updatedContent = ScrapnoteBlockEditor.appendElement(
-              controller.text,
+              baseContent,
               element.id,
             );
-            controller.text = updatedContent;
-
-            // Explicitly save to disk — auto-save only fires on user typing
+            controller!.text = updatedContent;
             await ref
                 .read(noteEditorProvider(currentNoteId).notifier)
                 .saveContent(currentNoteId);
+          } else {
+            // No controller — disk-based fallback
+            final noteStorage = ref.read(noteStorageServiceProvider);
+            final diskContent =
+                await noteStorage.loadNote(noteId: currentNoteId);
+            if (diskContent != null && diskContent.isNotEmpty) {
+              final updatedContent = ScrapnoteBlockEditor.appendElement(
+                diskContent,
+                element.id,
+              );
+              await noteStorage.saveNoteImmediate(
+                noteId: currentNoteId,
+                content: updatedContent,
+              );
+              ref.invalidate(noteStateProvider(currentNoteId));
+            }
           }
         }
 
@@ -541,6 +639,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       selectedText: extractedText,
       textRect: textRect,
       capturedImagePath: imagePath,
+      elementTypeOverride: ElementType.drawing,
     );
   }
 
@@ -631,6 +730,157 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     // Persist to Hive
     final box = await Hive.openBox('workspace_settings');
     await box.put('panel_sizes', sizes.toJson());
+  }
+
+  // ─── Scrap element operations ────────────────────────────
+
+  /// Remove a scrap element from the note and all associated data.
+  Future<void> removeScrapElement(String noteId, String elementId) async {
+    final noteStorage = ref.read(noteStorageServiceProvider);
+    final controller = ref.read(noteEditorProvider(noteId));
+
+    // 1. Remove @el from markdown
+    final content = controller?.text ??
+        await noteStorage.loadNote(noteId: noteId) ??
+        '';
+    if (content.isNotEmpty) {
+      final updated = ScrapnoteBlockEditor.removeElement(content, elementId);
+      if (controller != null) {
+        controller.text = updated;
+      }
+      await noteStorage.saveNoteImmediate(noteId: noteId, content: updated);
+    }
+
+    // 2. Delete element from Hive store
+    final element = ref.read(elementStoreProvider.notifier).getById(elementId);
+    ref.read(elementStoreProvider.notifier).delete(elementId);
+
+    // 3. Clear annotation strokes
+    ref.read(scrapAnnotationStoreProvider.notifier).clearStrokes(elementId);
+
+    // 4. Delete image file if exists
+    if (element?.imagePath != null && element!.imagePath!.isNotEmpty && !kIsWeb) {
+      try {
+        final capturesDir = await ref.read(capturesDirectoryProvider.future);
+        final imgPath = p.isAbsolute(element.imagePath!)
+            ? element.imagePath!
+            : p.join(capturesDir.path, element.imagePath!);
+        final file = File(imgPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (e) {
+        debugPrint('[removeScrapElement] failed to delete image: $e');
+      }
+    }
+
+    // 5. Invalidate providers
+    ref.invalidate(noteStateProvider(noteId));
+  }
+
+  /// Reorder scraps within the note's scrapnote block.
+  ///
+  /// [oldIndex] and [newIndex] are indices into the filtered capture/lasso list
+  /// (as shown in the UI), not the full @el list in the block.
+  Future<void> reorderScraps(String noteId, int oldIndex, int newIndex) async {
+    final noteStorage = ref.read(noteStorageServiceProvider);
+    final controller = ref.read(noteEditorProvider(noteId));
+
+    final content = controller?.text ??
+        await noteStorage.loadNote(noteId: noteId) ??
+        '';
+    if (content.isEmpty) return;
+
+    // Get ALL element IDs from the block (includes highlight/drawing)
+    final allIds = ScrapnoteBlockEditor.getElementIds(content);
+    if (allIds.isEmpty) return;
+
+    // Filter to capture/lasso only (matching noteScrapProvider logic)
+    final elementStore = ref.read(elementStoreProvider.notifier);
+    final captureIds = <String>[];
+    for (final id in allIds) {
+      final el = elementStore.getById(id);
+      if (el != null &&
+          (el.type == ElementType.capture || el.type == ElementType.lasso)) {
+        captureIds.add(id);
+      }
+    }
+    if (captureIds.isEmpty || oldIndex >= captureIds.length) return;
+
+    // Perform reorder on the filtered ID list
+    final movedId = captureIds.removeAt(oldIndex);
+    final insertAt = newIndex > oldIndex ? newIndex - 1 : newIndex;
+    captureIds.insert(insertAt.clamp(0, captureIds.length), movedId);
+
+    // Rebuild full ID list: non-capture IDs stay in original positions,
+    // capture IDs replaced in new order.
+    int captureIdx = 0;
+    final reorderedIds = <String>[];
+    for (final id in allIds) {
+      final el = elementStore.getById(id);
+      if (el != null &&
+          (el.type == ElementType.capture || el.type == ElementType.lasso)) {
+        reorderedIds.add(captureIds[captureIdx++]);
+      } else {
+        reorderedIds.add(id);
+      }
+    }
+
+    // Rewrite block with new order
+    final updated =
+        ScrapnoteBlockEditor.reorderElements(content, null, reorderedIds);
+    if (controller != null) {
+      controller.text = updated;
+    }
+    await noteStorage.saveNoteImmediate(noteId: noteId, content: updated);
+    ref.invalidate(noteStateProvider(noteId));
+  }
+
+  /// Reorder ALL capture/lasso elements to match a given ID order.
+  /// Used by canvas panel to sync 2D layout positions to markdown order.
+  Future<void> reorderAllScraps(String noteId, List<String> orderedCaptureIds) async {
+    final noteStorage = ref.read(noteStorageServiceProvider);
+    final controller = ref.read(noteEditorProvider(noteId));
+
+    final content = controller?.text ??
+        await noteStorage.loadNote(noteId: noteId) ??
+        '';
+    if (content.isEmpty) return;
+
+    final allIds = ScrapnoteBlockEditor.getElementIds(content);
+    if (allIds.isEmpty) return;
+
+    final elementStore = ref.read(elementStoreProvider.notifier);
+    final orderedSet = orderedCaptureIds.toSet();
+
+    // Rebuild full ID list: replace capture/lasso IDs with orderedCaptureIds
+    int captureIdx = 0;
+    final reorderedIds = <String>[];
+    for (final id in allIds) {
+      final el = elementStore.getById(id);
+      if (el != null &&
+          (el.type == ElementType.capture || el.type == ElementType.lasso) &&
+          orderedSet.contains(id)) {
+        if (captureIdx < orderedCaptureIds.length) {
+          reorderedIds.add(orderedCaptureIds[captureIdx++]);
+        } else {
+          reorderedIds.add(id);
+        }
+      } else {
+        reorderedIds.add(id);
+      }
+    }
+
+    final updated =
+        ScrapnoteBlockEditor.reorderElements(content, null, reorderedIds);
+    if (controller != null) {
+      controller.text = updated;
+    }
+    await noteStorage.saveNoteImmediate(noteId: noteId, content: updated);
+    ref.invalidate(noteStateProvider(noteId));
+    // Wait for note state to rebuild, then force scrap provider refresh
+    await ref.read(noteStateProvider(noteId).future);
+    ref.invalidate(noteScrapProvider(noteId));
   }
 
   // ─── Layout control ─────────────────────────────────────
@@ -731,8 +981,9 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     String? selectedText,
     String? imagePath,
     PdfRect? textRect,
+    ElementType? elementType,
   }) {
-    debugPrint('[WorkspaceProvider.openScrapBoard] page: $pageNumber, text: ${selectedText != null ? selectedText.substring(0, selectedText.length.clamp(0, 50)) : null}, hasImage: ${imagePath != null}');
+    debugPrint('[WorkspaceProvider.openScrapBoard] page: $pageNumber, text: ${selectedText != null ? selectedText.substring(0, selectedText.length.clamp(0, 50)) : null}, hasImage: ${imagePath != null}, type: ${elementType?.name}');
     final s = state.valueOrNull;
     if (s == null) return;
     state = AsyncData(s.copyWith(
@@ -741,6 +992,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       pendingScrapText: selectedText,
       pendingScrapImagePath: imagePath,
       pendingScrapTextRect: textRect,
+      pendingScrapElementType: elementType,
     ));
   }
 
@@ -755,6 +1007,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       pendingScrapText: null,
       pendingScrapImagePath: null,
       pendingScrapTextRect: null,
+      pendingScrapElementType: null,
     ));
   }
 

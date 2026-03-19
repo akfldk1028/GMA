@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 
+import '../../pdf_viewer/drawing/models/drawing_model.dart';
+import '../../pdf_viewer/drawing/pages/widgets/stroke_painter.dart';
+
 /// Cache: renders each PDF page ONCE as a full-page image.
 /// All scrap entries on the same page share the cached image.
 /// This turns 44 render calls into ~3 (one per page).
@@ -39,6 +42,14 @@ class PdfPageImageCache {
 
   Future<ui.Image?> _renderPage(int pageNumber) async {
     try {
+      // Wait for controller to be ready (document loaded)
+      if (!controller.isReady) {
+        for (var i = 0; i < 20; i++) {
+          await Future.delayed(const Duration(milliseconds: 200));
+          if (controller.isReady) break;
+        }
+        if (!controller.isReady) return null;
+      }
       return await controller.useDocument<ui.Image?>((doc) async {
         if (pageNumber < 1 || pageNumber > doc.pages.length) return null;
         final page = doc.pages[pageNumber - 1];
@@ -84,6 +95,7 @@ class PdfRegionImage extends StatefulWidget {
     required this.pageNumber,
     required this.rect,
     this.capturePath,
+    this.annotations,
     this.maxHeight = 100.0,
   });
 
@@ -91,6 +103,7 @@ class PdfRegionImage extends StatefulWidget {
   final int pageNumber;
   final PdfRect rect;
   final String? capturePath;
+  final List<DrawingStroke>? annotations;
   final double maxHeight;
 
   @override
@@ -139,8 +152,21 @@ class _PdfRegionImageState extends State<PdfRegionImage> {
   Widget build(BuildContext context) {
     if (_pageImage == null) {
       if (_failed) {
-        return SizedBox(height: 20, child: Text('P${widget.pageNumber}',
-            style: TextStyle(fontSize: 10, color: Colors.grey.shade400)));
+        // Cross-PDF fallback: show capture image directly if available
+        if (widget.capturePath != null && !kIsWeb) {
+          final file = File(widget.capturePath!);
+          if (file.existsSync()) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: widget.maxHeight),
+                child: Image.file(file, width: double.infinity, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _fallbackText()),
+              ),
+            );
+          }
+        }
+        return _fallbackText();
       }
       return Container(height: 20, color: Colors.grey.shade50,
           child: const Center(child: SizedBox(width: 10, height: 10,
@@ -173,19 +199,6 @@ class _PdfRegionImageState extends State<PdfRegionImage> {
       return const SizedBox.shrink();
     }
 
-    // Highlight rect relative to cropRect (to draw yellow highlight)
-    final hlLeft = (widget.rect.left * scale).clamp(0.0, imgW);
-    final hlRight = (widget.rect.right * scale).clamp(0.0, imgW);
-    final hlTop = selTop.clamp(cropRect.top, cropRect.bottom) - cropRect.top;
-    final hlBottom =
-        selBottom.clamp(cropRect.top, cropRect.bottom) - cropRect.top;
-    final highlightInCrop = Rect.fromLTRB(
-      hlLeft - cropRect.left,
-      hlTop,
-      hlRight - cropRect.left,
-      hlBottom,
-    );
-
     final ar = cropRect.width / cropRect.height;
 
     return ClipRRect(
@@ -202,17 +215,32 @@ class _PdfRegionImageState extends State<PdfRegionImage> {
                 painter: _CropPainter(
                   image: _pageImage!,
                   srcRect: cropRect,
-                  highlightRect: highlightInCrop,
                 ),
               ),
               // Overlay: user's pen strokes / highlights
               if (widget.capturePath != null && !kIsWeb)
                 _CaptureOverlay(path: widget.capturePath!),
+              // Annotation strokes overlay
+              if (widget.annotations != null && widget.annotations!.isNotEmpty)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: StrokePainter(
+                        strokes: widget.annotations!,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _fallbackText() {
+    return SizedBox(height: 20, child: Text('P${widget.pageNumber}',
+        style: TextStyle(fontSize: 10, color: Colors.grey.shade400)));
   }
 }
 
@@ -221,45 +249,23 @@ class _CropPainter extends CustomPainter {
   _CropPainter({
     required this.image,
     required this.srcRect,
-    this.highlightRect,
   });
   final ui.Image image;
   final Rect srcRect;
-  final Rect? highlightRect;
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw the PDF page region
     canvas.drawImageRect(
       image,
       srcRect,
       Offset.zero & size,
       Paint()..filterQuality = FilterQuality.medium,
     );
-
-    // Draw semi-transparent yellow highlight over the selected text area
-    if (highlightRect != null && highlightRect!.width > 0 && highlightRect!.height > 0) {
-      // Scale highlight rect from source coords to destination coords
-      final scaleX = size.width / srcRect.width;
-      final scaleY = size.height / srcRect.height;
-      final destHL = Rect.fromLTRB(
-        highlightRect!.left * scaleX,
-        highlightRect!.top * scaleY,
-        highlightRect!.right * scaleX,
-        highlightRect!.bottom * scaleY,
-      );
-      canvas.drawRect(
-        destHL,
-        Paint()
-          ..color = const Color(0x40FFC107) // amber, 25% opacity
-          ..style = PaintingStyle.fill,
-      );
-    }
   }
 
   @override
   bool shouldRepaint(_CropPainter old) =>
-      old.image != image || old.srcRect != srcRect || old.highlightRect != highlightRect;
+      old.image != image || old.srcRect != srcRect;
 }
 
 /// Overlays capture image (pen strokes) on top of PDF region.
