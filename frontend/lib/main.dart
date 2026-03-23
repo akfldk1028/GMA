@@ -26,9 +26,8 @@ void main() async {
 
   // Open app settings box for theme persistence
   final appSettingsBox = await Hive.openBox('app_settings');
-  // Ensure light theme on first run or if corrupted
-  if (appSettingsBox.get('theme_mode') == null ||
-      appSettingsBox.get('theme_mode') == 'dark') {
+  // Set default theme on first run only
+  if (appSettingsBox.get('theme_mode') == null) {
     await appSettingsBox.put('theme_mode', 'light');
   }
 

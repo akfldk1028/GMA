@@ -521,37 +521,51 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
       final result = _groupEditResults[key];
       if (result == null || result.strokes.isEmpty) continue;
 
-      // Find group bounding box on main canvas
-      double minX = double.infinity, minY = double.infinity;
+      // Current bounding box on main canvas
+      double curMinX = double.infinity, curMinY = double.infinity;
+      double curMaxX = -double.infinity, curMaxY = -double.infinity;
       for (final id in group) {
         final rect = _layout[id];
         if (rect == null) continue;
-        if (rect.left < minX) minX = rect.left;
-        if (rect.top < minY) minY = rect.top;
+        if (rect.left < curMinX) curMinX = rect.left;
+        if (rect.top < curMinY) curMinY = rect.top;
+        if (rect.right > curMaxX) curMaxX = rect.right;
+        if (rect.bottom > curMaxY) curMaxY = rect.bottom;
       }
-      if (minX == double.infinity) continue;
+      if (curMinX == double.infinity) continue;
 
-      // Find group edit card origin (first card position in edit dialog)
+      // Edit-time bounding box (from saved card states)
       double editMinX = double.infinity, editMinY = double.infinity;
+      double editMaxX = -double.infinity, editMaxY = -double.infinity;
       for (final id in group) {
         final cs = result.cardStates[id];
         if (cs == null) continue;
         if (cs.layout.left < editMinX) editMinX = cs.layout.left;
         if (cs.layout.top < editMinY) editMinY = cs.layout.top;
+        if (cs.layout.right > editMaxX) editMaxX = cs.layout.right;
+        if (cs.layout.bottom > editMaxY) editMaxY = cs.layout.bottom;
       }
       if (editMinX == double.infinity) continue;
 
-      // Offset = main canvas position - edit dialog position
-      final offsetX = minX - editMinX;
-      final offsetY = minY - editMinY;
+      // Scale factor: current size / edit-time size
+      final editW = editMaxX - editMinX;
+      final editH = editMaxY - editMinY;
+      final curW = curMaxX - curMinX;
+      final curH = curMaxY - curMinY;
+      final scaleX = editW > 0 ? curW / editW : 1.0;
+      final scaleY = editH > 0 ? curH / editH : 1.0;
 
       widgets.add(Positioned.fill(
         child: IgnorePointer(
           child: CustomPaint(
             painter: GroupStrokePainter(
               strokes: result.strokes,
-              offsetX: offsetX,
-              offsetY: offsetY,
+              editOriginX: editMinX,
+              editOriginY: editMinY,
+              canvasOriginX: curMinX,
+              canvasOriginY: curMinY,
+              scaleX: scaleX,
+              scaleY: scaleY,
             ),
           ),
         ),
@@ -702,25 +716,32 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     }
     if (minL == double.infinity) return null;
 
-    // Expand bounds to include group edit strokes
+    // Expand bounds to include group edit strokes (with scale)
     final key = _groupKey(_selectedCardIds);
     final result = _groupEditResults[key];
     if (result != null && result.strokes.isNotEmpty) {
-      // Calculate stroke offset (same as in _buildGroupEditStrokes)
+      // Calculate edit-time bounding box
       double editMinX = double.infinity, editMinY = double.infinity;
+      double editMaxX = -double.infinity, editMaxY = -double.infinity;
       for (final id in _selectedCardIds) {
         final cs = result.cardStates[id];
         if (cs == null) continue;
         if (cs.layout.left < editMinX) editMinX = cs.layout.left;
         if (cs.layout.top < editMinY) editMinY = cs.layout.top;
+        if (cs.layout.right > editMaxX) editMaxX = cs.layout.right;
+        if (cs.layout.bottom > editMaxY) editMaxY = cs.layout.bottom;
       }
       if (editMinX != double.infinity) {
-        final offsetX = minL - editMinX;
-        final offsetY = minT - editMinY;
+        final editW = editMaxX - editMinX;
+        final editH = editMaxY - editMinY;
+        final curW = maxR - minL;
+        final curH = maxB - minT;
+        final sx = editW > 0 ? curW / editW : 1.0;
+        final sy = editH > 0 ? curH / editH : 1.0;
         for (final s in result.strokes) {
           for (final p in s.points) {
-            final px = p.dx + offsetX;
-            final py = p.dy + offsetY;
+            final px = minL + (p.dx - editMinX) * sx;
+            final py = minT + (p.dy - editMinY) * sy;
             if (px < minL) minL = px;
             if (py < minT) minT = py;
             if (px > maxR) maxR = px;

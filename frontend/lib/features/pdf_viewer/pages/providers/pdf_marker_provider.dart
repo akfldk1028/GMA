@@ -12,7 +12,7 @@ part 'pdf_marker_provider.g.dart';
 const String _markersBoxName = 'pdf_markers';
 
 /// Provider for managing PDF markers with Hive storage.
-/// Handles CRUD operations for PdfMarker instances.
+/// Uses marker ID as Hive key for safe CRUD (no index-based access).
 @riverpod
 class PdfMarkerState extends _$PdfMarkerState {
   Box<Map<dynamic, dynamic>>? _box;
@@ -28,8 +28,8 @@ class PdfMarkerState extends _$PdfMarkerState {
     if (_box == null) return [];
 
     final markers = <PdfMarker>[];
-    for (var i = 0; i < _box!.length; i++) {
-      final value = _box!.getAt(i);
+    for (final key in _box!.keys) {
+      final value = _box!.get(key);
       if (value != null) {
         try {
           final json = Map<String, dynamic>.from(value);
@@ -64,7 +64,7 @@ class PdfMarkerState extends _$PdfMarkerState {
       capturedImagePath: capturedImagePath,
     );
 
-    await _box!.add(marker.toJson());
+    await _box!.put(marker.id, marker.toJson());
 
     // Update state with new marker
     final currentMarkers = state.valueOrNull ?? [];
@@ -102,8 +102,8 @@ class PdfMarkerState extends _$PdfMarkerState {
       throw Exception('Marker not found: ${updatedMarker.id}');
     }
 
-    // Update in Hive storage
-    await _box!.putAt(index, updatedMarker.toJson());
+    // Update in Hive by marker ID key
+    await _box!.put(updatedMarker.id, updatedMarker.toJson());
 
     // Update state
     final newMarkers = [...currentMarkers];
@@ -117,20 +117,12 @@ class PdfMarkerState extends _$PdfMarkerState {
       throw Exception('Marker storage not initialized');
     }
 
-    final currentMarkers = state.valueOrNull ?? [];
-    final index = currentMarkers.indexWhere((m) => m.id == id);
-
-    if (index == -1) {
-      throw Exception('Marker not found: $id');
-    }
-
-    // Delete from Hive storage
-    await _box!.deleteAt(index);
+    // Delete from Hive by key
+    await _box!.delete(id);
 
     // Update state
-    final newMarkers = [...currentMarkers];
-    newMarkers.removeAt(index);
-    state = AsyncData(newMarkers);
+    final currentMarkers = state.valueOrNull ?? [];
+    state = AsyncData(currentMarkers.where((m) => m.id != id).toList());
   }
 
   /// Delete all markers for a specific page.

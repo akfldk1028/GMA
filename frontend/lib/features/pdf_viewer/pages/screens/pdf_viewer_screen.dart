@@ -59,11 +59,6 @@ class PdfViewerScreen extends ConsumerStatefulWidget {
 }
 
 class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
-  // State for text selection
-  String? _selectedText;
-  int? _selectedPageNumber;
-  PdfRect? _selectedTextRect;
-
   // Track controller state to avoid excessive rebuilds from scroll/zoom
   int? _lastPageNumber;
   bool _wasReady = false;
@@ -196,15 +191,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       // Get the selected text ranges
       final selections = await textSelection.getSelectedTextRanges();
 
-      if (selections.isEmpty) {
-        setState(() {
-          // selection cleared
-          _selectedText = null;
-          _selectedPageNumber = null;
-          _selectedTextRect = null;
-        });
-        return;
-      }
+      if (selections.isEmpty) return;
 
       final firstSelection = selections.first;
 
@@ -218,128 +205,19 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
               selectedText: firstSelection.text,
               textRect: firstSelection.bounds,
             );
-        setState(() {
-          // selection cleared
-          _selectedText = null;
-          _selectedPageNumber = null;
-          _selectedTextRect = null;
-        });
         return;
       }
 
-      setState(() {
-        // textSelections updated
-        _selectedPageNumber = firstSelection.pageNumber;
-        _selectedText = firstSelection.text;
-        _selectedTextRect = firstSelection.bounds;
-      });
+      // Normal mode: forward to workspace via callback
+      widget.onAddMarkerPressed?.call(
+        pageNumber: firstSelection.pageNumber,
+        selectedText: firstSelection.text,
+        textRect: firstSelection.bounds,
+      );
     } catch (e) {
-      // Handle error silently or log it
-      setState(() {
-        // textSelections cleared
-        _selectedText = null;
-        _selectedPageNumber = null;
-        _selectedTextRect = null;
-      });
+      // Handle error silently
     }
   }
-
-  /// Build text selection action: color picker for instant highlight.
-  Widget _buildAddMarkerButton() {
-    return Positioned(
-      top: 60,
-      right: 16,
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Color circles for instant highlight
-            for (final color in [
-              MarkerColor.red,
-              MarkerColor.yellow,
-              MarkerColor.green,
-              MarkerColor.blue,
-              MarkerColor.purple,
-            ])
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: GestureDetector(
-                  onTap: () => _createHighlight(color),
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: color.color.withValues(alpha: 0.7),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: color.color,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            const SizedBox(width: 4),
-            // Add Marker button (for capture/scrapboard flow)
-            GestureDetector(
-              onTap: () {
-                if (_selectedPageNumber == null) return;
-                widget.onAddMarkerPressed?.call(
-                  pageNumber: _selectedPageNumber!,
-                  selectedText: _selectedText,
-                  textRect: _selectedTextRect,
-                );
-                _clearSelection();
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(Icons.bookmark_add,
-                    size: 16, color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Create highlight immediately with selected color.
-  void _createHighlight(MarkerColor color) {
-    if (_selectedPageNumber == null) return;
-    ref.read(workspaceProviderProvider.notifier).createMarker(
-          pageNumber: _selectedPageNumber!,
-          color: color,
-          selectedText: _selectedText,
-          textRect: _selectedTextRect,
-        );
-    _clearSelection();
-  }
-
-  void _clearSelection() {
-    setState(() {
-      _selectedText = null;
-      _selectedPageNumber = null;
-      _selectedTextRect = null;
-    });
-  }
-
 
 
   /// Build combined page overlays (drawing + capture + lasso).
@@ -630,156 +508,6 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
 
       return PdfRect(left, top, right, bottom);
     });
-  }
-
-  /// Build the capture toggle button.
-  Widget _buildCaptureButton(BuildContext context) {
-    final theme = ShadTheme.of(context);
-    final isActive = ref.watch(captureModeProvider);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.border),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.foreground.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Tooltip(
-        message: isActive ? 'Exit Capture' : 'Area Capture',
-        child: InkWell(
-          onTap: () {
-            final captureNotifier = ref.read(captureModeProvider.notifier);
-            if (!isActive) {
-              ref.read(drawingModeProvider.notifier).setActive(false);
-              ref.read(lassoModeProvider.notifier).setActive(false);
-            }
-            captureNotifier.toggle();
-          },
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.crop,
-              size: 18,
-              color: isActive
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.mutedForeground,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Build the lasso toggle button.
-  Widget _buildLassoButton(BuildContext context) {
-    final theme = ShadTheme.of(context);
-    final isActive = ref.watch(lassoModeProvider);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.border),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.foreground.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Tooltip(
-        message: isActive ? 'Exit Lasso' : 'Lasso Capture',
-        child: InkWell(
-          onTap: () {
-            final lassoNotifier = ref.read(lassoModeProvider.notifier);
-            if (!isActive) {
-              ref.read(drawingModeProvider.notifier).setActive(false);
-              ref.read(captureModeProvider.notifier).setActive(false);
-            }
-            lassoNotifier.toggle();
-          },
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.gesture,
-              size: 18,
-              color: isActive
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.mutedForeground,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Build the quick scrap mode toggle button.
-  Widget _buildQuickModeButton(BuildContext context) {
-    final theme = ShadTheme.of(context);
-    final isQuick = ref.watch(workspaceProviderProvider).valueOrNull?.isQuickScrapMode ?? false;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.border),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.foreground.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Tooltip(
-        message: isQuick ? 'Quick Mode ON' : 'Quick Mode OFF',
-        child: InkWell(
-          onTap: () =>
-              ref.read(workspaceProviderProvider.notifier).toggleQuickScrapMode(),
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: isQuick
-                  ? Colors.amber.withValues(alpha: 0.15)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.bolt,
-              size: 18,
-              color: isQuick
-                  ? Colors.amber.shade700
-                  : theme.colorScheme.mutedForeground,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   /// Build page navigation controls overlay (GoodNotes-style pill bar).

@@ -8,7 +8,6 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../common_widgets/responsive.dart';
 import '../../../../utils/file_system_provider.dart';
-import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
 import '../../../pdf_viewer/pages/screens/pdf_viewer_screen.dart';
 import '../../../scrapnote/pages/widgets/confirm_scrap_popup.dart';
 import '../../../scrapnote/pages/widgets/element_navigator_drawer.dart';
@@ -469,7 +468,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
   Widget _buildDesktopWorkspace(BuildContext context, WorkspaceState state) {
     final notifier = ref.read(workspaceProviderProvider.notifier);
-    final isFocusPdf = state.focusedPanel == FocusedPanel.pdf;
 
     // Always 1:1 layout (PDF and scrap panel equal width)
     const pdfFlex = 1;

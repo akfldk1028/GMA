@@ -73,17 +73,28 @@ class NotebookBgPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter old) => false;
 }
 
-/// Paints group edit strokes on the main canvas with coordinate offset.
+/// Paints group edit strokes on the main canvas with offset + scale.
+///
+/// Strokes are drawn relative to the edit-time origin, then scaled to match
+/// the current group bounding box size and positioned at the current origin.
 class GroupStrokePainter extends CustomPainter {
   GroupStrokePainter({
     required this.strokes,
-    required this.offsetX,
-    required this.offsetY,
+    required this.editOriginX,
+    required this.editOriginY,
+    required this.canvasOriginX,
+    required this.canvasOriginY,
+    this.scaleX = 1.0,
+    this.scaleY = 1.0,
   });
 
   final List<StrokeData> strokes;
-  final double offsetX;
-  final double offsetY;
+  final double editOriginX;
+  final double editOriginY;
+  final double canvasOriginX;
+  final double canvasOriginY;
+  final double scaleX;
+  final double scaleY;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -91,16 +102,25 @@ class GroupStrokePainter extends CustomPainter {
       if (s.points.length < 2) continue;
       final paint = Paint()
         ..color = Color(s.color)
-        ..strokeWidth = s.size
+        ..strokeWidth = s.size * ((scaleX + scaleY) / 2)
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
       final path = Path();
-      path.moveTo(s.points[0].dx + offsetX, s.points[0].dy + offsetY);
+      final p0 = _transform(s.points[0]);
+      path.moveTo(p0.dx, p0.dy);
       for (var i = 1; i < s.points.length; i++) {
-        path.lineTo(s.points[i].dx + offsetX, s.points[i].dy + offsetY);
+        final pt = _transform(s.points[i]);
+        path.lineTo(pt.dx, pt.dy);
       }
       canvas.drawPath(path, paint);
     }
+  }
+
+  Offset _transform(Offset pt) {
+    return Offset(
+      canvasOriginX + (pt.dx - editOriginX) * scaleX,
+      canvasOriginY + (pt.dy - editOriginY) * scaleY,
+    );
   }
 
   @override

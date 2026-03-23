@@ -6,7 +6,6 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../constants/app_colors.dart';
 import '../../../file_manager/pages/providers/file_manager_provider.dart';
-import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
 import '../../../workspace/pages/providers/workspace_provider.dart';
 import '../../providers/home_note_list_provider.dart';
 import '../../providers/home_state_provider.dart';
