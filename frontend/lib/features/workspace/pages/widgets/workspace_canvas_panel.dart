@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:vector_math/vector_math_64.dart' as vector_math;
 
 import 'package:flutter/material.dart';
@@ -11,6 +10,7 @@ import '../../../scrapnote/models/element_model.dart';
 import '../../../scrapnote/providers/note_scrap_provider.dart';
 import '../../../scrapnote/providers/scrap_annotation_provider.dart';
 import '../providers/workspace_provider.dart';
+import '../../services/workspace_persistence.dart';
 
 import 'canvas/canvas_card.dart';
 import 'canvas/canvas_handles.dart';
@@ -100,6 +100,7 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
   void initState() {
     super.initState();
     _loadGroupEditsFromHive();
+    _loadCanvasLayout();
   }
 
   @override
@@ -492,31 +493,47 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
   // ─── Group edit persistence ────────────────────────
 
   Future<void> _saveGroupEditToHive(String key, GroupEditResult result) async {
-    debugPrint('[Canvas] saving group edit: key=$key, strokes=${result.strokes.length}, notes=${result.notes.length}');
-    try {
-      final box = await Hive.openBox('group_edits');
-      await box.put(key, result.toJson());
-      debugPrint('[Canvas] group edit saved OK');
-    } catch (e) {
-      debugPrint('[Canvas] group edit save failed: $e');
-    }
+    await WorkspacePersistence.saveGroupEdit(key, result.toJson());
   }
 
   Future<void> _loadGroupEditsFromHive() async {
-    try {
-      final box = await Hive.openBox('group_edits');
-      debugPrint('[Canvas] loading group edits: ${box.length} entries');
-      for (final key in box.keys) {
-        final data = box.get(key);
-        if (data is Map) {
-          _groupEditResults[key as String] =
-              GroupEditResult.fromJson(Map<String, dynamic>.from(data));
-          debugPrint('[Canvas] loaded group edit: $key');
-        }
-      }
-    } catch (e) {
-      debugPrint('[Canvas] group edit load failed: $e');
+    final all = await WorkspacePersistence.loadAllGroupEdits();
+    for (final entry in all.entries) {
+      _groupEditResults[entry.key] = GroupEditResult.fromJson(entry.value);
     }
+  }
+
+  /// Save canvas layout to persistence (call after drag/resize).
+  Future<void> _persistCanvasLayout() async {
+    if (widget.noteId == null) return;
+    final data = <String, Map<String, double>>{};
+    for (final entry in _layout.entries) {
+      data[entry.key] = {
+        'l': entry.value.left, 't': entry.value.top,
+        'w': entry.value.width, 'h': entry.value.height,
+      };
+    }
+    await WorkspacePersistence.saveCanvasLayout(widget.noteId!, data);
+  }
+
+  /// Save rotations to persistence.
+  Future<void> _persistCanvasRotations() async {
+    if (widget.noteId == null) return;
+    await WorkspacePersistence.saveCanvasRotations(widget.noteId!, _rotations);
+  }
+
+  /// Load saved canvas layout on init.
+  Future<void> _loadCanvasLayout() async {
+    if (widget.noteId == null) return;
+    final saved = await WorkspacePersistence.loadCanvasLayout(widget.noteId!);
+    for (final entry in saved.entries) {
+      _layout[entry.key] = Rect.fromLTWH(
+        entry.value['l'] ?? 0, entry.value['t'] ?? 0,
+        entry.value['w'] ?? 200, entry.value['h'] ?? 120,
+      );
+    }
+    final rotations = await WorkspacePersistence.loadCanvasRotations(widget.noteId!);
+    _rotations.addAll(rotations);
   }
 
   // ─── Group / Delete actions ────────────────────────
@@ -749,6 +766,8 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     // Also persist to markdown (background)
     ref.read(workspaceProviderProvider.notifier)
         .reorderAllScraps(widget.noteId!, orderedIds);
+    // Persist canvas layout
+    _persistCanvasLayout();
   }
 
   void _showCardMenu(BuildContext context, ScrapElement el) {

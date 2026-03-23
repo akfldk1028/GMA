@@ -334,7 +334,6 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
 
   void _clearSelection() {
     setState(() {
-      _textSelections = null;
       _selectedText = null;
       _selectedPageNumber = null;
       _selectedTextRect = null;

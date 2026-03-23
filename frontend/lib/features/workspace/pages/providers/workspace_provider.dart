@@ -31,6 +31,7 @@ import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
 import '../../../pdf_viewer/pages/providers/pdf_marker_provider.dart';
 import '../../../scrapnote/providers/pdf_registry_provider.dart';
 import '../../models/pdf_marker_model.dart';
+import '../../services/workspace_persistence.dart';
 import '../../models/workspace_state.dart';
 
 part 'workspace_provider.g.dart';
@@ -40,19 +41,22 @@ part 'workspace_provider.g.dart';
 class WorkspaceProvider extends _$WorkspaceProvider {
   @override
   FutureOr<WorkspaceState> build() async {
-    // Load panel sizes from Hive if available
-    final box = await Hive.openBox('workspace_settings');
-    final savedSizes = box.get('panel_sizes');
-
+    // All persistence through WorkspacePersistence
+    final savedSizes = await WorkspacePersistence.loadPanelSizes();
     final panelSizes = savedSizes != null
-        ? PanelSizes.fromJson(Map<String, dynamic>.from(savedSizes as Map))
+        ? PanelSizes.fromJson(savedSizes)
         : const PanelSizes();
 
-    final lastNoteId = box.get('last_note_id') as String?;
-    final lastPdfPath = box.get('last_pdf_path') as String?;
+    final session = await WorkspacePersistence.loadLastSession();
+    final restoredGroups = await WorkspacePersistence.loadGroups();
 
-    // Restore last session
-    final initialState = WorkspaceState(panelSizes: panelSizes);
+    final initialState = WorkspaceState(
+      panelSizes: panelSizes,
+      scrapGroups: restoredGroups,
+    );
+
+    final lastNoteId = session.noteId;
+    final lastPdfPath = session.pdfPath;
 
     // Schedule async restore after build
     if (lastNoteId != null || lastPdfPath != null) {
@@ -111,10 +115,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     );
 
     // Persist last PDF path
-    try {
-      final box = await Hive.openBox('workspace_settings');
-      await box.put('last_pdf_path', pdfPath);
-    } catch (_) {}
+    await WorkspacePersistence.saveLastSession(pdfPath: pdfPath);
 
     // Load the actual PDF document for rendering
     if (isAsset) {
@@ -200,10 +201,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     );
 
     // Persist last note ID
-    try {
-      final box = await Hive.openBox('workspace_settings');
-      await box.put('last_note_id', noteId);
-    } catch (_) {}
+    await WorkspacePersistence.saveLastSession(noteId: noteId);
 
     // Load note content from filesystem using NoteStorageService
     final noteStorage = ref.read(noteStorageServiceProvider);
@@ -769,9 +767,8 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       currentState.copyWith(panelSizes: sizes),
     );
 
-    // Persist to Hive
-    final box = await Hive.openBox('workspace_settings');
-    await box.put('panel_sizes', sizes.toJson());
+    // Persist
+    await WorkspacePersistence.savePanelSizes(sizes.toJson());
   }
 
   // ─── Scrap element operations ────────────────────────────
@@ -1025,13 +1022,13 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     final s = state.valueOrNull;
     if (s == null || s.selectedScrapIds.length < 2) return;
     final newGroup = s.selectedScrapIds.toList();
-    // Remove members from existing groups
     final groups = s.scrapGroups
         .map((g) => g.where((id) => !s.selectedScrapIds.contains(id)).toList())
         .where((g) => g.length >= 2)
         .toList();
     groups.add(newGroup);
     state = AsyncData(s.copyWith(scrapGroups: groups));
+    _persistGroups(groups);
   }
 
   void ungroupScraps(Set<String> ids) {
@@ -1041,6 +1038,11 @@ class WorkspaceProvider extends _$WorkspaceProvider {
         .where((g) => !g.any((id) => ids.contains(id)))
         .toList();
     state = AsyncData(s.copyWith(scrapGroups: groups));
+    _persistGroups(groups);
+  }
+
+  Future<void> _persistGroups(List<List<String>> groups) async {
+    await WorkspacePersistence.saveGroups(groups);
   }
 
   /// Find the group containing [elementId], or null.
