@@ -21,12 +21,18 @@ class AppTheme {
         useMaterial3: true,
         colorSchemeSeed: AppColors.primary,
         brightness: Brightness.light,
+        textSelectionTheme: TextSelectionThemeData(
+          selectionColor: AppColors.primary.withValues(alpha: 0.4),
+        ),
       );
 
   static final ThemeData materialDark = ThemeData(
         useMaterial3: true,
         colorSchemeSeed: AppColors.primary,
         brightness: Brightness.dark,
+        textSelectionTheme: TextSelectionThemeData(
+          selectionColor: AppColors.primary.withValues(alpha: 0.4),
+        ),
       );
 
   static final ShadThemeData light = ShadThemeData(

@@ -61,20 +61,9 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       }
     }
 
-    // Update open tabs list — add if not already open
-    final openPdfs = List<String>.from(currentState.openPdfPaths);
-    if (!openPdfs.contains(pdfPath)) {
-      openPdfs.add(pdfPath);
-    }
-
-    // Clear markers from previous PDF
-    state = AsyncData(
-      currentState.copyWith(
-        currentPdfPath: pdfPath,
-        markers: [],
-        openPdfPaths: openPdfs,
-      ),
-    );
+    // Register PDF in PdfRegistry FIRST so ScrapnotePanel can resolve the ID
+    // when workspace state update triggers a rebuild
+    await ref.read(pdfRegistryProvProvider.notifier).register(pdfPath);
 
     // Load the actual PDF document for rendering
     if (isAsset) {
@@ -83,8 +72,20 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       await ref.read(pdfDocumentProvider.notifier).loadFromFile(pdfPath);
     }
 
-    // Register PDF in PdfRegistry for ScrapNote UUID tracking
-    await ref.read(pdfRegistryProvProvider.notifier).register(pdfPath);
+    // Update open tabs list — add if not already open
+    final openPdfs = List<String>.from(currentState.openPdfPaths);
+    if (!openPdfs.contains(pdfPath)) {
+      openPdfs.add(pdfPath);
+    }
+
+    // Update workspace state — ScrapnotePanel will find the registry ID on rebuild
+    state = AsyncData(
+      currentState.copyWith(
+        currentPdfPath: pdfPath,
+        markers: [],
+        openPdfPaths: openPdfs,
+      ),
+    );
 
     // Auto-create a linked note if none is currently open (skip on web for assets)
     if (currentState.currentNoteId == null && !isAsset) {
