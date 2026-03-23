@@ -48,9 +48,25 @@ class WorkspaceProvider extends _$WorkspaceProvider {
         ? PanelSizes.fromJson(Map<String, dynamic>.from(savedSizes as Map))
         : const PanelSizes();
 
-    return WorkspaceState(
-      panelSizes: panelSizes,
-    );
+    final lastNoteId = box.get('last_note_id') as String?;
+    final lastPdfPath = box.get('last_pdf_path') as String?;
+
+    // Restore last session
+    final initialState = WorkspaceState(panelSizes: panelSizes);
+
+    // Schedule async restore after build
+    if (lastNoteId != null || lastPdfPath != null) {
+      Future.microtask(() async {
+        try {
+          if (lastNoteId != null) await loadNote(lastNoteId);
+          if (lastPdfPath != null) await loadPdf(lastPdfPath);
+        } catch (e) {
+          debugPrint('[WorkspaceProvider.build] restore failed: $e');
+        }
+      });
+    }
+
+    return initialState;
   }
 
   /// Load a PDF file into the workspace.
@@ -93,6 +109,12 @@ class WorkspaceProvider extends _$WorkspaceProvider {
         openPdfPaths: openPdfs,
       ),
     );
+
+    // Persist last PDF path
+    try {
+      final box = await Hive.openBox('workspace_settings');
+      await box.put('last_pdf_path', pdfPath);
+    } catch (_) {}
 
     // Load the actual PDF document for rendering
     if (isAsset) {
@@ -176,6 +198,12 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     state = AsyncData(
       currentState.copyWith(currentNoteId: noteId),
     );
+
+    // Persist last note ID
+    try {
+      final box = await Hive.openBox('workspace_settings');
+      await box.put('last_note_id', noteId);
+    } catch (_) {}
 
     // Load note content from filesystem using NoteStorageService
     final noteStorage = ref.read(noteStorageServiceProvider);

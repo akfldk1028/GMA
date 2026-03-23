@@ -193,10 +193,11 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                           for (final el in filtered)
                             _buildPositionedCard(
                                 el, capturesDir, cardW, filtered),
-                          // Group bounding box handles for multi-select
-                          if (_selectedCardIds.length > 1 && !_annotateMode)
+                          // Group bounding box handles (multi-select OR grouped card selected)
+                          if (_selectedCardIds.isNotEmpty && !_annotateMode &&
+                              (_selectedCardIds.length > 1 || _isAnySelectedInGroup()))
                             ..._buildGroupHandlesWidgets(),
-                          // Rotation handle (single or group)
+                          // Rotation handle
                           if (_selectedCardIds.isNotEmpty && !_annotateMode)
                             _buildRotationHandleForSelection(),
                           // Drawing strokes always visible
@@ -311,6 +312,11 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
       List<ScrapElement> filtered) {
     final rect = _layout[el.id]!;
     final isSelected = _selectedCardIds.contains(el.id);
+    final isInGroup = ref.read(workspaceProviderProvider.notifier)
+        .findGroupOf(el.id) != null;
+    // Show individual handles only for ungrouped single selection
+    final showIndividualHandles = isSelected &&
+        _selectedCardIds.length == 1 && !isInGroup;
 
     final rotation = _rotations[el.id] ?? 0.0;
 
@@ -326,17 +332,27 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
             ? null
             : () {
                 setState(() {
-                  if (isSelected && _selectedCardIds.length == 1) {
-                    // Tap sole selected card → navigate to PDF page
+                  final group = ref.read(workspaceProviderProvider.notifier)
+                      .findGroupOf(el.id);
+
+                  if (group != null) {
+                    final allGroupSelected =
+                        group.every((id) => _selectedCardIds.contains(id));
+                    if (allGroupSelected) {
+                      // Group already selected → navigate
+                      widget.onNavigateToPage(el.pageNumber);
+                    } else {
+                      // Select entire group
+                      _selectedCardIds.clear();
+                      _selectedCardIds.addAll(group);
+                    }
+                  } else if (isSelected && _selectedCardIds.length == 1) {
                     widget.onNavigateToPage(el.pageNumber);
                   } else if (isSelected) {
-                    // Tap already selected card in multi-select → deselect it
                     _selectedCardIds.remove(el.id);
                   } else if (_selectedCardIds.isNotEmpty) {
-                    // Already have selection → add to multi-select
                     _selectedCardIds.add(el.id);
                   } else {
-                    // No selection → single select
                     _selectedCardIds.add(el.id);
                   }
                   _syncSelectionToWorkspace();
@@ -399,8 +415,8 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                 ),
               ),
             ),
-            // Single selection handles (hide when multi-selected — group handles shown instead)
-            if (isSelected && _selectedCardIds.length == 1 && !_annotateMode) ...[
+            // Individual handles (ungrouped single selection only)
+            if (showIndividualHandles && !_annotateMode) ...[
               buildHandle(elId: el.id, pos: HandlePos.topLeft, onResize: _onHandleResize),
               buildHandle(elId: el.id, pos: HandlePos.topRight, onResize: _onHandleResize),
               buildHandle(elId: el.id, pos: HandlePos.bottomLeft, onResize: _onHandleResize),
@@ -498,6 +514,15 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     return ids;
   }
 
+  bool _isAnySelectedInGroup() {
+    for (final id in _selectedCardIds) {
+      if (ref.read(workspaceProviderProvider.notifier).findGroupOf(id) != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   bool get _isSelectionGrouped =>
       ref.read(workspaceProviderProvider.notifier).isSelectionGrouped();
 
@@ -520,7 +545,18 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
       builder: (ctx) => GroupEditDialog(
         elements: elements,
         capturesDir: capturesDir,
-        onConfirm: () => Navigator.pop(ctx),
+        onConfirm: (cardStates) {
+          // Apply returned layout/rotation to main canvas
+          setState(() {
+            for (final entry in cardStates.entries) {
+              _layout[entry.key] = entry.value.layout;
+              if (entry.value.rotation != 0.0) {
+                _rotations[entry.key] = entry.value.rotation;
+              }
+            }
+          });
+          Navigator.pop(ctx);
+        },
       ),
     );
   }
