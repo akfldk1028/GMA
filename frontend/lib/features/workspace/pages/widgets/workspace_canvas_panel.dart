@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:vector_math/vector_math_64.dart' as vector_math;
 
 import 'package:flutter/material.dart';
@@ -92,6 +94,12 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     final cy = rect.center.dy;
     // ignore: deprecated_member_use
     _transformCtrl.value = Matrix4.identity()..translate(-cx + halfW, -cy + halfH);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGroupEditsFromHive();
   }
 
   @override
@@ -481,6 +489,32 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     });
   }
 
+  // ─── Group edit persistence ────────────────────────
+
+  Future<void> _saveGroupEditToHive(String key, GroupEditResult result) async {
+    try {
+      final box = await Hive.openBox('group_edits');
+      await box.put(key, result.toJson());
+    } catch (e) {
+      debugPrint('[Canvas] group edit save failed: $e');
+    }
+  }
+
+  Future<void> _loadGroupEditsFromHive() async {
+    try {
+      final box = await Hive.openBox('group_edits');
+      for (final key in box.keys) {
+        final data = box.get(key);
+        if (data is Map) {
+          _groupEditResults[key as String] =
+              GroupEditResult.fromJson(Map<String, dynamic>.from(data));
+        }
+      }
+    } catch (e) {
+      debugPrint('[Canvas] group edit load failed: $e');
+    }
+  }
+
   // ─── Group / Delete actions ────────────────────────
 
   void _groupSelectedCards() {
@@ -526,8 +560,15 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
   bool get _isSelectionGrouped =>
       ref.read(workspaceProviderProvider.notifier).isSelectionGrouped();
 
+  // Store group edit results keyed by sorted element IDs
+  final Map<String, GroupEditResult> _groupEditResults = {};
+
+  String _groupKey(Set<String> ids) {
+    final sorted = ids.toList()..sort();
+    return sorted.join('|');
+  }
+
   void _showGroupEditModal(BuildContext context) {
-    // Gather all elements in the selected group
     final elements = <ScrapElement>[];
     final allElements = widget.noteId != null
         ? ref.read(noteScrapProvider(widget.noteId!))
@@ -539,22 +580,29 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     }
     final capturesDir =
         ref.watch(capturesDirectoryProvider).valueOrNull?.path;
+    final key = _groupKey(_selectedCardIds);
+    final previousState = _groupEditResults[key];
 
     showDialog(
       context: context,
       builder: (ctx) => GroupEditDialog(
         elements: elements,
         capturesDir: capturesDir,
-        onConfirm: (cardStates) {
-          // Apply returned layout/rotation to main canvas
+        previousState: previousState,
+        onConfirm: (result) {
           setState(() {
-            for (final entry in cardStates.entries) {
+            // Apply card layout/rotation
+            for (final entry in result.cardStates.entries) {
               _layout[entry.key] = entry.value.layout;
               if (entry.value.rotation != 0.0) {
                 _rotations[entry.key] = entry.value.rotation;
               }
             }
+            // Save full result for next open
+            _groupEditResults[key] = result;
           });
+          // Persist to Hive
+          _saveGroupEditToHive(key, result);
           Navigator.pop(ctx);
         },
       ),

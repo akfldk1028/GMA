@@ -12,6 +12,92 @@ class GroupCardState {
   final Rect layout;
   final double rotation;
   GroupCardState({required this.layout, this.rotation = 0.0});
+
+  Map<String, dynamic> toJson() => {
+    'l': layout.left, 't': layout.top,
+    'w': layout.width, 'h': layout.height,
+    'r': rotation,
+  };
+
+  factory GroupCardState.fromJson(Map<String, dynamic> j) => GroupCardState(
+    layout: Rect.fromLTWH(
+      (j['l'] as num).toDouble(), (j['t'] as num).toDouble(),
+      (j['w'] as num).toDouble(), (j['h'] as num).toDouble(),
+    ),
+    rotation: (j['r'] as num?)?.toDouble() ?? 0.0,
+  );
+}
+
+/// Full result from group edit modal.
+class GroupEditResult {
+  final Map<String, GroupCardState> cardStates;
+  final List<StrokeData> strokes;
+  final List<NoteData> notes;
+  GroupEditResult({
+    required this.cardStates,
+    this.strokes = const [],
+    this.notes = const [],
+  });
+
+  Map<String, dynamic> toJson() => {
+    'cards': cardStates.map((k, v) => MapEntry(k, v.toJson())),
+    'strokes': strokes.map((s) => s.toJson()).toList(),
+    'notes': notes.map((n) => n.toJson()).toList(),
+  };
+
+  factory GroupEditResult.fromJson(Map<String, dynamic> j) {
+    final cards = <String, GroupCardState>{};
+    if (j['cards'] is Map) {
+      for (final e in (j['cards'] as Map).entries) {
+        cards[e.key as String] =
+            GroupCardState.fromJson(Map<String, dynamic>.from(e.value as Map));
+      }
+    }
+    return GroupEditResult(
+      cardStates: cards,
+      strokes: (j['strokes'] as List?)
+          ?.map((s) => StrokeData.fromJson(Map<String, dynamic>.from(s as Map)))
+          .toList() ?? [],
+      notes: (j['notes'] as List?)
+          ?.map((n) => NoteData.fromJson(Map<String, dynamic>.from(n as Map)))
+          .toList() ?? [],
+    );
+  }
+}
+
+class StrokeData {
+  final List<Offset> points;
+  final int color;
+  final double size;
+  StrokeData({required this.points, required this.color, required this.size});
+
+  Map<String, dynamic> toJson() => {
+    'pts': points.map((p) => [p.dx, p.dy]).toList(),
+    'c': color, 's': size,
+  };
+
+  factory StrokeData.fromJson(Map<String, dynamic> j) => StrokeData(
+    points: (j['pts'] as List)
+        .map((p) => Offset((p[0] as num).toDouble(), (p[1] as num).toDouble()))
+        .toList(),
+    color: j['c'] as int,
+    size: (j['s'] as num).toDouble(),
+  );
+}
+
+class NoteData {
+  final Offset position;
+  final String text;
+  NoteData({required this.position, required this.text});
+
+  Map<String, dynamic> toJson() => {
+    'x': position.dx, 'y': position.dy, 't': text,
+  };
+
+  factory NoteData.fromJson(Map<String, dynamic> j) => NoteData(
+    position: Offset((j['x'] as num).toDouble(), (j['y'] as num).toDouble()),
+    text: j['t'] as String,
+  );
 }
 
 /// Full-screen canvas board for editing a group of scraps.
@@ -22,12 +108,15 @@ class GroupEditDialog extends StatefulWidget {
     required this.elements,
     required this.onConfirm,
     this.capturesDir,
+    this.previousState,
   });
 
   final List<ScrapElement> elements;
   final String? capturesDir;
-  /// Called with element ID → (Rect layout, double rotation) map
-  final void Function(Map<String, GroupCardState> cardStates) onConfirm;
+  /// Previous edit state to restore (strokes, notes, card positions)
+  final GroupEditResult? previousState;
+  /// Called with full edit result (cards + strokes + notes)
+  final void Function(GroupEditResult result) onConfirm;
 
   @override
   State<GroupEditDialog> createState() => _GroupEditDialogState();
@@ -56,6 +145,28 @@ class _GroupEditDialogState extends State<GroupEditDialog> {
   void initState() {
     super.initState();
     _initLayout();
+    _restorePreviousState();
+  }
+
+  void _restorePreviousState() {
+    final prev = widget.previousState;
+    if (prev == null) return;
+    // Restore card positions/rotations
+    for (var i = 0; i < widget.elements.length; i++) {
+      final state = prev.cardStates[widget.elements[i].id];
+      if (state != null) {
+        _cardLayout[i] = state.layout;
+        if (state.rotation != 0.0) _cardRotations[i] = state.rotation;
+      }
+    }
+    // Restore strokes
+    for (final s in prev.strokes) {
+      _strokes.add(_Stroke(points: s.points, color: s.color, size: s.size));
+    }
+    // Restore notes
+    for (final n in prev.notes) {
+      _notes.add(_CanvasNote(position: n.position, text: n.text));
+    }
   }
 
   @override
@@ -171,7 +282,6 @@ class _GroupEditDialogState extends State<GroupEditDialog> {
           const Spacer(),
           TextButton(
             onPressed: () {
-              // Collect all card states and pass back
               final states = <String, GroupCardState>{};
               for (var i = 0; i < widget.elements.length; i++) {
                 states[widget.elements[i].id] = GroupCardState(
@@ -179,7 +289,17 @@ class _GroupEditDialogState extends State<GroupEditDialog> {
                   rotation: _cardRotations[i] ?? 0.0,
                 );
               }
-              widget.onConfirm(states);
+              widget.onConfirm(GroupEditResult(
+                cardStates: states,
+                strokes: _strokes
+                    .map((s) => StrokeData(
+                        points: s.points, color: s.color, size: s.size))
+                    .toList(),
+                notes: _notes
+                    .map((n) => NoteData(
+                        position: n.position, text: n.text))
+                    .toList(),
+              ));
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),

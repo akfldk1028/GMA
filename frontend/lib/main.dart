@@ -17,10 +17,12 @@ void main() async {
   } else {
     WidgetsFlutterBinding.ensureInitialized();
   }
-  await Hive.initFlutter();
+  // Use local AppData instead of OneDrive Documents to avoid lock conflicts
+  final appDataDir = await getApplicationSupportDirectory();
+  Hive.init(appDataDir.path);
 
   // Clean stale Hive lock files that prevent box opening after crash
-  await _cleanStaleLockFiles();
+  await _cleanStaleLockFiles(appDataDir.path);
 
   // Open app settings box for theme persistence
   final appSettingsBox = await Hive.openBox('app_settings');
@@ -84,10 +86,9 @@ Future<void> _migrateDrawingElements(Box<String> box) async {
 
 /// Delete stale .lock files from Hive storage directory.
 /// These can be left behind after a crash and prevent re-opening boxes.
-Future<void> _cleanStaleLockFiles() async {
+Future<void> _cleanStaleLockFiles(String hivePath) async {
   try {
-    final appDir = await getApplicationDocumentsDirectory();
-    final dir = Directory(appDir.path);
+    final dir = Directory(hivePath);
     if (!dir.existsSync()) return;
 
     for (final entity in dir.listSync()) {
