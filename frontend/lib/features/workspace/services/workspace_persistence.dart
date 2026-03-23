@@ -27,9 +27,11 @@ class WorkspacePersistence {
 
   static Future<({String? noteId, String? pdfPath})> loadLastSession() async {
     final box = await _getBox();
+    final noteId = box.get('last_note_id') as String?;
+    final pdfPath = box.get('last_pdf_path') as String?;
     return (
-      noteId: box.get('last_note_id') as String?,
-      pdfPath: box.get('last_pdf_path') as String?,
+      noteId: (noteId != null && noteId.isNotEmpty) ? noteId : null,
+      pdfPath: (pdfPath != null && pdfPath.isNotEmpty) ? pdfPath : null,
     );
   }
 

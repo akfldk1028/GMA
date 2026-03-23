@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:flutter/foundation.dart';
+
 import 'package:vector_math/vector_math_64.dart' as vector_math;
 
 import 'package:flutter/material.dart';
@@ -698,7 +698,10 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
           }
         });
       },
-      onRotateEnd: () => _isRotating = false,
+      onRotateEnd: () {
+        _isRotating = false;
+        _persistCanvasRotations();
+      },
     );
   }
 
@@ -715,7 +718,10 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
           _rotations[elId] = (_rotations[elId] ?? 0.0) + delta;
         });
       },
-      onRotateEnd: () => _isRotating = false,
+      onRotateEnd: () {
+        _isRotating = false;
+        _persistCanvasRotations();
+      },
     );
   }
 

@@ -56,9 +56,9 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
       final mutation = ref.read(createNoteMutationProvider.notifier);
       final note = await mutation.call(title: 'Untitled Note');
       if (mounted) {
-        await ref
+        ref
             .read(workspaceProviderProvider.notifier)
-            .loadNote(note.id);
+            .resetForNewNote(note.id);
         if (mounted) context.go('/workspace');
       }
     } catch (e) {

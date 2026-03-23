@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path/path.dart' as p;
 import 'package:pdfrx/pdfrx.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -71,6 +70,18 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     }
 
     return initialState;
+  }
+
+  /// Reset workspace to clean state (new note without PDF).
+  void resetForNewNote(String noteId) {
+    final s = state.valueOrNull ?? const WorkspaceState();
+    state = AsyncData(WorkspaceState(
+      currentNoteId: noteId,
+      panelSizes: s.panelSizes,
+      scrapGroups: s.scrapGroups,
+    ));
+    // Clear last PDF so it doesn't auto-restore
+    WorkspacePersistence.saveLastSession(noteId: noteId, pdfPath: '');
   }
 
   /// Load a PDF file into the workspace.
