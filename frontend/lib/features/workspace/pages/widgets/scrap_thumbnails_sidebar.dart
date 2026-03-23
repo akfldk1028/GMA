@@ -38,6 +38,11 @@ class ScrapThumbnailsSidebar extends ConsumerStatefulWidget {
 
 enum _SidebarTab { all, capture, highlight }
 
+class _FlatEntry {
+  final Widget widget;
+  _FlatEntry({required this.widget});
+}
+
 class _SidebarItem {
   final List<ScrapElement> elements;
   final bool isGroup;
@@ -53,6 +58,7 @@ class _SidebarItem {
 class _ScrapThumbnailsSidebarState
     extends ConsumerState<ScrapThumbnailsSidebar> {
   _SidebarTab _currentTab = _SidebarTab.all;
+  final Set<int> _expandedGroups = {}; // group indices that are expanded
 
   List<ScrapElement> _filterElements(List<ScrapElement> elements) {
     switch (_currentTab) {
@@ -93,7 +99,6 @@ class _ScrapThumbnailsSidebarState
       });
     }
     final filtered = _filterElements(elements);
-    final selectedIds = ws?.selectedScrapIds ?? {};
 
     if (ws == null) return const SizedBox.shrink();
 
@@ -152,30 +157,146 @@ class _ScrapThumbnailsSidebarState
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(
                         vertical: 4, horizontal: 6),
-                    itemCount: _buildSidebarItems(filtered, ws?.scrapGroups ?? []).length,
+                    itemCount: _buildFlatList(filtered, ws.scrapGroups).length,
                     itemBuilder: (context, index) {
-                      final items = _buildSidebarItems(filtered, ws?.scrapGroups ?? []);
-                      final item = items[index];
-                      return item.isGroup
-                          ? _buildGroupedPreview(
-                              item, theme, selectedIds, ref, index + 1)
-                          : _ScrapMiniPreview(
-                              element: item.elements.first,
-                              theme: theme,
-                              orderIndex: index + 1,
-                              isSelected: selectedIds.contains(item.elements.first.id),
-                              isGrouped: false,
-                              onTap: () {
-                                ref.read(workspaceProviderProvider.notifier)
-                                    .toggleScrapSelection(item.elements.first.id);
-                                widget.onElementTap?.call(item.elements.first.id);
-                              },
-                              capturesDir: widget.capturesDir,
-                            );
+                      final flatItems = _buildFlatList(filtered, ws.scrapGroups);
+                      final entry = flatItems[index];
+                      return entry.widget;
                     },
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Flat list entry for ListView
+  List<_FlatEntry> _buildFlatList(
+      List<ScrapElement> filtered, List<List<String>> groups) {
+    final items = _buildSidebarItems(filtered, groups);
+    final entries = <_FlatEntry>[];
+    var orderIdx = 1;
+
+    for (final item in items) {
+      if (item.isGroup) {
+        final isExpanded = _expandedGroups.contains(item.groupIndex);
+        final selectedIds = ref.read(workspaceProviderProvider).valueOrNull?.selectedScrapIds ?? {};
+        final isAnySelected = item.elements.any((e) => selectedIds.contains(e.id));
+
+        // Group header (always visible)
+        entries.add(_FlatEntry(widget: _buildGroupHeader(
+          item, isExpanded, isAnySelected, orderIdx,
+        )));
+
+        // Children (only when expanded)
+        if (isExpanded) {
+          for (final el in item.elements) {
+            entries.add(_FlatEntry(widget: Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: _ScrapMiniPreview(
+                element: el,
+                theme: ShadTheme.of(context),
+                orderIndex: orderIdx,
+                isSelected: selectedIds.contains(el.id),
+                isGrouped: true,
+                onTap: () {
+                  ref.read(workspaceProviderProvider.notifier)
+                      .toggleScrapSelection(el.id);
+                  widget.onElementTap?.call(el.id);
+                },
+                capturesDir: widget.capturesDir,
+              ),
+            )));
+          }
+        }
+        orderIdx++;
+      } else {
+        final el = item.elements.first;
+        final selectedIds = ref.read(workspaceProviderProvider).valueOrNull?.selectedScrapIds ?? {};
+        entries.add(_FlatEntry(widget: _ScrapMiniPreview(
+          element: el,
+          theme: ShadTheme.of(context),
+          orderIndex: orderIdx,
+          isSelected: selectedIds.contains(el.id),
+          isGrouped: false,
+          onTap: () {
+            ref.read(workspaceProviderProvider.notifier)
+                .toggleScrapSelection(el.id);
+            widget.onElementTap?.call(el.id);
+          },
+          capturesDir: widget.capturesDir,
+        )));
+        orderIdx++;
+      }
+    }
+    return entries;
+  }
+
+  Widget _buildGroupHeader(
+      _SidebarItem item, bool isExpanded, bool isAnySelected, int orderIdx) {
+    final theme = ShadTheme.of(context);
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (isExpanded) {
+            _expandedGroups.remove(item.groupIndex);
+          } else {
+            _expandedGroups.add(item.groupIndex);
+          }
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+        decoration: BoxDecoration(
+          color: isAnySelected
+              ? theme.colorScheme.primary.withValues(alpha: 0.15)
+              : theme.colorScheme.muted.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(4),
+          border: Border(
+            left: BorderSide(
+              color: isAnySelected
+                  ? theme.colorScheme.primary
+                  : Colors.blue.shade400,
+              width: isAnySelected ? 3 : 2,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            // Expand/collapse arrow
+            Icon(
+              isExpanded ? Icons.expand_more : Icons.chevron_right,
+              size: 12,
+              color: theme.colorScheme.mutedForeground,
+            ),
+            const SizedBox(width: 2),
+            // Order badge
+            Container(
+              width: 14, height: 14,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.blue.shade100,
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Text('$orderIdx',
+                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700,
+                      color: Colors.blue.shade700)),
+            ),
+            const SizedBox(width: 3),
+            Icon(Icons.layers, size: 11, color: Colors.blue.shade400),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                'Group ${item.groupIndex} (${item.elements.length})',
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.foreground),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

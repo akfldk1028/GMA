@@ -60,7 +60,6 @@ class PdfViewerScreen extends ConsumerStatefulWidget {
 
 class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   // State for text selection
-  List<PdfPageTextRange>? _textSelections;
   String? _selectedText;
   int? _selectedPageNumber;
   PdfRect? _selectedTextRect;
@@ -199,7 +198,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
 
       if (selections.isEmpty) {
         setState(() {
-          _textSelections = null;
+          // selection cleared
           _selectedText = null;
           _selectedPageNumber = null;
           _selectedTextRect = null;
@@ -220,7 +219,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
               textRect: firstSelection.bounds,
             );
         setState(() {
-          _textSelections = null;
+          // selection cleared
           _selectedText = null;
           _selectedPageNumber = null;
           _selectedTextRect = null;
@@ -229,7 +228,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       }
 
       setState(() {
-        _textSelections = selections;
+        // textSelections updated
         _selectedPageNumber = firstSelection.pageNumber;
         _selectedText = firstSelection.text;
         _selectedTextRect = firstSelection.bounds;
@@ -237,7 +236,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     } catch (e) {
       // Handle error silently or log it
       setState(() {
-        _textSelections = null;
+        // textSelections cleared
         _selectedText = null;
         _selectedPageNumber = null;
         _selectedTextRect = null;

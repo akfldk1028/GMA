@@ -158,6 +158,7 @@ List<Widget> buildGroupHandles({
   required VoidCallback onUngroup,
   required VoidCallback onDelete,
   required VoidCallback onEdit,
+  void Function(double scaleX, double scaleY, Offset anchor)? onResize,
 }) {
   const pad = 8.0;
   final r = Rect.fromLTRB(
@@ -165,20 +166,38 @@ List<Widget> buildGroupHandles({
     bounds.right + pad, bounds.bottom + pad,
   );
 
-  Widget dot(double left, double top) {
+  Widget dot(double left, double top, {MouseCursor cursor = SystemMouseCursors.basic,
+      void Function(DragUpdateDetails)? onDrag}) {
     return Positioned(
-      left: left - 5,
-      top: top - 5,
-      child: Container(
-        width: 10,
-        height: 10,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.blue.shade400, width: 2),
+      left: left - 8,
+      top: top - 8,
+      child: MouseRegion(
+        cursor: onDrag != null ? cursor : MouseCursor.defer,
+        child: GestureDetector(
+          onPanUpdate: onDrag,
+          child: Container(
+            width: 16, height: 16,
+            alignment: Alignment.center,
+            child: Container(
+              width: 10, height: 10,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.blue.shade400, width: 2),
+              ),
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  // Scale helper: compute proportional scale from drag delta
+  void scaleFromCorner(DragUpdateDetails d, Offset anchor) {
+    if (onResize == null || r.width < 1 || r.height < 1) return;
+    final sx = 1.0 + d.delta.dx / r.width;
+    final sy = 1.0 + d.delta.dy / r.height;
+    onResize(sx, sy, anchor);
   }
 
   Widget actionButton({
@@ -222,11 +241,19 @@ List<Widget> buildGroupHandles({
         ),
       ),
     ),
-    // 6 corner/midpoint dots
-    dot(r.left, r.top),
-    dot(r.right, r.top),
-    dot(r.left, r.bottom),
-    dot(r.right, r.bottom),
+    // 4 corner resize handles + 2 midpoint
+    dot(r.left, r.top, cursor: SystemMouseCursors.resizeUpLeft,
+        onDrag: (d) => scaleFromCorner(d, Offset(r.right, r.bottom))),
+    dot(r.right, r.top, cursor: SystemMouseCursors.resizeUpRight,
+        onDrag: (d) => scaleFromCorner(
+            DragUpdateDetails(globalPosition: d.globalPosition, delta: Offset(d.delta.dx, -d.delta.dy)),
+            Offset(r.left, r.bottom))),
+    dot(r.left, r.bottom, cursor: SystemMouseCursors.resizeDownLeft,
+        onDrag: (d) => scaleFromCorner(
+            DragUpdateDetails(globalPosition: d.globalPosition, delta: Offset(-d.delta.dx, d.delta.dy)),
+            Offset(r.right, r.top))),
+    dot(r.right, r.bottom, cursor: SystemMouseCursors.resizeDownRight,
+        onDrag: (d) => scaleFromCorner(d, Offset(r.left, r.top))),
     dot(r.left + r.width / 2, r.top),
     dot(r.left + r.width / 2, r.bottom),
     // Action buttons (bottom-right of bounding box)

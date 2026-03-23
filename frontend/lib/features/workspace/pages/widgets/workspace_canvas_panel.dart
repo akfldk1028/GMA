@@ -492,9 +492,11 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
   // ─── Group edit persistence ────────────────────────
 
   Future<void> _saveGroupEditToHive(String key, GroupEditResult result) async {
+    debugPrint('[Canvas] saving group edit: key=$key, strokes=${result.strokes.length}, notes=${result.notes.length}');
     try {
       final box = await Hive.openBox('group_edits');
       await box.put(key, result.toJson());
+      debugPrint('[Canvas] group edit saved OK');
     } catch (e) {
       debugPrint('[Canvas] group edit save failed: $e');
     }
@@ -503,11 +505,13 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
   Future<void> _loadGroupEditsFromHive() async {
     try {
       final box = await Hive.openBox('group_edits');
+      debugPrint('[Canvas] loading group edits: ${box.length} entries');
       for (final key in box.keys) {
         final data = box.get(key);
         if (data is Map) {
           _groupEditResults[key as String] =
               GroupEditResult.fromJson(Map<String, dynamic>.from(data));
+          debugPrint('[Canvas] loaded group edit: $key');
         }
       }
     } catch (e) {
@@ -637,6 +641,20 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
       onUngroup: _ungroupSelectedCards,
       onDelete: _deleteSelectedCards,
       onEdit: () => _showGroupEditModal(context),
+      onResize: (sx, sy, anchor) {
+        setState(() {
+          for (final id in _selectedCardIds) {
+            final old = _layout[id];
+            if (old == null) continue;
+            // Scale position relative to anchor + scale size
+            final newLeft = anchor.dx + (old.left - anchor.dx) * sx;
+            final newTop = anchor.dy + (old.top - anchor.dy) * sy;
+            final newW = (old.width * sx).clamp(60.0, 800.0);
+            final newH = (old.height * sy).clamp(40.0, 1000.0);
+            _layout[id] = Rect.fromLTWH(newLeft, newTop, newW, newH);
+          }
+        });
+      },
     );
   }
 

@@ -517,7 +517,6 @@ class _GroupEditDialogState extends State<GroupEditDialog> {
     final rect = _cardLayout[index]!;
     final imgPath = _resolveImage(el);
     final isHighlight = el.type == ElementType.highlight;
-    final isSelected = _selectedCard == index;
     final rotation = _cardRotations[index] ?? 0.0;
 
     return Positioned(
