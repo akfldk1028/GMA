@@ -20,61 +20,68 @@ Map<String, dynamic> _$$PanelSizesImplToJson(_$PanelSizesImpl instance) =>
       'right': instance.right,
     };
 
-_$WorkspaceStateImpl _$$WorkspaceStateImplFromJson(Map<String, dynamic> json) =>
-    _$WorkspaceStateImpl(
-      currentPdfPath: json['currentPdfPath'] as String?,
-      currentNoteId: json['currentNoteId'] as String?,
-      markers:
-          (json['markers'] as List<dynamic>?)
-              ?.map((e) => PdfMarker.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          const [],
-      openPdfPaths:
-          (json['openPdfPaths'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-      panelSizes: json['panelSizes'] == null
-          ? const PanelSizes()
-          : PanelSizes.fromJson(json['panelSizes'] as Map<String, dynamic>),
-      sidebarMode:
-          $enumDecodeNullable(_$SidebarModeEnumMap, json['sidebarMode']) ??
-          SidebarMode.fileBrowser,
-      isEditorModalOpen: json['isEditorModalOpen'] as bool? ?? false,
-      isFileBrowserOpen: json['isFileBrowserOpen'] as bool? ?? false,
-      isMarkerEditModalOpen: json['isMarkerEditModalOpen'] as bool? ?? false,
-      isStickyNoteVisible: json['isStickyNoteVisible'] as bool? ?? false,
-      isPageNavOpen: json['isPageNavOpen'] as bool? ?? true,
-      isLiveScrapsOpen: json['isLiveScrapsOpen'] as bool? ?? true,
-      focusedPanel:
-          $enumDecodeNullable(_$FocusedPanelEnumMap, json['focusedPanel']) ??
-          FocusedPanel.scrapnote,
-      isLayoutSwapped: json['isLayoutSwapped'] as bool? ?? false,
-      selectedScrapIds:
-          (json['selectedScrapIds'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toSet() ??
-          const {},
-      isQuickScrapMode: json['isQuickScrapMode'] as bool? ?? false,
-      isScrapBoardOpen: json['isScrapBoardOpen'] as bool? ?? false,
-      pendingScrapPageNumber: (json['pendingScrapPageNumber'] as num?)?.toInt(),
-      pendingScrapText: json['pendingScrapText'] as String?,
-      pendingScrapImagePath: json['pendingScrapImagePath'] as String?,
-      pendingScrapTextRect: const PdfRectConverter().fromJson(
-        json['pendingScrapTextRect'] as Map<String, dynamic>?,
-      ),
-      pendingScrapElementType: $enumDecodeNullable(
-        _$ElementTypeEnumMap,
-        json['pendingScrapElementType'],
-      ),
-      editingMarkerId: json['editingMarkerId'] as String?,
-      pendingMarkerPageNumber: (json['pendingMarkerPageNumber'] as num?)
-          ?.toInt(),
-      pendingMarkerText: json['pendingMarkerText'] as String?,
-      pendingMarkerTextRect: const PdfRectConverter().fromJson(
-        json['pendingMarkerTextRect'] as Map<String, dynamic>?,
-      ),
-    );
+_$WorkspaceStateImpl _$$WorkspaceStateImplFromJson(
+  Map<String, dynamic> json,
+) => _$WorkspaceStateImpl(
+  currentPdfPath: json['currentPdfPath'] as String?,
+  currentNoteId: json['currentNoteId'] as String?,
+  markers:
+      (json['markers'] as List<dynamic>?)
+          ?.map((e) => PdfMarker.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
+  openPdfPaths:
+      (json['openPdfPaths'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  panelSizes: json['panelSizes'] == null
+      ? const PanelSizes()
+      : PanelSizes.fromJson(json['panelSizes'] as Map<String, dynamic>),
+  sidebarMode:
+      $enumDecodeNullable(_$SidebarModeEnumMap, json['sidebarMode']) ??
+      SidebarMode.fileBrowser,
+  isEditorModalOpen: json['isEditorModalOpen'] as bool? ?? false,
+  isFileBrowserOpen: json['isFileBrowserOpen'] as bool? ?? false,
+  isMarkerEditModalOpen: json['isMarkerEditModalOpen'] as bool? ?? false,
+  isStickyNoteVisible: json['isStickyNoteVisible'] as bool? ?? false,
+  isPageNavOpen: json['isPageNavOpen'] as bool? ?? true,
+  isLiveScrapsOpen: json['isLiveScrapsOpen'] as bool? ?? true,
+  focusedPanel:
+      $enumDecodeNullable(_$FocusedPanelEnumMap, json['focusedPanel']) ??
+      FocusedPanel.scrapnote,
+  isLayoutSwapped: json['isLayoutSwapped'] as bool? ?? false,
+  selectedScrapIds:
+      (json['selectedScrapIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toSet() ??
+      const {},
+  scrapGroups:
+      (json['scrapGroups'] as List<dynamic>?)
+          ?.map((e) => (e as List<dynamic>).map((e) => e as String).toList())
+          .toList() ??
+      const [],
+  isQuickScrapMode: json['isQuickScrapMode'] as bool? ?? false,
+  isScrapBoardOpen: json['isScrapBoardOpen'] as bool? ?? false,
+  pendingScrapPageNumber: (json['pendingScrapPageNumber'] as num?)?.toInt(),
+  pendingScrapText: json['pendingScrapText'] as String?,
+  pendingScrapImagePath: json['pendingScrapImagePath'] as String?,
+  pendingScrapTextRect: const PdfRectConverter().fromJson(
+    json['pendingScrapTextRect'] as Map<String, dynamic>?,
+  ),
+  pendingScrapElementType: $enumDecodeNullable(
+    _$ElementTypeEnumMap,
+    json['pendingScrapElementType'],
+  ),
+  isHighlightMode: json['isHighlightMode'] as bool? ?? false,
+  highlightModeColorName: json['highlightModeColorName'] as String? ?? 'yellow',
+  editingMarkerId: json['editingMarkerId'] as String?,
+  pendingMarkerPageNumber: (json['pendingMarkerPageNumber'] as num?)?.toInt(),
+  pendingMarkerText: json['pendingMarkerText'] as String?,
+  pendingMarkerTextRect: const PdfRectConverter().fromJson(
+    json['pendingMarkerTextRect'] as Map<String, dynamic>?,
+  ),
+);
 
 Map<String, dynamic> _$$WorkspaceStateImplToJson(
   _$WorkspaceStateImpl instance,
@@ -94,6 +101,7 @@ Map<String, dynamic> _$$WorkspaceStateImplToJson(
   'focusedPanel': _$FocusedPanelEnumMap[instance.focusedPanel]!,
   'isLayoutSwapped': instance.isLayoutSwapped,
   'selectedScrapIds': instance.selectedScrapIds.toList(),
+  'scrapGroups': instance.scrapGroups,
   'isQuickScrapMode': instance.isQuickScrapMode,
   'isScrapBoardOpen': instance.isScrapBoardOpen,
   'pendingScrapPageNumber': instance.pendingScrapPageNumber,
@@ -104,6 +112,8 @@ Map<String, dynamic> _$$WorkspaceStateImplToJson(
   ),
   'pendingScrapElementType':
       _$ElementTypeEnumMap[instance.pendingScrapElementType],
+  'isHighlightMode': instance.isHighlightMode,
+  'highlightModeColorName': instance.highlightModeColorName,
   'editingMarkerId': instance.editingMarkerId,
   'pendingMarkerPageNumber': instance.pendingMarkerPageNumber,
   'pendingMarkerText': instance.pendingMarkerText,

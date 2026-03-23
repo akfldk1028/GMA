@@ -254,6 +254,9 @@ mixin _$WorkspaceState {
   /// Set of currently selected scrap element IDs (for edit mode)
   Set<String> get selectedScrapIds => throw _privateConstructorUsedError;
 
+  /// Scrap groups: each inner list = one group of element IDs
+  List<List<String>> get scrapGroups => throw _privateConstructorUsedError;
+
   /// Quick scrap mode — skip popup, create element immediately (슬라이드 10~12)
   bool get isQuickScrapMode => throw _privateConstructorUsedError;
 
@@ -270,6 +273,12 @@ mixin _$WorkspaceState {
   /// Element type override for pending scrap (e.g. lasso vs capture)
   ElementType? get pendingScrapElementType =>
       throw _privateConstructorUsedError;
+
+  /// Whether highlight mode is active (text drag → auto-highlight)
+  bool get isHighlightMode => throw _privateConstructorUsedError;
+
+  /// Selected color name for highlight mode (defaults to yellow)
+  String get highlightModeColorName => throw _privateConstructorUsedError;
 
   /// ID of the marker currently being edited in the modal (null = new marker)
   String? get editingMarkerId => throw _privateConstructorUsedError;
@@ -313,6 +322,7 @@ abstract class $WorkspaceStateCopyWith<$Res> {
     FocusedPanel focusedPanel,
     bool isLayoutSwapped,
     Set<String> selectedScrapIds,
+    List<List<String>> scrapGroups,
     bool isQuickScrapMode,
     bool isScrapBoardOpen,
     int? pendingScrapPageNumber,
@@ -320,6 +330,8 @@ abstract class $WorkspaceStateCopyWith<$Res> {
     String? pendingScrapImagePath,
     @PdfRectConverter() PdfRect? pendingScrapTextRect,
     ElementType? pendingScrapElementType,
+    bool isHighlightMode,
+    String highlightModeColorName,
     String? editingMarkerId,
     int? pendingMarkerPageNumber,
     String? pendingMarkerText,
@@ -359,6 +371,7 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
     Object? focusedPanel = null,
     Object? isLayoutSwapped = null,
     Object? selectedScrapIds = null,
+    Object? scrapGroups = null,
     Object? isQuickScrapMode = null,
     Object? isScrapBoardOpen = null,
     Object? pendingScrapPageNumber = freezed,
@@ -366,6 +379,8 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
     Object? pendingScrapImagePath = freezed,
     Object? pendingScrapTextRect = freezed,
     Object? pendingScrapElementType = freezed,
+    Object? isHighlightMode = null,
+    Object? highlightModeColorName = null,
     Object? editingMarkerId = freezed,
     Object? pendingMarkerPageNumber = freezed,
     Object? pendingMarkerText = freezed,
@@ -433,6 +448,10 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
                 ? _value.selectedScrapIds
                 : selectedScrapIds // ignore: cast_nullable_to_non_nullable
                       as Set<String>,
+            scrapGroups: null == scrapGroups
+                ? _value.scrapGroups
+                : scrapGroups // ignore: cast_nullable_to_non_nullable
+                      as List<List<String>>,
             isQuickScrapMode: null == isQuickScrapMode
                 ? _value.isQuickScrapMode
                 : isQuickScrapMode // ignore: cast_nullable_to_non_nullable
@@ -461,6 +480,14 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
                 ? _value.pendingScrapElementType
                 : pendingScrapElementType // ignore: cast_nullable_to_non_nullable
                       as ElementType?,
+            isHighlightMode: null == isHighlightMode
+                ? _value.isHighlightMode
+                : isHighlightMode // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            highlightModeColorName: null == highlightModeColorName
+                ? _value.highlightModeColorName
+                : highlightModeColorName // ignore: cast_nullable_to_non_nullable
+                      as String,
             editingMarkerId: freezed == editingMarkerId
                 ? _value.editingMarkerId
                 : editingMarkerId // ignore: cast_nullable_to_non_nullable
@@ -518,6 +545,7 @@ abstract class _$$WorkspaceStateImplCopyWith<$Res>
     FocusedPanel focusedPanel,
     bool isLayoutSwapped,
     Set<String> selectedScrapIds,
+    List<List<String>> scrapGroups,
     bool isQuickScrapMode,
     bool isScrapBoardOpen,
     int? pendingScrapPageNumber,
@@ -525,6 +553,8 @@ abstract class _$$WorkspaceStateImplCopyWith<$Res>
     String? pendingScrapImagePath,
     @PdfRectConverter() PdfRect? pendingScrapTextRect,
     ElementType? pendingScrapElementType,
+    bool isHighlightMode,
+    String highlightModeColorName,
     String? editingMarkerId,
     int? pendingMarkerPageNumber,
     String? pendingMarkerText,
@@ -564,6 +594,7 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
     Object? focusedPanel = null,
     Object? isLayoutSwapped = null,
     Object? selectedScrapIds = null,
+    Object? scrapGroups = null,
     Object? isQuickScrapMode = null,
     Object? isScrapBoardOpen = null,
     Object? pendingScrapPageNumber = freezed,
@@ -571,6 +602,8 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
     Object? pendingScrapImagePath = freezed,
     Object? pendingScrapTextRect = freezed,
     Object? pendingScrapElementType = freezed,
+    Object? isHighlightMode = null,
+    Object? highlightModeColorName = null,
     Object? editingMarkerId = freezed,
     Object? pendingMarkerPageNumber = freezed,
     Object? pendingMarkerText = freezed,
@@ -638,6 +671,10 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
             ? _value._selectedScrapIds
             : selectedScrapIds // ignore: cast_nullable_to_non_nullable
                   as Set<String>,
+        scrapGroups: null == scrapGroups
+            ? _value._scrapGroups
+            : scrapGroups // ignore: cast_nullable_to_non_nullable
+                  as List<List<String>>,
         isQuickScrapMode: null == isQuickScrapMode
             ? _value.isQuickScrapMode
             : isQuickScrapMode // ignore: cast_nullable_to_non_nullable
@@ -666,6 +703,14 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
             ? _value.pendingScrapElementType
             : pendingScrapElementType // ignore: cast_nullable_to_non_nullable
                   as ElementType?,
+        isHighlightMode: null == isHighlightMode
+            ? _value.isHighlightMode
+            : isHighlightMode // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        highlightModeColorName: null == highlightModeColorName
+            ? _value.highlightModeColorName
+            : highlightModeColorName // ignore: cast_nullable_to_non_nullable
+                  as String,
         editingMarkerId: freezed == editingMarkerId
             ? _value.editingMarkerId
             : editingMarkerId // ignore: cast_nullable_to_non_nullable
@@ -706,6 +751,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     this.focusedPanel = FocusedPanel.scrapnote,
     this.isLayoutSwapped = false,
     final Set<String> selectedScrapIds = const {},
+    final List<List<String>> scrapGroups = const [],
     this.isQuickScrapMode = false,
     this.isScrapBoardOpen = false,
     this.pendingScrapPageNumber,
@@ -713,13 +759,16 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     this.pendingScrapImagePath,
     @PdfRectConverter() this.pendingScrapTextRect,
     this.pendingScrapElementType,
+    this.isHighlightMode = false,
+    this.highlightModeColorName = 'yellow',
     this.editingMarkerId,
     this.pendingMarkerPageNumber,
     this.pendingMarkerText,
     @PdfRectConverter() this.pendingMarkerTextRect,
   }) : _markers = markers,
        _openPdfPaths = openPdfPaths,
-       _selectedScrapIds = selectedScrapIds;
+       _selectedScrapIds = selectedScrapIds,
+       _scrapGroups = scrapGroups;
 
   factory _$WorkspaceStateImpl.fromJson(Map<String, dynamic> json) =>
       _$$WorkspaceStateImplFromJson(json);
@@ -803,6 +852,18 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     return EqualUnmodifiableSetView(_selectedScrapIds);
   }
 
+  /// Scrap groups: each inner list = one group of element IDs
+  final List<List<String>> _scrapGroups;
+
+  /// Scrap groups: each inner list = one group of element IDs
+  @override
+  @JsonKey()
+  List<List<String>> get scrapGroups {
+    if (_scrapGroups is EqualUnmodifiableListView) return _scrapGroups;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_scrapGroups);
+  }
+
   /// Quick scrap mode — skip popup, create element immediately (슬라이드 10~12)
   @override
   @JsonKey()
@@ -828,6 +889,16 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
   @override
   final ElementType? pendingScrapElementType;
 
+  /// Whether highlight mode is active (text drag → auto-highlight)
+  @override
+  @JsonKey()
+  final bool isHighlightMode;
+
+  /// Selected color name for highlight mode (defaults to yellow)
+  @override
+  @JsonKey()
+  final String highlightModeColorName;
+
   /// ID of the marker currently being edited in the modal (null = new marker)
   @override
   final String? editingMarkerId;
@@ -843,7 +914,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
 
   @override
   String toString() {
-    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, openPdfPaths: $openPdfPaths, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, focusedPanel: $focusedPanel, isLayoutSwapped: $isLayoutSwapped, selectedScrapIds: $selectedScrapIds, isQuickScrapMode: $isQuickScrapMode, isScrapBoardOpen: $isScrapBoardOpen, pendingScrapPageNumber: $pendingScrapPageNumber, pendingScrapText: $pendingScrapText, pendingScrapImagePath: $pendingScrapImagePath, pendingScrapTextRect: $pendingScrapTextRect, pendingScrapElementType: $pendingScrapElementType, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
+    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, openPdfPaths: $openPdfPaths, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, focusedPanel: $focusedPanel, isLayoutSwapped: $isLayoutSwapped, selectedScrapIds: $selectedScrapIds, scrapGroups: $scrapGroups, isQuickScrapMode: $isQuickScrapMode, isScrapBoardOpen: $isScrapBoardOpen, pendingScrapPageNumber: $pendingScrapPageNumber, pendingScrapText: $pendingScrapText, pendingScrapImagePath: $pendingScrapImagePath, pendingScrapTextRect: $pendingScrapTextRect, pendingScrapElementType: $pendingScrapElementType, isHighlightMode: $isHighlightMode, highlightModeColorName: $highlightModeColorName, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
   }
 
   @override
@@ -884,6 +955,10 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
               other._selectedScrapIds,
               _selectedScrapIds,
             ) &&
+            const DeepCollectionEquality().equals(
+              other._scrapGroups,
+              _scrapGroups,
+            ) &&
             (identical(other.isQuickScrapMode, isQuickScrapMode) ||
                 other.isQuickScrapMode == isQuickScrapMode) &&
             (identical(other.isScrapBoardOpen, isScrapBoardOpen) ||
@@ -901,6 +976,10 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
                   pendingScrapElementType,
                 ) ||
                 other.pendingScrapElementType == pendingScrapElementType) &&
+            (identical(other.isHighlightMode, isHighlightMode) ||
+                other.isHighlightMode == isHighlightMode) &&
+            (identical(other.highlightModeColorName, highlightModeColorName) ||
+                other.highlightModeColorName == highlightModeColorName) &&
             (identical(other.editingMarkerId, editingMarkerId) ||
                 other.editingMarkerId == editingMarkerId) &&
             (identical(
@@ -933,6 +1012,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     focusedPanel,
     isLayoutSwapped,
     const DeepCollectionEquality().hash(_selectedScrapIds),
+    const DeepCollectionEquality().hash(_scrapGroups),
     isQuickScrapMode,
     isScrapBoardOpen,
     pendingScrapPageNumber,
@@ -940,6 +1020,8 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     pendingScrapImagePath,
     pendingScrapTextRect,
     pendingScrapElementType,
+    isHighlightMode,
+    highlightModeColorName,
     editingMarkerId,
     pendingMarkerPageNumber,
     pendingMarkerText,
@@ -980,6 +1062,7 @@ abstract class _WorkspaceState implements WorkspaceState {
     final FocusedPanel focusedPanel,
     final bool isLayoutSwapped,
     final Set<String> selectedScrapIds,
+    final List<List<String>> scrapGroups,
     final bool isQuickScrapMode,
     final bool isScrapBoardOpen,
     final int? pendingScrapPageNumber,
@@ -987,6 +1070,8 @@ abstract class _WorkspaceState implements WorkspaceState {
     final String? pendingScrapImagePath,
     @PdfRectConverter() final PdfRect? pendingScrapTextRect,
     final ElementType? pendingScrapElementType,
+    final bool isHighlightMode,
+    final String highlightModeColorName,
     final String? editingMarkerId,
     final int? pendingMarkerPageNumber,
     final String? pendingMarkerText,
@@ -1041,6 +1126,10 @@ abstract class _WorkspaceState implements WorkspaceState {
   @override
   Set<String> get selectedScrapIds;
 
+  /// Scrap groups: each inner list = one group of element IDs
+  @override
+  List<List<String>> get scrapGroups;
+
   /// Quick scrap mode — skip popup, create element immediately (슬라이드 10~12)
   @override
   bool get isQuickScrapMode;
@@ -1063,6 +1152,14 @@ abstract class _WorkspaceState implements WorkspaceState {
   /// Element type override for pending scrap (e.g. lasso vs capture)
   @override
   ElementType? get pendingScrapElementType;
+
+  /// Whether highlight mode is active (text drag → auto-highlight)
+  @override
+  bool get isHighlightMode;
+
+  /// Selected color name for highlight mode (defaults to yellow)
+  @override
+  String get highlightModeColorName;
 
   /// ID of the marker currently being edited in the modal (null = new marker)
   @override

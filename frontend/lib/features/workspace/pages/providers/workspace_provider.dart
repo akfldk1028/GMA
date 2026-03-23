@@ -28,6 +28,7 @@ import '../../../scrapnote/providers/scrapnote_service_provider.dart';
 import '../../../scrapnote/services/scrap_insertion_service.dart';
 import '../../../scrapnote/utils/scrapnote_block_editor.dart';
 import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
+import '../../../pdf_viewer/pages/providers/pdf_marker_provider.dart';
 import '../../../scrapnote/providers/pdf_registry_provider.dart';
 import '../../models/pdf_marker_model.dart';
 import '../../models/workspace_state.dart';
@@ -452,6 +453,19 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     state = AsyncData(
       currentState.copyWith(markers: updatedMarkers),
     );
+
+    // Persist to Hive so PdfPageOverlay can render highlights
+    try {
+      await ref.read(pdfMarkerStateProvider.notifier).createMarker(
+            pageNumber: pageNumber,
+            color: color,
+            selectedText: selectedText,
+            textRect: textRect,
+            capturedImagePath: capturedImagePath,
+          );
+    } catch (e) {
+      debugPrint('[WorkspaceProvider.createMarker] Hive persist failed: $e');
+    }
 
     // Insert marker into note editor. Auto-create note if none is open.
     var currentNoteId = state.valueOrNull?.currentNoteId;
@@ -939,6 +953,18 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     state = AsyncData(s.copyWith(isQuickScrapMode: !s.isQuickScrapMode));
   }
 
+  void toggleHighlightMode() {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(isHighlightMode: !s.isHighlightMode));
+  }
+
+  void setHighlightColor(String colorName) {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(highlightModeColorName: colorName));
+  }
+
   // ─── Scrap selection control ─────────────────────────────
 
   /// Toggle selection of a scrap element
@@ -963,6 +989,50 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     final s = state.valueOrNull;
     if (s == null) return;
     state = AsyncData(s.copyWith(selectedScrapIds: {}));
+  }
+
+  // ─── Scrap group control ──────────────────────────
+
+  void groupSelectedScraps() {
+    final s = state.valueOrNull;
+    if (s == null || s.selectedScrapIds.length < 2) return;
+    final newGroup = s.selectedScrapIds.toList();
+    // Remove members from existing groups
+    final groups = s.scrapGroups
+        .map((g) => g.where((id) => !s.selectedScrapIds.contains(id)).toList())
+        .where((g) => g.length >= 2)
+        .toList();
+    groups.add(newGroup);
+    state = AsyncData(s.copyWith(scrapGroups: groups));
+  }
+
+  void ungroupScraps(Set<String> ids) {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    final groups = s.scrapGroups
+        .where((g) => !g.any((id) => ids.contains(id)))
+        .toList();
+    state = AsyncData(s.copyWith(scrapGroups: groups));
+  }
+
+  /// Find the group containing [elementId], or null.
+  List<String>? findGroupOf(String elementId) {
+    final s = state.valueOrNull;
+    if (s == null) return null;
+    for (final g in s.scrapGroups) {
+      if (g.contains(elementId)) return g;
+    }
+    return null;
+  }
+
+  /// Check if current selection is already a group.
+  bool isSelectionGrouped() {
+    final s = state.valueOrNull;
+    if (s == null || s.selectedScrapIds.length < 2) return false;
+    for (final g in s.scrapGroups) {
+      if (s.selectedScrapIds.every((id) => g.contains(id))) return true;
+    }
+    return false;
   }
 
   /// Select specific scrap IDs

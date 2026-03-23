@@ -168,50 +168,21 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                 : null,
           ),
         ),
-        // Text selection action (appears when text is selected)
-        if (_textSelections != null && _textSelections!.isNotEmpty)
-          _buildAddMarkerButton(),
-        // Drawing toolbar + capture button (top-center) — only if not external
+        // Drawing toolbar (only if not external — workspace header handles it)
         if (widget.noteId != null && !widget.externalToolbar)
           Positioned(
             top: 8,
             left: 0,
             right: 0,
             child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DrawingToolbar(
-                    noteId: widget.noteId,
-                    pageNumber:
-                        controller.isReady ? controller.pageNumber : null,
-                  ),
-                  const SizedBox(width: 6),
-                  _buildCaptureButton(context),
-                  const SizedBox(width: 6),
-                  _buildLassoButton(context),
-                  const SizedBox(width: 6),
-                  _buildQuickModeButton(context),
-                ],
+              child: DrawingToolbar(
+                noteId: widget.noteId,
+                pageNumber:
+                    controller.isReady ? controller.pageNumber : null,
               ),
             ),
           ),
-        // Capture button only (when toolbar is external but capture is still needed)
-        if (widget.noteId != null && widget.externalToolbar)
-          Positioned(
-            top: 8,
-            right: 8,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildCaptureButton(context),
-                const SizedBox(width: 6),
-                _buildLassoButton(context),
-                const SizedBox(width: 6),
-                _buildQuickModeButton(context),
-              ],
-            ),
-          ),
+        // All capture/lasso/highlight buttons moved to workspace header
         // Page navigation controls
         _buildNavigationControls(controller),
       ],
@@ -226,19 +197,42 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       // Get the selected text ranges
       final selections = await textSelection.getSelectedTextRanges();
 
-      setState(() {
-        _textSelections = selections;
-        if (selections.isEmpty) {
+      if (selections.isEmpty) {
+        setState(() {
+          _textSelections = null;
           _selectedText = null;
           _selectedPageNumber = null;
           _selectedTextRect = null;
-        } else {
-          // Get the first selection (pdfrx supports multi-selection but we use single)
-          final firstSelection = selections.first;
-          _selectedPageNumber = firstSelection.pageNumber;
-          _selectedText = firstSelection.text;
-          _selectedTextRect = firstSelection.bounds;
-        }
+        });
+        return;
+      }
+
+      final firstSelection = selections.first;
+
+      // Highlight mode: auto-create highlight on text selection
+      final ws = ref.read(workspaceProviderProvider).valueOrNull;
+      if (ws?.isHighlightMode == true) {
+        final color = MarkerColor.fromName(ws!.highlightModeColorName);
+        ref.read(workspaceProviderProvider.notifier).createMarker(
+              pageNumber: firstSelection.pageNumber,
+              color: color,
+              selectedText: firstSelection.text,
+              textRect: firstSelection.bounds,
+            );
+        setState(() {
+          _textSelections = null;
+          _selectedText = null;
+          _selectedPageNumber = null;
+          _selectedTextRect = null;
+        });
+        return;
+      }
+
+      setState(() {
+        _textSelections = selections;
+        _selectedPageNumber = firstSelection.pageNumber;
+        _selectedText = firstSelection.text;
+        _selectedTextRect = firstSelection.bounds;
       });
     } catch (e) {
       // Handle error silently or log it
@@ -251,32 +245,92 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     }
   }
 
-  /// Build text selection action button (Add Marker only).
+  /// Build text selection action: color picker for instant highlight.
   Widget _buildAddMarkerButton() {
     return Positioned(
       top: 60,
       right: 16,
-      child: ShadButton(
-        onPressed: () {
-          if (_selectedPageNumber == null) return;
-          widget.onAddMarkerPressed?.call(
-            pageNumber: _selectedPageNumber!,
-            selectedText: _selectedText,
-            textRect: _selectedTextRect,
-          );
-          _clearSelection();
-        },
-        size: ShadButtonSize.sm,
-        child: const Row(
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.bookmark_add, size: 16),
-            SizedBox(width: 6),
-            Text('Add Marker'),
+            // Color circles for instant highlight
+            for (final color in [
+              MarkerColor.red,
+              MarkerColor.yellow,
+              MarkerColor.green,
+              MarkerColor.blue,
+              MarkerColor.purple,
+            ])
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: GestureDetector(
+                  onTap: () => _createHighlight(color),
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: color.color.withValues(alpha: 0.7),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: color.color,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(width: 4),
+            // Add Marker button (for capture/scrapboard flow)
+            GestureDetector(
+              onTap: () {
+                if (_selectedPageNumber == null) return;
+                widget.onAddMarkerPressed?.call(
+                  pageNumber: _selectedPageNumber!,
+                  selectedText: _selectedText,
+                  textRect: _selectedTextRect,
+                );
+                _clearSelection();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.bookmark_add,
+                    size: 16, color: Colors.white),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  /// Create highlight immediately with selected color.
+  void _createHighlight(MarkerColor color) {
+    if (_selectedPageNumber == null) return;
+    ref.read(workspaceProviderProvider.notifier).createMarker(
+          pageNumber: _selectedPageNumber!,
+          color: color,
+          selectedText: _selectedText,
+          textRect: _selectedTextRect,
+        );
+    _clearSelection();
   }
 
   void _clearSelection() {

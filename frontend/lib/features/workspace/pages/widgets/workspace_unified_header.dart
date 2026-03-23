@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../pdf_viewer/capture/pages/providers/capture_provider.dart';
+import '../../../pdf_viewer/capture/pages/providers/lasso_provider.dart';
 import '../../../pdf_viewer/drawing/pages/providers/drawing_provider.dart';
 import '../../../pdf_viewer/drawing/pages/widgets/drawing_toolbar_widgets.dart';
 import '../../../pdf_viewer/drawing/tools/tool_registry.dart';
@@ -94,10 +96,13 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
                         onTap: () {
                           final notifier =
                               ref.read(drawingModeProvider.notifier);
-                          if (!isDrawing) {
-                            notifier.toggleActive();
+                          if (isDrawing && drawingMode.currentToolId == tool.id) {
+                            // Same tool tapped again → turn off
+                            notifier.setActive(false);
+                          } else {
+                            notifier.setActive(true);
+                            notifier.selectTool(tool.id);
                           }
-                          notifier.selectTool(tool.id);
                         },
                       ),
                     const ToolbarDivider(),
@@ -126,6 +131,94 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
                           notifier.setSize(size);
                         },
                       ),
+                    const ToolbarDivider(),
+                    // Highlight mode toggle + check to complete
+                    Builder(builder: (context) {
+                      final ws = ref.watch(workspaceProviderProvider).valueOrNull;
+                      final isHL = ws?.isHighlightMode ?? false;
+                      if (isHL) {
+                        // In highlight mode: show color dots + check button
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (final entry in {
+                              'red': 0xFFEF4444,
+                              'yellow': 0xFFF59E0B,
+                              'green': 0xFF22C55E,
+                              'blue': 0xFF3B82F6,
+                              'purple': 0xFF8B5CF6,
+                            }.entries)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 2),
+                                child: GestureDetector(
+                                  onTap: () => ref
+                                      .read(workspaceProviderProvider.notifier)
+                                      .setHighlightColor(entry.key),
+                                  child: Container(
+                                    width: 18,
+                                    height: 18,
+                                    decoration: BoxDecoration(
+                                      color: Color(entry.value),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: ws?.highlightModeColorName == entry.key
+                                            ? Colors.white
+                                            : Colors.transparent,
+                                        width: 2,
+                                      ),
+                                      boxShadow: ws?.highlightModeColorName == entry.key
+                                          ? [BoxShadow(
+                                              color: Color(entry.value).withValues(alpha: 0.5),
+                                              blurRadius: 4,
+                                            )]
+                                          : null,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(width: 6),
+                            // Check to complete
+                            ToolbarIconButton(
+                              icon: Icons.check_circle,
+                              tooltip: 'Highlight Done',
+                              isActive: true,
+                              activeColor: Colors.green,
+                              onTap: () => ref
+                                  .read(workspaceProviderProvider.notifier)
+                                  .toggleHighlightMode(),
+                            ),
+                          ],
+                        );
+                      }
+                      // Not in highlight mode: show toggle button
+                      return ToolbarIconButton(
+                        icon: Icons.border_color_rounded,
+                        tooltip: 'Highlight Mode',
+                        isActive: false,
+                        onTap: () => ref
+                            .read(workspaceProviderProvider.notifier)
+                            .toggleHighlightMode(),
+                      );
+                    }),
+                    const ToolbarDivider(),
+                    // Capture (crop) button
+                    ToolbarIconButton(
+                      icon: Icons.crop,
+                      tooltip: 'Capture',
+                      isActive: ref.watch(captureModeProvider),
+                      onTap: () => ref
+                          .read(captureModeProvider.notifier)
+                          .toggle(),
+                    ),
+                    // Lasso button
+                    ToolbarIconButton(
+                      icon: Icons.gesture,
+                      tooltip: 'Lasso',
+                      isActive: ref.watch(lassoModeProvider),
+                      onTap: () => ref
+                          .read(lassoModeProvider.notifier)
+                          .toggle(),
+                    ),
                     const ToolbarDivider(),
                     // Quick scrap toggle (슬라이드 10~12)
                     ToolbarIconButton(

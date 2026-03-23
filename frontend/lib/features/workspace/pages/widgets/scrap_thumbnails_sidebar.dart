@@ -36,8 +36,40 @@ class ScrapThumbnailsSidebar extends ConsumerStatefulWidget {
       _ScrapThumbnailsSidebarState();
 }
 
+enum _SidebarTab { all, capture, highlight }
+
+class _SidebarItem {
+  final List<ScrapElement> elements;
+  final bool isGroup;
+  final int groupIndex;
+
+  _SidebarItem({
+    required this.elements,
+    this.isGroup = false,
+    this.groupIndex = 0,
+  });
+}
+
 class _ScrapThumbnailsSidebarState
     extends ConsumerState<ScrapThumbnailsSidebar> {
+  _SidebarTab _currentTab = _SidebarTab.all;
+
+  List<ScrapElement> _filterElements(List<ScrapElement> elements) {
+    switch (_currentTab) {
+      case _SidebarTab.all:
+        return elements;
+      case _SidebarTab.capture:
+        return elements
+            .where((e) =>
+                e.type == ElementType.capture || e.type == ElementType.lasso)
+            .toList();
+      case _SidebarTab.highlight:
+        return elements
+            .where((e) => e.type == ElementType.highlight)
+            .toList();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
@@ -47,9 +79,7 @@ class _ScrapThumbnailsSidebarState
     final allElements = noteId != null
         ? ref.watch(noteScrapProvider(noteId))
         : ref.read(elementStoreProvider.notifier).all();
-    var elements = allElements
-        .where((e) => e.type == ElementType.capture || e.type == ElementType.lasso)
-        .toList();
+    var elements = allElements.toList();
     // If canvas provides order, sort elements to match
     if (widget.canvasOrder != null && widget.canvasOrder!.isNotEmpty) {
       final orderMap = <String, int>{};
@@ -62,6 +92,7 @@ class _ScrapThumbnailsSidebarState
         return ai.compareTo(bi);
       });
     }
+    final filtered = _filterElements(elements);
     final selectedIds = ws?.selectedScrapIds ?? {};
 
     if (ws == null) return const SizedBox.shrink();
@@ -76,10 +107,9 @@ class _ScrapThumbnailsSidebarState
       ),
       child: Column(
         children: [
-          // ─── Header: count ───
+          // ─── Tab bar ───
           Container(
-            height: 28,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            height: 30,
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(color: theme.colorScheme.border),
@@ -87,23 +117,25 @@ class _ScrapThumbnailsSidebarState
             ),
             child: Row(
               children: [
-                Text('Scraps',
-                    style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.foreground)),
-                const SizedBox(width: 4),
-                Text('${elements.length}',
-                    style: TextStyle(
-                        fontSize: 9,
-                        color: theme.colorScheme.mutedForeground)),
+                _buildTab(theme, _SidebarTab.all, '전체',
+                    elements.length),
+                _buildTab(theme, _SidebarTab.capture, '캡처',
+                    elements
+                        .where((e) =>
+                            e.type == ElementType.capture ||
+                            e.type == ElementType.lasso)
+                        .length),
+                _buildTab(theme, _SidebarTab.highlight, '하이라이트',
+                    elements
+                        .where((e) => e.type == ElementType.highlight)
+                        .length),
               ],
             ),
           ),
 
           // ─── Flat list (markdown order) ───
           Expanded(
-            child: elements.isEmpty
+            child: filtered.isEmpty
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -120,22 +152,181 @@ class _ScrapThumbnailsSidebarState
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(
                         vertical: 4, horizontal: 6),
-                    itemCount: elements.length,
+                    itemCount: _buildSidebarItems(filtered, ws?.scrapGroups ?? []).length,
                     itemBuilder: (context, index) {
-                      final el = elements[index];
-                      return _ScrapMiniPreview(
-                        element: el,
-                        theme: theme,
-                        isSelected: selectedIds.contains(el.id),
-                        onTap: widget.onElementTap != null
-                            ? () => widget.onElementTap!(el.id)
-                            : null,
-                        capturesDir: widget.capturesDir,
-                      );
+                      final items = _buildSidebarItems(filtered, ws?.scrapGroups ?? []);
+                      final item = items[index];
+                      return item.isGroup
+                          ? _buildGroupedPreview(
+                              item, theme, selectedIds, ref, index + 1)
+                          : _ScrapMiniPreview(
+                              element: item.elements.first,
+                              theme: theme,
+                              orderIndex: index + 1,
+                              isSelected: selectedIds.contains(item.elements.first.id),
+                              isGrouped: false,
+                              onTap: () {
+                                ref.read(workspaceProviderProvider.notifier)
+                                    .toggleScrapSelection(item.elements.first.id);
+                                widget.onElementTap?.call(item.elements.first.id);
+                              },
+                              capturesDir: widget.capturesDir,
+                            );
                     },
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Build merged sidebar items — grouped elements collapse into one entry.
+  List<_SidebarItem> _buildSidebarItems(
+      List<ScrapElement> filtered, List<List<String>> groups) {
+    final items = <_SidebarItem>[];
+    final consumed = <String>{};
+
+    for (final el in filtered) {
+      if (consumed.contains(el.id)) continue;
+
+      // Check if this element belongs to a group
+      List<String>? group;
+      int? groupIdx;
+      for (var gi = 0; gi < groups.length; gi++) {
+        if (groups[gi].contains(el.id)) {
+          group = groups[gi];
+          groupIdx = gi;
+          break;
+        }
+      }
+
+      if (group != null) {
+        // Collect all group members that are in filtered
+        final groupElements = filtered
+            .where((e) => group!.contains(e.id))
+            .toList();
+        for (final ge in groupElements) {
+          consumed.add(ge.id);
+        }
+        items.add(_SidebarItem(
+          elements: groupElements,
+          isGroup: true,
+          groupIndex: groupIdx! + 1,
+        ));
+      } else {
+        consumed.add(el.id);
+        items.add(_SidebarItem(elements: [el]));
+      }
+    }
+    return items;
+  }
+
+  Widget _buildGroupedPreview(
+      _SidebarItem item, ShadThemeData theme,
+      Set<String> selectedIds, WidgetRef ref, int orderIndex) {
+    final isAnySelected = item.elements.any((e) => selectedIds.contains(e.id));
+    final firstEl = item.elements.first;
+    final count = item.elements.length;
+
+    return GestureDetector(
+      onTap: () {
+        // Select/deselect all group members
+        final notifier = ref.read(workspaceProviderProvider.notifier);
+        for (final el in item.elements) {
+          if (!selectedIds.contains(el.id)) {
+            notifier.toggleScrapSelection(el.id);
+          }
+        }
+        widget.onElementTap?.call(firstEl.id);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+        decoration: BoxDecoration(
+          color: isAnySelected
+              ? theme.colorScheme.primary.withValues(alpha: 0.15)
+              : theme.colorScheme.muted.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(4),
+          border: Border(
+            left: BorderSide(
+              color: isAnySelected
+                  ? theme.colorScheme.primary
+                  : Colors.blue.shade400,
+              width: isAnySelected ? 3 : 2,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            // Group order badge
+            Container(
+              width: 14,
+              height: 14,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.blue.shade100,
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Text(
+                '$orderIndex',
+                style: TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.blue.shade700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 3),
+            // Stacked group icon
+            Icon(Icons.layers, size: 11, color: Colors.blue.shade400),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                'Group ${item.groupIndex} ($count)',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.foreground,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTab(
+      ShadThemeData theme, _SidebarTab tab, String label, int count) {
+    final isActive = _currentTab == tab;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _currentTab = tab),
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isActive
+                    ? theme.colorScheme.primary
+                    : Colors.transparent,
+                width: 2,
+              ),
+            ),
+          ),
+          child: Text(
+            '$label $count',
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+              color: isActive
+                  ? theme.colorScheme.foreground
+                  : theme.colorScheme.mutedForeground,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -145,13 +336,17 @@ class _ScrapMiniPreview extends StatelessWidget {
   const _ScrapMiniPreview({
     required this.element,
     required this.theme,
+    required this.orderIndex,
     this.isSelected = false,
+    this.isGrouped = false,
     this.onTap,
     this.capturesDir,
   });
   final ScrapElement element;
   final ShadThemeData theme;
+  final int orderIndex;
   final bool isSelected;
+  final bool isGrouped;
   final VoidCallback? onTap;
   final String? capturesDir;
 
@@ -202,6 +397,25 @@ class _ScrapMiniPreview extends StatelessWidget {
           children: [
             Row(
               children: [
+                // Order number badge
+                Container(
+                  width: 14,
+                  height: 14,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Text(
+                    '$orderIndex',
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 3),
                 Icon(
                   isCapture
                       ? Icons.crop_rounded

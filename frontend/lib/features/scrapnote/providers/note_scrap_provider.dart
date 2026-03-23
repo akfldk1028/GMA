@@ -40,7 +40,7 @@ List<ScrapElement> noteScrap(NoteScrapRef ref, String noteId) {
     debugPrint('[noteScrapProvider] block found, ${ids.length} element IDs');
     if (ids.isNotEmpty) {
       final elements = elementStore.getByIds(ids)
-          .where((e) => e.type == ElementType.capture || e.type == ElementType.lasso)
+          .where((e) => e.type != ElementType.drawing)
           .toList();
       // Preserve @el order from block (user-defined via drag reorder).
       // Only sort by PDF position in fallback path below.
@@ -58,9 +58,9 @@ List<ScrapElement> noteScrap(NoteScrapRef ref, String noteId) {
   if (pdfId == null) return [];
 
   final elements = elementStore.getByPdfId(pdfId)
-      .where((e) => e.type == ElementType.capture || e.type == ElementType.lasso)
+      .where((e) => e.type != ElementType.drawing)
       .toList();
-  debugPrint('[noteScrapProvider] fallback: ${elements.length} capture/lasso elements for pdfId $pdfId');
+  debugPrint('[noteScrapProvider] fallback: ${elements.length} elements for pdfId $pdfId');
 
   // Trigger async backfill so next rebuild uses block path instead of fallback.
   // syncElementsToBlock invalidates noteStateProvider when it writes,

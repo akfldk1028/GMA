@@ -58,6 +58,8 @@ class WorkspaceState with _$WorkspaceState {
     @Default(false) bool isLayoutSwapped,
     /// Set of currently selected scrap element IDs (for edit mode)
     @Default({}) Set<String> selectedScrapIds,
+    /// Scrap groups: each inner list = one group of element IDs
+    @Default([]) List<List<String>> scrapGroups,
     /// Quick scrap mode — skip popup, create element immediately (슬라이드 10~12)
     @Default(false) bool isQuickScrapMode,
     /// Whether the scrap board popup is open
@@ -69,6 +71,10 @@ class WorkspaceState with _$WorkspaceState {
     @PdfRectConverter() PdfRect? pendingScrapTextRect,
     /// Element type override for pending scrap (e.g. lasso vs capture)
     ElementType? pendingScrapElementType,
+    /// Whether highlight mode is active (text drag → auto-highlight)
+    @Default(false) bool isHighlightMode,
+    /// Selected color name for highlight mode (defaults to yellow)
+    @Default('yellow') String highlightModeColorName,
     /// ID of the marker currently being edited in the modal (null = new marker)
     String? editingMarkerId,
     /// Pending marker data for the marker edit modal (from text selection)

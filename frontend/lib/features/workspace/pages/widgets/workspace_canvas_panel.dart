@@ -1,19 +1,21 @@
-import 'dart:io';
 import 'dart:math';
-import 'dart:ui' as ui;
 import 'package:vector_math/vector_math_64.dart' as vector_math;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
 import '../../../../utils/file_system_provider.dart';
 import '../../../pdf_viewer/drawing/models/drawing_model.dart';
 import '../../../scrapnote/models/element_model.dart';
-import '../../../scrapnote/providers/element_store.dart';
 import '../../../scrapnote/providers/note_scrap_provider.dart';
 import '../../../scrapnote/providers/scrap_annotation_provider.dart';
 import '../providers/workspace_provider.dart';
+
+import 'canvas/canvas_card.dart';
+import 'canvas/canvas_handles.dart';
+import 'canvas/canvas_header.dart';
+import 'canvas/canvas_painters.dart';
+import 'canvas/group_edit_dialog.dart';
+import 'canvas/scrap_import_dialog.dart';
 
 // ─── Constants ───────────────────────────────────
 const _kDefaultCardHeight = 120.0;
@@ -64,6 +66,9 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
   List<Offset> _panelCurrentPoints = [];
   String? _draggedId; // Track which card is being dragged
   bool _orderSyncPending = false;
+  final Set<String> _selectedCardIds = {}; // Multi-select support
+  final Map<String, double> _rotations = {}; // elementId → angle in radians
+  bool _isRotating = false; // Prevent card move during rotation
 
   final TransformationController _transformCtrl = TransformationController();
 
@@ -127,17 +132,19 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
 
     final filtered = elements
         .where((e) =>
-            e.type == ElementType.capture || e.type == ElementType.lasso)
+            e.type == ElementType.capture ||
+            e.type == ElementType.lasso ||
+            e.type == ElementType.highlight)
         .toList();
     return Column(
       children: [
-        _CanvasHeader(
+        CanvasHeader(
           totalCount: filtered.length,
           annotateMode: _annotateMode,
           onAnnotateToggled: () =>
               setState(() => _annotateMode = !_annotateMode),
           onImportPressed: widget.noteId != null
-              ? () => _ScrapImportDialog.show(
+              ? () => ScrapImportDialog.show(
                     context: context,
                     ref: ref,
                     currentNoteId: widget.noteId!,
@@ -170,18 +177,34 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                       child: Stack(
                         children: [
                           Positioned.fill(
-                            child: CustomPaint(
-                                painter: _NotebookBgPainter()),
+                            child: GestureDetector(
+                              onTap: () {
+                                if (_selectedCardIds.isNotEmpty) {
+                                  setState(() {
+                                    _selectedCardIds.clear();
+                                    _syncSelectionToWorkspace();
+                                  });
+                                }
+                              },
+                              child: CustomPaint(
+                                  painter: NotebookBgPainter()),
+                            ),
                           ),
                           for (final el in filtered)
                             _buildPositionedCard(
                                 el, capturesDir, cardW, filtered),
+                          // Group bounding box handles for multi-select
+                          if (_selectedCardIds.length > 1 && !_annotateMode)
+                            ..._buildGroupHandlesWidgets(),
+                          // Rotation handle (single or group)
+                          if (_selectedCardIds.isNotEmpty && !_annotateMode)
+                            _buildRotationHandleForSelection(),
                           // Drawing strokes always visible
                           Positioned.fill(
                             child: IgnorePointer(
                               ignoring: true,
                               child: CustomPaint(
-                                painter: _AbsoluteStrokePainter(
+                                painter: AbsoluteStrokePainter(
                                   strokes: _panelStrokes,
                                   liveStroke: _panelCurrentPoints.length >= 2
                                       ? DrawingStroke(
@@ -287,73 +310,300 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
       ScrapElement el, String? capturesDir, double cardW,
       List<ScrapElement> filtered) {
     final rect = _layout[el.id]!;
+    final isSelected = _selectedCardIds.contains(el.id);
+
+    final rotation = _rotations[el.id] ?? 0.0;
+
     return Positioned(
       left: rect.left,
       top: rect.top,
       width: rect.width,
       height: rect.height,
-      child: GestureDetector(
+      child: Transform.rotate(
+        angle: rotation,
+        child: GestureDetector(
         onTap: _annotateMode
             ? null
-            : () => widget.onNavigateToPage(el.pageNumber),
-        onLongPress: _annotateMode
+            : () {
+                setState(() {
+                  if (isSelected && _selectedCardIds.length == 1) {
+                    // Tap sole selected card → navigate to PDF page
+                    widget.onNavigateToPage(el.pageNumber);
+                  } else if (isSelected) {
+                    // Tap already selected card in multi-select → deselect it
+                    _selectedCardIds.remove(el.id);
+                  } else if (_selectedCardIds.isNotEmpty) {
+                    // Already have selection → add to multi-select
+                    _selectedCardIds.add(el.id);
+                  } else {
+                    // No selection → single select
+                    _selectedCardIds.add(el.id);
+                  }
+                  _syncSelectionToWorkspace();
+                });
+              },
+        onDoubleTap: _annotateMode
             ? null
-            : () => _showCardMenu(context, el),
+            : () => widget.onNavigateToPage(el.pageNumber),
         onPanUpdate: _annotateMode
             ? null
             : (details) {
+                if (_isRotating) return;
                 setState(() {
-                  final old = _layout[el.id]!;
-                  _layout[el.id] = Rect.fromLTWH(
-                    old.left + details.delta.dx,
-                    old.top + details.delta.dy,
-                    old.width,
-                    old.height,
-                  );
+                  if (!_selectedCardIds.contains(el.id)) {
+                    _selectedCardIds.clear();
+                    _selectedCardIds.add(el.id);
+                    _syncSelectionToWorkspace();
+                  }
+                  // Move ALL selected + grouped cards together
+                  final movable = _getMovableIds(el.id);
+                  for (final id in movable) {
+                    final old = _layout[id];
+                    if (old == null) continue;
+                    _layout[id] = Rect.fromLTWH(
+                      old.left + details.delta.dx,
+                      old.top + details.delta.dy,
+                      old.width,
+                      old.height,
+                    );
+                  }
                   _draggedId = el.id;
                 });
               },
+        onPanEnd: _annotateMode
+            ? null
+            : (_) {
+                if (_draggedId != null) {
+                  _draggedId = null;
+                  _syncOrderByPosition(filtered);
+                }
+              },
         child: Stack(
+          clipBehavior: Clip.none,
           children: [
+            // Card content
             Positioned.fill(
-              child: _ScrapCard(
-                element: el,
-                capturesDir: capturesDir,
+              child: Container(
+                decoration: isSelected
+                    ? BoxDecoration(
+                        border: Border.all(
+                          color: Colors.blue.shade400,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(6),
+                      )
+                    : null,
+                child: CanvasScrapCard(
+                  element: el,
+                  capturesDir: capturesDir,
+                ),
               ),
             ),
-            // Resize handle (bottom-right corner)
-            if (!_annotateMode)
+            // Single selection handles (hide when multi-selected — group handles shown instead)
+            if (isSelected && _selectedCardIds.length == 1 && !_annotateMode) ...[
+              buildHandle(elId: el.id, pos: HandlePos.topLeft, onResize: _onHandleResize),
+              buildHandle(elId: el.id, pos: HandlePos.topRight, onResize: _onHandleResize),
+              buildHandle(elId: el.id, pos: HandlePos.bottomLeft, onResize: _onHandleResize),
+              buildHandle(elId: el.id, pos: HandlePos.bottomRight, onResize: _onHandleResize),
+              buildHandle(elId: el.id, pos: HandlePos.bottomCenter, onResize: _onHandleResize),
               Positioned(
-                right: 0,
-                bottom: 0,
+                right: -12,
+                top: -12,
                 child: GestureDetector(
-                  onPanUpdate: (details) {
+                  onTap: () {
                     setState(() {
-                      final old = _layout[el.id]!;
-                      _layout[el.id] = Rect.fromLTWH(
-                        old.left,
-                        old.top,
-                        (old.width + details.delta.dx).clamp(100.0, 800.0),
-                        (old.height + details.delta.dy).clamp(80.0, 1000.0),
-                      );
+                      _selectedCardIds.remove(el.id);
+                      _syncSelectionToWorkspace();
                     });
+                    _showCardMenu(context, el);
                   },
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.resizeDownRight,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      alignment: Alignment.bottomRight,
-                      child: Icon(Icons.drag_handle,
-                          size: 10, color: Colors.grey.shade400),
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade400,
+                      shape: BoxShape.circle,
                     ),
+                    child: const Icon(Icons.close,
+                        size: 12, color: Colors.white),
                   ),
                 ),
               ),
+            ],
           ],
         ),
       ),
+      ),
     );
+  }
+
+  // ─── Handle resize callback ───────────────────────
+
+  void _onHandleResize(String elId, HandlePos pos, Offset delta) {
+    setState(() {
+      final old = _layout[elId]!;
+      double l = old.left, t = old.top, w = old.width, h = old.height;
+      final dx = delta.dx;
+      final dy = delta.dy;
+      switch (pos) {
+        case HandlePos.topLeft:
+          l += dx; t += dy; w -= dx; h -= dy;
+        case HandlePos.topRight:
+          t += dy; w += dx; h -= dy;
+        case HandlePos.bottomLeft:
+          l += dx; w -= dx; h += dy;
+        case HandlePos.bottomRight:
+          w += dx; h += dy;
+        case HandlePos.topCenter:
+          t += dy; h -= dy;
+        case HandlePos.bottomCenter:
+          h += dy;
+      }
+      _layout[elId] = Rect.fromLTWH(
+        l, t, w.clamp(80.0, 800.0), h.clamp(60.0, 1000.0),
+      );
+    });
+  }
+
+  // ─── Group / Delete actions ────────────────────────
+
+  void _groupSelectedCards() {
+    ref.read(workspaceProviderProvider.notifier).groupSelectedScraps();
+  }
+
+  void _ungroupSelectedCards() {
+    ref.read(workspaceProviderProvider.notifier)
+        .ungroupScraps(_selectedCardIds);
+  }
+
+  void _deleteSelectedCards() {
+    if (_selectedCardIds.isEmpty || widget.noteId == null) return;
+    final idsToDelete = _selectedCardIds.toList();
+    for (final id in idsToDelete) {
+      ref.read(workspaceProviderProvider.notifier)
+          .removeScrapElement(widget.noteId!, id);
+    }
+    setState(() {
+      _selectedCardIds.clear();
+      _syncSelectionToWorkspace();
+    });
+  }
+
+  /// When dragging a selected card, also move its group members.
+  Set<String> _getMovableIds(String dragId) {
+    final ids = Set<String>.from(_selectedCardIds);
+    final notifier = ref.read(workspaceProviderProvider.notifier);
+    final group = notifier.findGroupOf(dragId);
+    if (group != null) ids.addAll(group);
+    return ids;
+  }
+
+  bool get _isSelectionGrouped =>
+      ref.read(workspaceProviderProvider.notifier).isSelectionGrouped();
+
+  void _showGroupEditModal(BuildContext context) {
+    // Gather all elements in the selected group
+    final elements = <ScrapElement>[];
+    final allElements = widget.noteId != null
+        ? ref.read(noteScrapProvider(widget.noteId!))
+        : <ScrapElement>[];
+    for (final el in allElements) {
+      if (_selectedCardIds.contains(el.id)) {
+        elements.add(el);
+      }
+    }
+    final capturesDir =
+        ref.watch(capturesDirectoryProvider).valueOrNull?.path;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => GroupEditDialog(
+        elements: elements,
+        capturesDir: capturesDir,
+        onConfirm: () => Navigator.pop(ctx),
+      ),
+    );
+  }
+
+  /// Compute bounding box of all selected cards.
+  Rect? _groupBounds() {
+    if (_selectedCardIds.isEmpty) return null;
+    double minL = double.infinity, minT = double.infinity;
+    double maxR = double.negativeInfinity, maxB = double.negativeInfinity;
+    for (final id in _selectedCardIds) {
+      final r = _layout[id];
+      if (r == null) continue;
+      if (r.left < minL) minL = r.left;
+      if (r.top < minT) minT = r.top;
+      if (r.right > maxR) maxR = r.right;
+      if (r.bottom > maxB) maxB = r.bottom;
+    }
+    if (minL == double.infinity) return null;
+    return Rect.fromLTRB(minL, minT, maxR, maxB);
+  }
+
+  /// Build group bounding box outline + corner handles for multi-select.
+  List<Widget> _buildGroupHandlesWidgets() {
+    final bounds = _groupBounds();
+    if (bounds == null) return [];
+    return buildGroupHandles(
+      bounds: bounds,
+      isGrouped: _isSelectionGrouped,
+      onGroup: _groupSelectedCards,
+      onUngroup: _ungroupSelectedCards,
+      onDelete: _deleteSelectedCards,
+      onEdit: () => _showGroupEditModal(context),
+    );
+  }
+
+  /// Rotation handle for current selection (single card or group).
+  Widget _buildRotationHandleForSelection() {
+    if (_selectedCardIds.length == 1) {
+      final id = _selectedCardIds.first;
+      if (!_layout.containsKey(id)) return const SizedBox.shrink();
+      return _buildRotationHandleOverlay(id);
+    }
+    // Multi-select: use group bounds
+    final bounds = _groupBounds();
+    if (bounds == null) return const SizedBox.shrink();
+    final cx = bounds.left + bounds.width / 2;
+    final handleTop = bounds.top - 42;
+    return buildRotationHandleAt(
+      cx: cx,
+      handleTop: handleTop,
+      onRotateStart: () => _isRotating = true,
+      onRotate: (delta) {
+        setState(() {
+          for (final id in _selectedCardIds) {
+            _rotations[id] = (_rotations[id] ?? 0.0) + delta;
+          }
+        });
+      },
+      onRotateEnd: () => _isRotating = false,
+    );
+  }
+
+  Widget _buildRotationHandleOverlay(String elId) {
+    final rect = _layout[elId]!;
+    final cx = rect.left + rect.width / 2;
+    final handleTop = rect.top - 34;
+    return buildRotationHandleAt(
+      cx: cx,
+      handleTop: handleTop,
+      onRotateStart: () => _isRotating = true,
+      onRotate: (delta) {
+        setState(() {
+          _rotations[elId] = (_rotations[elId] ?? 0.0) + delta;
+        });
+      },
+      onRotateEnd: () => _isRotating = false,
+    );
+  }
+
+  /// Sync local selection to WorkspaceState so left sidebar reflects it.
+  void _syncSelectionToWorkspace() {
+    ref.read(workspaceProviderProvider.notifier)
+        .setScrapSelection(Set<String>.from(_selectedCardIds));
   }
 
   /// After card drag, sync markdown order to match canvas positions.
@@ -520,406 +770,6 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
               style: TextStyle(color: Colors.grey, fontSize: 11)),
         ],
       ),
-    );
-  }
-}
-
-/// Paints strokes using absolute canvas coordinates (not normalized).
-class _AbsoluteStrokePainter extends CustomPainter {
-  _AbsoluteStrokePainter({required this.strokes, this.liveStroke});
-  final List<DrawingStroke> strokes;
-  final DrawingStroke? liveStroke;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (final stroke in strokes) {
-      _drawAbsStroke(canvas, stroke);
-    }
-    if (liveStroke != null) {
-      _drawAbsStroke(canvas, liveStroke!);
-    }
-  }
-
-  void _drawAbsStroke(Canvas canvas, DrawingStroke stroke) {
-    if (stroke.points.length < 2) return;
-    final paint = Paint()
-      ..color = Color(stroke.colorValue)
-      ..strokeWidth = stroke.size
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    final path = Path();
-    path.moveTo(stroke.points[0].x, stroke.points[0].y);
-    for (var i = 1; i < stroke.points.length; i++) {
-      path.lineTo(stroke.points[i].x, stroke.points[i].y);
-    }
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _AbsoluteStrokePainter old) => true;
-}
-
-// ─── Scrap card ──────────────────────────────────
-
-class _ScrapCard extends StatelessWidget {
-  const _ScrapCard({
-    required this.element,
-    this.capturesDir,
-  });
-
-  final ScrapElement element;
-  final String? capturesDir;
-
-  String? get _resolvedImagePath {
-    final img = element.imagePath;
-    if (img == null || img.isEmpty || kIsWeb) return null;
-    if (p.isAbsolute(img)) {
-      if (File(img).existsSync()) return img;
-      return null;
-    }
-    if (capturesDir != null) {
-      final resolved = p.join(capturesDir!, img);
-      if (File(resolved).existsSync()) return resolved;
-    }
-    return null;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final imgPath = _resolvedImagePath;
-    final isLasso = element.type == ElementType.lasso;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isLasso ? Colors.transparent : Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        border: isLasso ? null : Border.all(color: Colors.grey.shade200),
-        boxShadow: isLasso
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header — compact for lasso
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: isLasso
-                    ? Colors.black.withValues(alpha: 0.4)
-                    : Colors.grey.shade50,
-                border: isLasso
-                    ? null
-                    : Border(
-                        bottom: BorderSide(color: Colors.grey.shade200)),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    isLasso ? Icons.gesture : Icons.crop,
-                    size: 10,
-                    color: isLasso ? Colors.white : Colors.grey.shade500,
-                  ),
-                  const SizedBox(width: 3),
-                  Text('P${element.pageNumber}',
-                      style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: isLasso
-                              ? Colors.white
-                              : Colors.grey.shade600)),
-                ],
-              ),
-            ),
-            // Image — fill remaining space
-            Expanded(
-              child: imgPath != null
-                  ? Image.file(
-                      File(imgPath),
-                      width: double.infinity,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => _placeholder(),
-                    )
-                  : _placeholder(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _placeholder() {
-    return Container(
-      height: 80,
-      color: Colors.grey.shade50,
-      child: Center(
-        child: Icon(Icons.image, size: 24, color: Colors.grey.shade300),
-      ),
-    );
-  }
-}
-
-// ─── Canvas header ───────────────────────────────
-
-class _CanvasHeader extends StatelessWidget {
-  const _CanvasHeader({
-    required this.totalCount,
-    required this.annotateMode,
-    required this.onAnnotateToggled,
-    this.onImportPressed,
-    required this.onSwapLayout,
-    required this.onFoldPanel,
-  });
-
-  final int totalCount;
-  final bool annotateMode;
-  final VoidCallback onAnnotateToggled;
-  final VoidCallback? onImportPressed;
-  final VoidCallback onSwapLayout;
-  final VoidCallback onFoldPanel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 36,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-      ),
-      child: Row(
-        children: [
-          Text('Scraps',
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700)),
-          const SizedBox(width: 6),
-          Text('$totalCount',
-              style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey.shade400,
-                  fontWeight: FontWeight.w500)),
-          const Spacer(),
-          _iconBtn(Icons.swap_horiz, 'Swap', onSwapLayout),
-          _iconBtn(Icons.chevron_right, 'Fold', onFoldPanel),
-          GestureDetector(
-            onTap: onAnnotateToggled,
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: annotateMode
-                    ? Colors.blue.shade50
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Icon(Icons.edit, size: 14,
-                  color: annotateMode
-                      ? Colors.blue.shade700
-                      : Colors.grey.shade400),
-            ),
-          ),
-          if (onImportPressed != null)
-            _iconBtn(Icons.add, 'Import', onImportPressed!),
-        ],
-      ),
-    );
-  }
-
-  Widget _iconBtn(IconData icon, String tip, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Tooltip(
-        message: tip,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-          child: Icon(icon, size: 14, color: Colors.grey.shade400),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Notebook background ─────────────────────────
-
-class _NotebookBgPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-        Offset.zero & size, Paint()..color = const Color(0xFFFBFBFB));
-
-    final linePaint = Paint()
-      ..color = const Color(0xFFEEEEEE)
-      ..strokeWidth = 0.5;
-    for (double y = 24; y < size.height; y += 24) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
-    }
-
-    // Subtle dot grid
-    final dotPaint = Paint()
-      ..color = const Color(0xFFE0E0E0)
-      ..strokeWidth = 1.0
-      ..strokeCap = StrokeCap.round;
-    for (double x = 24; x < size.width; x += 24) {
-      for (double y = 24; y < min(size.height, 600); y += 24) {
-        canvas.drawPoints(
-            ui.PointMode.points, [Offset(x, y)], dotPaint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
-}
-
-// ─── Import dialog ───────────────────────────────
-
-class _ScrapImportDialog {
-  static Future<void> show({
-    required BuildContext context,
-    required WidgetRef ref,
-    required String currentNoteId,
-  }) async {
-    final allElements = ref.read(elementStoreProvider.notifier).all();
-    final importable = allElements
-        .where((e) =>
-            e.type == ElementType.capture || e.type == ElementType.lasso)
-        .toList();
-    final currentElements = ref.read(noteScrapProvider(currentNoteId));
-    final currentIds = currentElements.map((e) => e.id).toSet();
-    final available =
-        importable.where((e) => !currentIds.contains(e.id)).toList();
-
-    if (available.isEmpty) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('No other scraps available to import')),
-        );
-      }
-      return;
-    }
-
-    final grouped = <String, List<ScrapElement>>{};
-    for (final el in available) {
-      grouped.putIfAbsent(el.pdfId, () => []).add(el);
-    }
-
-    final capturesDir =
-        ref.read(capturesDirectoryProvider).valueOrNull?.path;
-    if (!context.mounted) return;
-
-    final selected = await showDialog<List<String>>(
-      context: context,
-      builder: (ctx) => _ImportDialogContent(
-        grouped: grouped,
-        capturesDir: capturesDir,
-      ),
-    );
-
-    if (selected == null || selected.isEmpty) return;
-    final wsNotifier = ref.read(workspaceProviderProvider.notifier);
-    for (final id in selected) {
-      await wsNotifier.appendElementToBlock(currentNoteId, id);
-    }
-  }
-}
-
-class _ImportDialogContent extends StatefulWidget {
-  const _ImportDialogContent({required this.grouped, this.capturesDir});
-  final Map<String, List<ScrapElement>> grouped;
-  final String? capturesDir;
-
-  @override
-  State<_ImportDialogContent> createState() => _ImportDialogContentState();
-}
-
-class _ImportDialogContentState extends State<_ImportDialogContent> {
-  final Set<String> _selected = {};
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Import Scraps', style: TextStyle(fontSize: 16)),
-      content: SizedBox(
-        width: 320,
-        height: 400,
-        child: ListView(
-          children: widget.grouped.entries.map((entry) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Text(
-                    'PDF: ${entry.key.length > 8 ? '${entry.key.substring(0, 8)}...' : entry.key}',
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade600),
-                  ),
-                ),
-                ...entry.value.map((el) {
-                  final sel = _selected.contains(el.id);
-                  return GestureDetector(
-                    onTap: () => setState(() {
-                      sel ? _selected.remove(el.id) : _selected.add(el.id);
-                    }),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 4),
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color:
-                            sel ? Colors.blue.shade50 : Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                            color: sel
-                                ? Colors.blue.shade300
-                                : Colors.grey.shade200),
-                      ),
-                      child: Row(children: [
-                        Icon(
-                            sel
-                                ? Icons.check_box
-                                : Icons.check_box_outline_blank,
-                            size: 16,
-                            color: sel
-                                ? Colors.blue.shade700
-                                : Colors.grey.shade400),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text('P${el.pageNumber} ${el.type.name}',
-                              style: const TextStyle(fontSize: 11)),
-                        ),
-                      ]),
-                    ),
-                  );
-                }),
-              ],
-            );
-          }).toList(),
-        ),
-      ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
-        TextButton(
-            onPressed: _selected.isEmpty
-                ? null
-                : () => Navigator.pop(context, _selected.toList()),
-            child: Text('Import (${_selected.length})')),
-      ],
     );
   }
 }
