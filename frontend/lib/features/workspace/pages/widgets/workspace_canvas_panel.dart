@@ -20,10 +20,10 @@ import 'canvas/group_edit_dialog.dart';
 import 'canvas/scrap_import_dialog.dart';
 
 // ─── Constants ───────────────────────────────────
-const _kDefaultCardHeight = 120.0;
-const _kCardSpacingY = 40.0;
-const _kStartX = 20.0;
-const _kStartY = 20.0;
+// Layout ratios (relative to panel width)
+const _kCardHeightRatio = 0.25;   // card height = 25% of panel width
+const _kCardSpacingRatio = 0.06;  // spacing = 6% of panel width
+const _kPaddingRatio = 0.04;      // start padding = 4% of panel width
 
 const _kAnnotationColors = <int>[
   0xFF000000, 0xFF1565C0, 0xFFD32F2F, 0xFF2E7D32, 0xFFE65100,
@@ -110,19 +110,22 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
   }
 
   /// Ensure every element has a position. Auto-layout to fit panel width.
-  void _ensureLayoutFit(List<ScrapElement> elements, double cardW) {
-    double nextY = _kStartY;
-    // Find max Y of existing cards
+  void _ensureLayoutFit(List<ScrapElement> elements, double cardW, double panelW) {
+    final startX = panelW * _kPaddingRatio;
+    final startY = panelW * _kPaddingRatio;
+    final cardH = panelW * _kCardHeightRatio;
+    final spacing = panelW * _kCardSpacingRatio;
+
+    double nextY = startY;
     for (final r in _layout.values) {
-      if (r.bottom + _kCardSpacingY > nextY) {
-        nextY = r.bottom + _kCardSpacingY;
+      if (r.bottom + spacing > nextY) {
+        nextY = r.bottom + spacing;
       }
     }
     for (final el in elements) {
       if (!_layout.containsKey(el.id)) {
-        _layout[el.id] = Rect.fromLTWH(
-            _kStartX, nextY, cardW, _kDefaultCardHeight);
-        nextY += _kDefaultCardHeight + _kCardSpacingY;
+        _layout[el.id] = Rect.fromLTWH(startX, nextY, cardW, cardH);
+        nextY += cardH + spacing;
       }
     }
     // Remove stale entries
@@ -172,16 +175,15 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                   builder: (context, constraints) {
                     final panelW = constraints.maxWidth;
                     final panelH = constraints.maxHeight;
-                    final cardW = (panelW * 0.4).clamp(140.0, 300.0);
-                    _ensureLayoutFit(filtered, cardW);
-                    // Canvas: at least viewport size, expand for cards
+                    final cardW = (panelW * 0.85).clamp(200.0, panelW - 20);
+                    _ensureLayoutFit(filtered, cardW, panelW);
+                    // Fixed width, infinite vertical (always room to scroll)
+                    const minCanvasH = 5000.0;
                     final maxBottom = _layout.values.fold(
-                        panelH, (v, r) => max(v, r.bottom + 200));
-                    final maxRight = _layout.values.fold(
-                        panelW, (v, r) => max(v, r.right + 100));
+                        minCanvasH, (v, r) => max(v, r.bottom + panelH));
 
                     final canvasContent = SizedBox(
-                      width: max(panelW, maxRight),
+                      width: panelW,
                       height: max(panelH, maxBottom),
                       child: Stack(
                         children: [
@@ -201,7 +203,7 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                           ),
                           for (final el in filtered)
                             _buildPositionedCard(
-                                el, capturesDir, cardW, filtered),
+                                el, capturesDir, cardW, filtered, panelW),
                           // Group bounding box handles (multi-select OR grouped card selected)
                           if (_selectedCardIds.isNotEmpty && !_annotateMode &&
                               (_selectedCardIds.length > 1 || _isAnySelectedInGroup()))
@@ -209,6 +211,8 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                           // Rotation handle
                           if (_selectedCardIds.isNotEmpty && !_annotateMode)
                             _buildRotationHandleForSelection(),
+                          // Group edit strokes (rendered per group)
+                          ..._buildGroupEditStrokes(filtered),
                           // Drawing strokes always visible
                           Positioned.fill(
                             child: IgnorePointer(
@@ -318,7 +322,7 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
 
   Widget _buildPositionedCard(
       ScrapElement el, String? capturesDir, double cardW,
-      List<ScrapElement> filtered) {
+      List<ScrapElement> filtered, double canvasW) {
     final rect = _layout[el.id]!;
     final isSelected = _selectedCardIds.contains(el.id);
     final isInGroup = ref.read(workspaceProviderProvider.notifier)
@@ -385,8 +389,10 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                   for (final id in movable) {
                     final old = _layout[id];
                     if (old == null) continue;
+                    final newLeft = (old.left + details.delta.dx)
+                        .clamp(0.0, max(0.0, canvasW - old.width));
                     _layout[id] = Rect.fromLTWH(
-                      old.left + details.delta.dx,
+                      newLeft.toDouble(),
                       old.top + details.delta.dy,
                       old.width,
                       old.height,
@@ -401,6 +407,7 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                 if (_draggedId != null) {
                   _draggedId = null;
                   _syncOrderByPosition(filtered);
+                  _persistCanvasLayout();
                 }
               },
         child: Stack(
@@ -501,6 +508,56 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     for (final entry in all.entries) {
       _groupEditResults[entry.key] = GroupEditResult.fromJson(entry.value);
     }
+  }
+
+  /// Render saved group edit strokes on the main canvas.
+  List<Widget> _buildGroupEditStrokes(List<ScrapElement> filtered) {
+    final widgets = <Widget>[];
+    final ws = ref.read(workspaceProviderProvider).valueOrNull;
+    if (ws == null) return widgets;
+
+    for (final group in ws.scrapGroups) {
+      final key = _groupKey(group.toSet());
+      final result = _groupEditResults[key];
+      if (result == null || result.strokes.isEmpty) continue;
+
+      // Find group bounding box on main canvas
+      double minX = double.infinity, minY = double.infinity;
+      for (final id in group) {
+        final rect = _layout[id];
+        if (rect == null) continue;
+        if (rect.left < minX) minX = rect.left;
+        if (rect.top < minY) minY = rect.top;
+      }
+      if (minX == double.infinity) continue;
+
+      // Find group edit card origin (first card position in edit dialog)
+      double editMinX = double.infinity, editMinY = double.infinity;
+      for (final id in group) {
+        final cs = result.cardStates[id];
+        if (cs == null) continue;
+        if (cs.layout.left < editMinX) editMinX = cs.layout.left;
+        if (cs.layout.top < editMinY) editMinY = cs.layout.top;
+      }
+      if (editMinX == double.infinity) continue;
+
+      // Offset = main canvas position - edit dialog position
+      final offsetX = minX - editMinX;
+      final offsetY = minY - editMinY;
+
+      widgets.add(Positioned.fill(
+        child: IgnorePointer(
+          child: CustomPaint(
+            painter: GroupStrokePainter(
+              strokes: result.strokes,
+              offsetX: offsetX,
+              offsetY: offsetY,
+            ),
+          ),
+        ),
+      ));
+    }
+    return widgets;
   }
 
   /// Save canvas layout to persistence (call after drag/resize).
@@ -644,6 +701,35 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
       if (r.bottom > maxB) maxB = r.bottom;
     }
     if (minL == double.infinity) return null;
+
+    // Expand bounds to include group edit strokes
+    final key = _groupKey(_selectedCardIds);
+    final result = _groupEditResults[key];
+    if (result != null && result.strokes.isNotEmpty) {
+      // Calculate stroke offset (same as in _buildGroupEditStrokes)
+      double editMinX = double.infinity, editMinY = double.infinity;
+      for (final id in _selectedCardIds) {
+        final cs = result.cardStates[id];
+        if (cs == null) continue;
+        if (cs.layout.left < editMinX) editMinX = cs.layout.left;
+        if (cs.layout.top < editMinY) editMinY = cs.layout.top;
+      }
+      if (editMinX != double.infinity) {
+        final offsetX = minL - editMinX;
+        final offsetY = minT - editMinY;
+        for (final s in result.strokes) {
+          for (final p in s.points) {
+            final px = p.dx + offsetX;
+            final py = p.dy + offsetY;
+            if (px < minL) minL = px;
+            if (py < minT) minT = py;
+            if (px > maxR) maxR = px;
+            if (py > maxB) maxB = py;
+          }
+        }
+      }
+    }
+
     return Rect.fromLTRB(minL, minT, maxR, maxB);
   }
 

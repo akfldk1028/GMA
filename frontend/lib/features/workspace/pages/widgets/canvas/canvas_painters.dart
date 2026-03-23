@@ -1,9 +1,9 @@
-import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
 import '../../../../pdf_viewer/drawing/models/drawing_model.dart';
+import 'group_edit_dialog.dart';
 
 /// Paints strokes using absolute canvas coordinates (not normalized).
 class AbsoluteStrokePainter extends CustomPainter {
@@ -40,13 +40,16 @@ class AbsoluteStrokePainter extends CustomPainter {
   bool shouldRepaint(covariant AbsoluteStrokePainter old) => true;
 }
 
-/// Notebook-style background with horizontal lines and dot grid.
+/// Infinite vertical canvas with subtle grid.
+/// Obsidian-style: endless scroll, PDF export auto-paginates at A4 height.
 class NotebookBgPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
+    // Clean white background
     canvas.drawRect(
         Offset.zero & size, Paint()..color = const Color(0xFFFBFBFB));
 
+    // Horizontal lines
     final linePaint = Paint()
       ..color = const Color(0xFFEEEEEE)
       ..strokeWidth = 0.5;
@@ -60,13 +63,46 @@ class NotebookBgPainter extends CustomPainter {
       ..strokeWidth = 1.0
       ..strokeCap = StrokeCap.round;
     for (double x = 24; x < size.width; x += 24) {
-      for (double y = 24; y < min(size.height, 600); y += 24) {
-        canvas.drawPoints(
-            ui.PointMode.points, [Offset(x, y)], dotPaint);
+      for (double y = 24; y < size.height; y += 24) {
+        canvas.drawPoints(ui.PointMode.points, [Offset(x, y)], dotPaint);
       }
     }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter old) => false;
+}
+
+/// Paints group edit strokes on the main canvas with coordinate offset.
+class GroupStrokePainter extends CustomPainter {
+  GroupStrokePainter({
+    required this.strokes,
+    required this.offsetX,
+    required this.offsetY,
+  });
+
+  final List<StrokeData> strokes;
+  final double offsetX;
+  final double offsetY;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final s in strokes) {
+      if (s.points.length < 2) continue;
+      final paint = Paint()
+        ..color = Color(s.color)
+        ..strokeWidth = s.size
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
+      final path = Path();
+      path.moveTo(s.points[0].dx + offsetX, s.points[0].dy + offsetY);
+      for (var i = 1; i < s.points.length; i++) {
+        path.lineTo(s.points[i].dx + offsetX, s.points[i].dy + offsetY);
+      }
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant GroupStrokePainter old) => true;
 }
