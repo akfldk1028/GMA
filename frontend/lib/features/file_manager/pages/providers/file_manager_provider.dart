@@ -168,6 +168,9 @@ class CreateNoteMutation extends _$CreateNoteMutation {
     String? linkedPdfPath,
   }) async {
     debugPrint('[CreateNoteMutation.call] title: $title, linkedPdfPath: $linkedPdfPath');
+    // Keep this provider alive during the async mutation so AutoDispose
+    // doesn't kill it mid-flight when the dialog rebuilds.
+    final keepAlive = ref.keepAlive();
     state = const AsyncLoading();
     try {
       final notesRoot = await ref.read(notesRootDirectoryProvider.future);
@@ -216,15 +219,14 @@ class CreateNoteMutation extends _$CreateNoteMutation {
 
       debugPrint('[CreateNoteMutation.call] created note: ${metadata.id}');
       state = AsyncData(metadata);
-
-      // Refresh file manager AFTER setting state to avoid "Future already completed"
-      ref.read(fileManagerProvider.notifier).refresh();
-
+      ref.invalidate(fileManagerProvider);
       return metadata;
     } catch (e, st) {
       debugPrint('[CreateNoteMutation.call] FAILED: $e');
       state = AsyncError(e, st);
       rethrow;
+    } finally {
+      keepAlive.close();
     }
   }
 }

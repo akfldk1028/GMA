@@ -197,7 +197,7 @@ final markerCountProvider = AutoDisposeProvider<int>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef MarkerCountRef = AutoDisposeProviderRef<int>;
-String _$pdfMarkerStateHash() => r'0cba199d6922ff32da9d40a292bf92d5feb8f666';
+String _$pdfMarkerStateHash() => r'5ae20c521c2c5ca22cc93f0a9879a804d841a6b5';
 
 /// Provider for managing PDF markers with Hive storage.
 /// Uses marker ID as Hive key for safe CRUD (no index-based access).

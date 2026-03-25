@@ -10,6 +10,18 @@ import '../../../pdf_viewer/drawing/pages/widgets/drawing_toolbar_widgets.dart';
 import '../../../pdf_viewer/drawing/tools/tool_registry.dart';
 import '../providers/workspace_provider.dart';
 
+/// Map drawing color value to closest MarkerColor name for highlight sync.
+String _colorValueToMarkerName(int colorValue) {
+  const map = {
+    0xFFEF4444: 'red',
+    0xFF3B82F6: 'blue',
+    0xFF22C55E: 'green',
+    0xFFEAB308: 'yellow',
+    0xFFF59E0B: 'yellow',
+  };
+  return map[colorValue] ?? 'yellow';
+}
+
 /// Unified header combining title + drawing tools + menu in a single row.
 ///
 /// Layout matches 260316 기획안 슬라이드 1:
@@ -106,7 +118,7 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
                         },
                       ),
                     const ToolbarDivider(),
-                    // Color palette (always visible)
+                    // Color palette (shared: drawing + highlight)
                     for (final color in kDrawingPaletteColors)
                       ToolbarColorDot(
                         color: Color(color),
@@ -116,6 +128,10 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
                               ref.read(drawingModeProvider.notifier);
                           if (!isDrawing) notifier.toggleActive();
                           notifier.setColor(color);
+                          // Sync highlight color to closest MarkerColor
+                          final hlName = _colorValueToMarkerName(color);
+                          ref.read(workspaceProviderProvider.notifier)
+                              .setHighlightColor(hlName);
                         },
                       ),
                     const ToolbarDivider(),
@@ -136,48 +152,19 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
                     Builder(builder: (context) {
                       final ws = ref.watch(workspaceProviderProvider).valueOrNull;
                       final isHL = ws?.isHighlightMode ?? false;
-                      if (isHL) {
-                        // In highlight mode: show color dots + check button
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            for (final entry in {
-                              'red': 0xFFEF4444,
-                              'yellow': 0xFFF59E0B,
-                              'green': 0xFF22C55E,
-                              'blue': 0xFF3B82F6,
-                              'purple': 0xFF8B5CF6,
-                            }.entries)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 2),
-                                child: GestureDetector(
-                                  onTap: () => ref
-                                      .read(workspaceProviderProvider.notifier)
-                                      .setHighlightColor(entry.key),
-                                  child: Container(
-                                    width: 18,
-                                    height: 18,
-                                    decoration: BoxDecoration(
-                                      color: Color(entry.value),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: ws?.highlightModeColorName == entry.key
-                                            ? Colors.white
-                                            : Colors.transparent,
-                                        width: 2,
-                                      ),
-                                      boxShadow: ws?.highlightModeColorName == entry.key
-                                          ? [BoxShadow(
-                                              color: Color(entry.value).withValues(alpha: 0.5),
-                                              blurRadius: 4,
-                                            )]
-                                          : null,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            const SizedBox(width: 6),
-                            // Check to complete
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ToolbarIconButton(
+                            icon: Icons.border_color_rounded,
+                            tooltip: isHL ? 'Highlight Mode ON' : 'Highlight Mode',
+                            isActive: isHL,
+                            activeColor: Colors.green,
+                            onTap: () => ref
+                                .read(workspaceProviderProvider.notifier)
+                                .toggleHighlightMode(),
+                          ),
+                          if (isHL)
                             ToolbarIconButton(
                               icon: Icons.check_circle,
                               tooltip: 'Highlight Done',
@@ -187,17 +174,7 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
                                   .read(workspaceProviderProvider.notifier)
                                   .toggleHighlightMode(),
                             ),
-                          ],
-                        );
-                      }
-                      // Not in highlight mode: show toggle button
-                      return ToolbarIconButton(
-                        icon: Icons.border_color_rounded,
-                        tooltip: 'Highlight Mode',
-                        isActive: false,
-                        onTap: () => ref
-                            .read(workspaceProviderProvider.notifier)
-                            .toggleHighlightMode(),
+                        ],
                       );
                     }),
                     const ToolbarDivider(),
@@ -409,6 +386,28 @@ class _OverflowMenu extends ConsumerWidget {
               Icon(Icons.collections_bookmark_rounded, size: 16),
               SizedBox(width: 8),
               Text('ScrapNote Manage'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'toggle_structure',
+          child: Row(
+            children: [
+              Icon(Icons.account_tree_rounded, size: 16),
+              SizedBox(width: 8),
+              Text(ref.read(workspaceProviderProvider).valueOrNull?.isStructureOverlayVisible == true
+                  ? 'Hide Structure'
+                  : 'Show Structure'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'import_pdf_md',
+          child: Row(
+            children: [
+              Icon(Icons.import_contacts_rounded, size: 16),
+              SizedBox(width: 8),
+              Text('PDF → Note Import'),
             ],
           ),
         ),

@@ -1,7 +1,7 @@
 name: gma_frontend
 description: "GMA - PDF-Linked Markdown Annotation App"
 publish_to: 'none'
-version: 1.0.5+7
+version: 1.0.6+8
 
 environment:
   sdk: ^3.10.8
@@ -70,9 +70,21 @@ dev_dependencies:
   freezed: ^2.5.7
   json_serializable: ^6.8.0
   riverpod_generator: ^2.6.2
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  image_path: "assets/icon/app_icon.png"
+  windows:
+    generate: true
+    icon_size: 48
+    image_path: "assets/icon/app_icon.png"
+  web:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
 
 flutter:
   uses-material-design: true
   assets:
     - assets/sample/
     - assets/logo.png
+    - assets/icon/

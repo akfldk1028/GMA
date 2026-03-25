@@ -49,6 +49,7 @@ class PdfMarkerState extends _$PdfMarkerState {
     required MarkerColor color,
     String? selectedText,
     PdfRect? textRect,
+    List<PdfRect>? lineRects,
     String? capturedImagePath,
   }) async {
     if (_box == null) {
@@ -61,6 +62,7 @@ class PdfMarkerState extends _$PdfMarkerState {
       color: color,
       selectedText: selectedText,
       textRect: textRect,
+      lineRects: lineRects,
       capturedImagePath: capturedImagePath,
     );
 

@@ -8,9 +8,9 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../constants/marker_colors.dart';
 import '../../../../utils/file_system_provider.dart';
-import '../../../ocr/ocr_service.dart';
-import '../../../ocr/pages/providers/ocr_provider.dart';
+import '../../../pdf_structure/services/pdf_text_extraction_service.dart';
 import '../../../scrapnote/models/element_model.dart';
+import '../../../workspace/models/workspace_state.dart';
 import '../../../workspace/pages/providers/workspace_provider.dart';
 import '../../capture/pages/providers/capture_provider.dart';
 import '../../capture/pages/providers/lasso_provider.dart';
@@ -19,7 +19,6 @@ import '../../capture/pages/widgets/lasso_overlay.dart';
 import '../../drawing/models/drawing_model.dart';
 import '../../drawing/pages/providers/drawing_provider.dart';
 import '../../drawing/pages/widgets/drawing_overlay.dart';
-import '../../utils/pdf_text_extractor.dart';
 import '../../drawing/pages/widgets/drawing_toolbar.dart';
 import '../providers/pdf_document_provider.dart';
 import '../providers/pdf_marker_provider.dart';
@@ -45,6 +44,7 @@ class PdfViewerScreen extends ConsumerStatefulWidget {
     required int pageNumber,
     String? selectedText,
     PdfRect? textRect,
+    List<PdfRect>? lineRects,
   })? onAddMarkerPressed;
 
   /// Current note ID for per-note drawing stroke storage.
@@ -146,8 +146,8 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           docState.documentRef!,
           controller: controller!,
           params: PdfViewerParams(
-            // Facing-page layout: page 1 solo, then 2-3, 4-5, ...
-            layoutPages: _facingPagesLayout,
+            // Layout depends on workspace view mode setting
+            layoutPages: _resolvePageLayout(ref),
             // Disable text selection when drawing or capture mode is active
             textSelectionParams: anyOverlayActive
                 ? const PdfTextSelectionParams()
@@ -195,6 +195,12 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
 
       final firstSelection = selections.first;
 
+      // Compute per-line (fragment) rects for precise highlight rendering
+      final lineRects = firstSelection
+          .enumerateFragmentBoundingRects()
+          .map((fb) => fb.bounds)
+          .toList();
+
       // Highlight mode: auto-create highlight on text selection
       final ws = ref.read(workspaceProviderProvider).valueOrNull;
       if (ws?.isHighlightMode == true) {
@@ -204,6 +210,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
               color: color,
               selectedText: firstSelection.text,
               textRect: firstSelection.bounds,
+              lineRects: lineRects,
             );
         return;
       }
@@ -213,6 +220,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         pageNumber: firstSelection.pageNumber,
         selectedText: firstSelection.text,
         textRect: firstSelection.bounds,
+        lineRects: lineRects,
       );
     } catch (e) {
       // Handle error silently
@@ -258,31 +266,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     required Rect normalizedRect,
   }) async {
     try {
-      // Extract PDF text at the captured area
-      var extractedText =
+      // Extract PDF text at the captured area (via submodule)
+      final extractedText =
           await _extractTextFromRect(pageNumber, normalizedRect);
-
-      // OCR fallback: if no text was extracted and OCR is enabled
-      if ((extractedText == null || extractedText.trim().isEmpty)) {
-        final ocrSettings =
-            await ref.read(ocrSettingsProvider.future);
-        if (ocrSettings.isEnabled) {
-          try {
-            final capturesDir =
-                await ref.read(capturesDirectoryProvider.future);
-            final imagePath = '${capturesDir.path}/$filename';
-            extractedText = await OcrService.recognizeFile(
-              imagePath,
-              backendId: ocrSettings.backendId,
-              baseUrl: ocrSettings.ollamaUrl,
-              model: ocrSettings.modelName,
-            );
-          } catch (ocrError) {
-            // OCR failed — continue with no text (image still gets inserted)
-            debugPrint('OCR fallback failed: $ocrError');
-          }
-        }
-      }
 
       // Convert normalized rect to pdfrx PdfRect for navigation
       final pdfRect = await _normalizedToPdfRect(
@@ -298,9 +284,11 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
 
       // Quick scrap mode: skip popup, create instantly
       if (workspaceState?.isQuickScrapMode == true) {
+        final selectedColor = MarkerColor.fromName(
+            workspaceState!.highlightModeColorName);
         await workspaceNotifier.createMarker(
           pageNumber: pageNumber,
-          color: MarkerColor.yellow,
+          color: selectedColor,
           capturedImagePath: filename,
           selectedText: extractedText,
           textRect: pdfRect,
@@ -340,28 +328,8 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     required List<Offset> lassoPoints,
   }) async {
     try {
-      var extractedText =
+      final extractedText =
           await _extractTextFromRect(pageNumber, normalizedRect);
-
-      // OCR fallback
-      if ((extractedText == null || extractedText.trim().isEmpty)) {
-        final ocrSettings = await ref.read(ocrSettingsProvider.future);
-        if (ocrSettings.isEnabled) {
-          try {
-            final capturesDir =
-                await ref.read(capturesDirectoryProvider.future);
-            final imagePath = '${capturesDir.path}/$filename';
-            extractedText = await OcrService.recognizeFile(
-              imagePath,
-              backendId: ocrSettings.backendId,
-              baseUrl: ocrSettings.ollamaUrl,
-              model: ocrSettings.modelName,
-            );
-          } catch (ocrError) {
-            debugPrint('OCR fallback failed: $ocrError');
-          }
-        }
-      }
 
       final pdfRect = await _normalizedToPdfRect(
         pageNumber,
@@ -376,9 +344,11 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
 
       // Quick scrap mode: skip popup, create instantly
       if (workspaceState?.isQuickScrapMode == true) {
+        final selectedColor = MarkerColor.fromName(
+            workspaceState!.highlightModeColorName);
         await workspaceNotifier.createMarker(
           pageNumber: pageNumber,
-          color: MarkerColor.yellow,
+          color: selectedColor,
           capturedImagePath: filename,
           selectedText: extractedText,
           textRect: pdfRect,
@@ -409,21 +379,27 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     }
   }
 
-  /// Extract PDF text from a normalized rect area (for capture).
-  Future<String?> _extractTextFromRect(int pageNumber, Rect normalizedRect) {
-    final docState = ref.read(pdfDocumentProvider);
-    final controller = widget.controller ?? docState.controller;
-    if (controller == null) return Future.value(null);
+  /// Extract PDF text from a normalized rect area using submodule.
+  Future<String?> _extractTextFromRect(int pageNumber, Rect normalizedRect) async {
+    final pdfPath = ref.read(workspaceProviderProvider).valueOrNull?.currentPdfPath;
+    if (pdfPath == null) return null;
 
-    return PdfTextExtractor.fromNormalizedRect(
-      controller,
+    // Convert normalized rect to PdfRect
+    final pdfRect = await _normalizedToPdfRect(
       pageNumber,
-      minX: normalizedRect.left,
-      minY: normalizedRect.top,
-      maxX: normalizedRect.right,
-      maxY: normalizedRect.bottom,
-      margin: 0.0,
+      normalizedRect.left,
+      normalizedRect.top,
+      normalizedRect.right,
+      normalizedRect.bottom,
     );
+    if (pdfRect == null) return null;
+
+    try {
+      return await PdfTextExtractionService.extractTextInRect(pdfPath, pageNumber, pdfRect);
+    } catch (e) {
+      debugPrint('[_extractTextFromRect] submodule failed: $e');
+      return null;
+    }
   }
 
   /// Handle drawing stroke added — extract nearby PDF text and insert pen marker.
@@ -472,16 +448,34 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     }
   }
 
-  /// Extract PDF text near a drawing stroke using the shared utility.
+  /// Extract PDF text near a drawing stroke using submodule.
   Future<String?> _extractTextNearStroke(
     int pageNumber,
     DrawingStroke stroke,
-  ) {
-    final docState = ref.read(pdfDocumentProvider);
-    final controller = widget.controller ?? docState.controller;
-    if (controller == null) return Future.value(null);
+  ) async {
+    if (stroke.points.length < 2) return null;
+    final pdfPath = ref.read(workspaceProviderProvider).valueOrNull?.currentPdfPath;
+    if (pdfPath == null) return null;
 
-    return PdfTextExtractor.fromStroke(controller, pageNumber, stroke);
+    // Calculate stroke bounding box in normalized [0,1] coords
+    double minX = stroke.points[0].x, maxX = stroke.points[0].x;
+    double minY = stroke.points[0].y, maxY = stroke.points[0].y;
+    for (final pt in stroke.points.skip(1)) {
+      if (pt.x < minX) minX = pt.x;
+      if (pt.x > maxX) maxX = pt.x;
+      if (pt.y < minY) minY = pt.y;
+      if (pt.y > maxY) maxY = pt.y;
+    }
+
+    final pdfRect = await _normalizedToPdfRect(pageNumber, minX, minY, maxX, maxY);
+    if (pdfRect == null) return null;
+
+    try {
+      return await PdfTextExtractionService.extractTextInRect(pdfPath, pageNumber, pdfRect);
+    } catch (e) {
+      debugPrint('[_extractTextNearStroke] submodule failed: $e');
+      return null;
+    }
   }
 
   /// Convert normalized [0,1] rect → pdfrx PdfRect (PDF page coordinates).
@@ -674,6 +668,13 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         ),
       ),
     );
+  }
+
+  /// Resolve page layout function based on workspace view mode.
+  static PdfPageLayoutFunction? _resolvePageLayout(WidgetRef ref) {
+    final ws = ref.watch(workspaceProviderProvider).valueOrNull;
+    if (ws == null || ws.pdfViewMode == PdfViewMode.continuous) return null;
+    return _facingPagesLayout;
   }
 
   /// Custom 2-page facing layout (book-style).

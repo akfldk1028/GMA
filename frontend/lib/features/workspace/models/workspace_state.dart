@@ -18,6 +18,14 @@ enum FocusedPanel {
   scrapnote,
 }
 
+/// PDF page layout mode
+enum PdfViewMode {
+  /// Single column, continuous scroll (one page per row)
+  continuous,
+  /// Facing pages (book-style, 2-up)
+  facing,
+}
+
 /// Panel size configuration (legacy, kept for test compatibility)
 @freezed
 class PanelSizes with _$PanelSizes {
@@ -69,6 +77,7 @@ class WorkspaceState with _$WorkspaceState {
     String? pendingScrapText,
     String? pendingScrapImagePath,
     @PdfRectConverter() PdfRect? pendingScrapTextRect,
+    @PdfRectListConverter() List<PdfRect>? pendingScrapLineRects,
     /// Element type override for pending scrap (e.g. lasso vs capture)
     ElementType? pendingScrapElementType,
     /// Whether highlight mode is active (text drag → auto-highlight)
@@ -81,6 +90,10 @@ class WorkspaceState with _$WorkspaceState {
     int? pendingMarkerPageNumber,
     String? pendingMarkerText,
     @PdfRectConverter() PdfRect? pendingMarkerTextRect,
+    /// Whether the PDF structure overlay is visible on the viewer
+    @Default(false) bool isStructureOverlayVisible,
+    /// PDF page layout mode (continuous scroll vs facing pages)
+    @Default(PdfViewMode.continuous) PdfViewMode pdfViewMode,
   }) = _WorkspaceState;
 
   factory WorkspaceState.fromJson(Map<String, dynamic> json) =>

@@ -27,6 +27,8 @@ mixin _$PdfMarker {
   String? get selectedText => throw _privateConstructorUsedError;
   @PdfRectConverter()
   PdfRect? get textRect => throw _privateConstructorUsedError;
+  @PdfRectListConverter()
+  List<PdfRect>? get lineRects => throw _privateConstructorUsedError;
   String? get capturedImagePath => throw _privateConstructorUsedError;
 
   /// Serializes this PdfMarker to a JSON map.
@@ -50,6 +52,7 @@ abstract class $PdfMarkerCopyWith<$Res> {
     MarkerColor color,
     String? selectedText,
     @PdfRectConverter() PdfRect? textRect,
+    @PdfRectListConverter() List<PdfRect>? lineRects,
     String? capturedImagePath,
   });
 }
@@ -74,6 +77,7 @@ class _$PdfMarkerCopyWithImpl<$Res, $Val extends PdfMarker>
     Object? color = null,
     Object? selectedText = freezed,
     Object? textRect = freezed,
+    Object? lineRects = freezed,
     Object? capturedImagePath = freezed,
   }) {
     return _then(
@@ -98,6 +102,10 @@ class _$PdfMarkerCopyWithImpl<$Res, $Val extends PdfMarker>
                 ? _value.textRect
                 : textRect // ignore: cast_nullable_to_non_nullable
                       as PdfRect?,
+            lineRects: freezed == lineRects
+                ? _value.lineRects
+                : lineRects // ignore: cast_nullable_to_non_nullable
+                      as List<PdfRect>?,
             capturedImagePath: freezed == capturedImagePath
                 ? _value.capturedImagePath
                 : capturedImagePath // ignore: cast_nullable_to_non_nullable
@@ -123,6 +131,7 @@ abstract class _$$PdfMarkerImplCopyWith<$Res>
     MarkerColor color,
     String? selectedText,
     @PdfRectConverter() PdfRect? textRect,
+    @PdfRectListConverter() List<PdfRect>? lineRects,
     String? capturedImagePath,
   });
 }
@@ -146,6 +155,7 @@ class __$$PdfMarkerImplCopyWithImpl<$Res>
     Object? color = null,
     Object? selectedText = freezed,
     Object? textRect = freezed,
+    Object? lineRects = freezed,
     Object? capturedImagePath = freezed,
   }) {
     return _then(
@@ -170,6 +180,10 @@ class __$$PdfMarkerImplCopyWithImpl<$Res>
             ? _value.textRect
             : textRect // ignore: cast_nullable_to_non_nullable
                   as PdfRect?,
+        lineRects: freezed == lineRects
+            ? _value._lineRects
+            : lineRects // ignore: cast_nullable_to_non_nullable
+                  as List<PdfRect>?,
         capturedImagePath: freezed == capturedImagePath
             ? _value.capturedImagePath
             : capturedImagePath // ignore: cast_nullable_to_non_nullable
@@ -188,8 +202,9 @@ class _$PdfMarkerImpl implements _PdfMarker {
     required this.color,
     this.selectedText,
     @PdfRectConverter() this.textRect,
+    @PdfRectListConverter() final List<PdfRect>? lineRects,
     this.capturedImagePath,
-  });
+  }) : _lineRects = lineRects;
 
   factory _$PdfMarkerImpl.fromJson(Map<String, dynamic> json) =>
       _$$PdfMarkerImplFromJson(json);
@@ -205,12 +220,23 @@ class _$PdfMarkerImpl implements _PdfMarker {
   @override
   @PdfRectConverter()
   final PdfRect? textRect;
+  final List<PdfRect>? _lineRects;
+  @override
+  @PdfRectListConverter()
+  List<PdfRect>? get lineRects {
+    final value = _lineRects;
+    if (value == null) return null;
+    if (_lineRects is EqualUnmodifiableListView) return _lineRects;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
   @override
   final String? capturedImagePath;
 
   @override
   String toString() {
-    return 'PdfMarker(id: $id, pageNumber: $pageNumber, color: $color, selectedText: $selectedText, textRect: $textRect, capturedImagePath: $capturedImagePath)';
+    return 'PdfMarker(id: $id, pageNumber: $pageNumber, color: $color, selectedText: $selectedText, textRect: $textRect, lineRects: $lineRects, capturedImagePath: $capturedImagePath)';
   }
 
   @override
@@ -226,6 +252,10 @@ class _$PdfMarkerImpl implements _PdfMarker {
                 other.selectedText == selectedText) &&
             (identical(other.textRect, textRect) ||
                 other.textRect == textRect) &&
+            const DeepCollectionEquality().equals(
+              other._lineRects,
+              _lineRects,
+            ) &&
             (identical(other.capturedImagePath, capturedImagePath) ||
                 other.capturedImagePath == capturedImagePath));
   }
@@ -239,6 +269,7 @@ class _$PdfMarkerImpl implements _PdfMarker {
     color,
     selectedText,
     textRect,
+    const DeepCollectionEquality().hash(_lineRects),
     capturedImagePath,
   );
 
@@ -263,6 +294,7 @@ abstract class _PdfMarker implements PdfMarker {
     required final MarkerColor color,
     final String? selectedText,
     @PdfRectConverter() final PdfRect? textRect,
+    @PdfRectListConverter() final List<PdfRect>? lineRects,
     final String? capturedImagePath,
   }) = _$PdfMarkerImpl;
 
@@ -280,6 +312,9 @@ abstract class _PdfMarker implements PdfMarker {
   @override
   @PdfRectConverter()
   PdfRect? get textRect;
+  @override
+  @PdfRectListConverter()
+  List<PdfRect>? get lineRects;
   @override
   String? get capturedImagePath;
 

@@ -2,27 +2,32 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+
+import '../../../pdf_structure/services/pdf_text_extraction_service.dart';
 
 /// Scrap board popup shown after capture/highlight.
 ///
-/// 기획안 슬라이드 7~9: 캡처/하이라이트 후 팝업으로 내용 작성 + 확인.
-/// Replaces both MarkerEditModal and ConfirmScrapPopup.
+/// Text field always starts EMPTY and is editable.
+/// OCR checkbox extracts text via opendataloader-pdf submodule.
 class ScrapBoardPopup extends ConsumerStatefulWidget {
   const ScrapBoardPopup({
     super.key,
     required this.onConfirm,
     required this.onCancel,
     this.capturedImagePath,
-    this.highlightedText,
     this.pageNumber,
+    this.pdfPath,
+    this.textRect,
   });
 
   final void Function(String memo) onConfirm;
   final VoidCallback onCancel;
   final String? capturedImagePath;
-  final String? highlightedText;
   final int? pageNumber;
+  final String? pdfPath;
+  final PdfRect? textRect;
 
   @override
   ConsumerState<ScrapBoardPopup> createState() => _ScrapBoardPopupState();
@@ -30,9 +35,11 @@ class ScrapBoardPopup extends ConsumerStatefulWidget {
 
 class _ScrapBoardPopupState extends ConsumerState<ScrapBoardPopup>
     with SingleTickerProviderStateMixin {
-  final _memoController = TextEditingController();
+  final _textController = TextEditingController();
   late final AnimationController _animController;
   late final Animation<double> _scaleAnimation;
+  bool _ocrRunning = false;
+  bool _ocrDone = false;
 
   @override
   void initState() {
@@ -46,41 +53,78 @@ class _ScrapBoardPopupState extends ConsumerState<ScrapBoardPopup>
       curve: Curves.easeOutBack,
     );
     _animController.forward();
-
-    // Pre-fill with highlighted text if available
-    if (widget.highlightedText != null) {
-      _memoController.text = widget.highlightedText!;
-    }
+    // Text field starts empty — user types or uses OCR
   }
 
   @override
   void dispose() {
-    _memoController.dispose();
+    _textController.dispose();
     _animController.dispose();
     super.dispose();
+  }
+
+  Future<void> _runOcr() async {
+    final pdfPath = widget.pdfPath;
+    final pageNumber = widget.pageNumber;
+    if (pdfPath == null || pageNumber == null) return;
+
+    setState(() => _ocrRunning = true);
+    try {
+      String? text;
+      if (widget.textRect != null) {
+        text = await PdfTextExtractionService.extractTextInRect(
+          pdfPath,
+          pageNumber,
+          widget.textRect!,
+        );
+      } else {
+        text = await PdfTextExtractionService.extractPageText(
+          pdfPath,
+          pageNumber,
+        );
+      }
+      if (mounted && text != null && text.isNotEmpty) {
+        _textController.text = text;
+        setState(() => _ocrDone = true);
+      } else if (mounted) {
+        ShadToaster.of(context).show(
+          const ShadToast(
+            title: Text('No text found'),
+            description: Text('Could not extract text from this area.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ShadToaster.of(context).show(
+          ShadToast.destructive(
+            title: const Text('Text extraction failed'),
+            description: Text('$e'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _ocrRunning = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
+    final hasImage = widget.capturedImagePath != null;
 
     return Stack(
       children: [
-        // Dim background
         GestureDetector(
           onTap: widget.onCancel,
-          child: Container(
-            color: Colors.black.withValues(alpha: 0.3),
-          ),
+          child: Container(color: Colors.black.withValues(alpha: 0.3)),
         ),
-
-        // Popup card
         Center(
           child: ScaleTransition(
             scale: _scaleAnimation,
             child: Container(
               width: 400,
-              constraints: const BoxConstraints(maxHeight: 500),
+              constraints: const BoxConstraints(maxHeight: 520),
               margin: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: theme.colorScheme.background,
@@ -102,17 +146,15 @@ class _ScrapBoardPopupState extends ConsumerState<ScrapBoardPopup>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.05),
+                      color:
+                          theme.colorScheme.primary.withValues(alpha: 0.05),
                       borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(15)),
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.note_add_rounded,
-                          size: 18,
-                          color: theme.colorScheme.primary,
-                        ),
+                        Icon(Icons.note_add_rounded,
+                            size: 18, color: theme.colorScheme.primary),
                         const SizedBox(width: 8),
                         Text(
                           'Scrap Board',
@@ -145,8 +187,8 @@ class _ScrapBoardPopupState extends ConsumerState<ScrapBoardPopup>
                     ),
                   ),
 
-                  // ─── Preview (capture image or highlight text) ───
-                  if (widget.capturedImagePath != null)
+                  // ─── Capture image preview ───
+                  if (hasImage)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                       child: ClipRRect(
@@ -160,53 +202,62 @@ class _ScrapBoardPopupState extends ConsumerState<ScrapBoardPopup>
                             height: 80,
                             color: theme.colorScheme.muted,
                             child: const Center(
-                              child: Icon(Icons.broken_image, size: 24),
-                            ),
+                                child: Icon(Icons.broken_image, size: 24)),
                           ),
                         ),
                       ),
                     ),
 
-                  if (widget.highlightedText != null &&
-                      widget.capturedImagePath == null)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary
-                              .withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border(
-                            left: BorderSide(
-                              color: theme.colorScheme.primary,
-                              width: 3,
+                  // ─── OCR toggle ───
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: _ocrRunning
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2),
+                                )
+                              : Checkbox(
+                                  value: _ocrDone,
+                                  onChanged: _ocrDone ? null : (_) => _runOcr(),
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: (_ocrRunning || _ocrDone) ? null : _runOcr,
+                          child: Text(
+                            _ocrRunning
+                                ? 'Extracting...'
+                                : _ocrDone
+                                    ? 'Text extracted'
+                                    : 'Extract text from PDF',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.mutedForeground,
                             ),
                           ),
                         ),
-                        child: Text(
-                          widget.highlightedText!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                            color: theme.colorScheme.foreground,
-                            height: 1.4,
-                          ),
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      ],
                     ),
+                  ),
 
-                  // ─── Memo input ───
+                  // ─── Text input (starts empty, editable) ───
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                     child: TextField(
-                      controller: _memoController,
-                      maxLines: 3,
+                      controller: _textController,
+                      maxLines: 4,
+                      minLines: 3,
                       decoration: InputDecoration(
-                        hintText: 'Add a note...',
+                        hintText: 'Type or extract text...',
                         hintStyle: TextStyle(
                           color: theme.colorScheme.mutedForeground,
                           fontSize: 13,
@@ -241,7 +292,6 @@ class _ScrapBoardPopupState extends ConsumerState<ScrapBoardPopup>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        // Cancel
                         TextButton(
                           onPressed: widget.onCancel,
                           child: Text(
@@ -253,10 +303,11 @@ class _ScrapBoardPopupState extends ConsumerState<ScrapBoardPopup>
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // Confirm
                         ElevatedButton.icon(
-                          onPressed: () =>
-                              widget.onConfirm(_memoController.text),
+                          onPressed: _ocrRunning
+                              ? null
+                              : () =>
+                                  widget.onConfirm(_textController.text),
                           icon: const Icon(Icons.check, size: 16),
                           label: const Text('Save Scrap'),
                           style: ElevatedButton.styleFrom(

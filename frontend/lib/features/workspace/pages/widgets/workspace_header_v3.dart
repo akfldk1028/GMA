@@ -6,7 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../common_widgets/responsive.dart';
-import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
+import '../../models/workspace_state.dart';
 import '../providers/workspace_provider.dart';
 
 class WorkspaceHeaderV3 extends ConsumerWidget {
@@ -31,7 +31,6 @@ class WorkspaceHeaderV3 extends ConsumerWidget {
       if (result != null && result.files.single.path != null) {
         final pdfPath = result.files.single.path!;
         await ref.read(workspaceProviderProvider.notifier).loadPdf(pdfPath);
-        await ref.read(pdfDocumentProvider.notifier).loadFromFile(pdfPath);
       }
     } catch (e) {
       if (context.mounted) {
@@ -146,6 +145,23 @@ class WorkspaceHeaderV3 extends ConsumerWidget {
               color: theme.colorScheme.border,
             ),
             const SizedBox(width: 4),
+
+            // PDF view mode toggle
+            _HeaderIconButton(
+              icon: (workspaceState?.pdfViewMode ?? PdfViewMode.continuous) ==
+                      PdfViewMode.continuous
+                  ? Icons.view_day_rounded
+                  : Icons.menu_book_rounded,
+              tooltip: (workspaceState?.pdfViewMode ?? PdfViewMode.continuous) ==
+                      PdfViewMode.continuous
+                  ? 'Facing Pages'
+                  : 'Continuous Scroll',
+              size: buttonSize,
+              iconSize: iconSize,
+              onTap: () => ref
+                  .read(workspaceProviderProvider.notifier)
+                  .togglePdfViewMode(),
+            ),
 
             // Panel toggle buttons
             _HeaderIconButton(

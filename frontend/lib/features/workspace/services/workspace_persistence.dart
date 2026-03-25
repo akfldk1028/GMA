@@ -37,14 +37,16 @@ class WorkspacePersistence {
 
   // ─── Groups ───────────────────────────────────────
 
-  static Future<void> saveGroups(List<List<String>> groups) async {
+  static String _groupsKey(String noteId) => 'scrap_groups_$noteId';
+
+  static Future<void> saveGroups(String noteId, List<List<String>> groups) async {
     final box = await _getBox();
-    await box.put('scrap_groups', groups);
+    await box.put(_groupsKey(noteId), groups);
   }
 
-  static Future<List<List<String>>> loadGroups() async {
+  static Future<List<List<String>>> loadGroups(String noteId) async {
     final box = await _getBox();
-    final saved = box.get('scrap_groups');
+    final saved = box.get(_groupsKey(noteId));
     if (saved is! List) return [];
     return saved
         .whereType<List>()

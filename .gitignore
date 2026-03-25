@@ -207,7 +207,8 @@ dist-ssr/
 
 # User Custom Patterns (preserved by moai update)
 ﻿nul
-clone
+clone/*
+!clone/opendataloader-pdf
 .auto-claude/
 .claude/hooks/moai
 .claude/output-styles/moai

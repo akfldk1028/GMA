@@ -183,15 +183,19 @@ class _PdfRegionImageState extends State<PdfRegionImage> {
     // PdfRect (bottom-left, Y up) → pixel (top-left, Y down)
     final selTop = (pageSize.height - widget.rect.top) * scale;
     final selBottom = (pageSize.height - widget.rect.bottom) * scale;
+    final selLeft = widget.rect.left * scale;
+    final selRight = widget.rect.right * scale;
 
-    // Full page width + vertical padding around selection for context
+    // Crop to actual selection area with small padding for context
+    final selWidth = (selRight - selLeft).abs();
     final selHeight = (selBottom - selTop).abs();
-    final vPad = selHeight * 0.6; // 60% padding above and below
+    final hPad = selWidth * 0.08; // 8% horizontal padding
+    final vPad = selHeight * 0.08; // 8% vertical padding
 
     final cropRect = Rect.fromLTRB(
-      0, // full page width: left edge
+      (selLeft - hPad).clamp(0, imgW),
       (selTop - vPad).clamp(0, imgH),
-      imgW, // full page width: right edge
+      (selRight + hPad).clamp(0, imgW),
       (selBottom + vPad).clamp(0, imgH),
     );
 

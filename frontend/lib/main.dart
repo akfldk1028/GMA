@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'app.dart';
 import 'package:flutter/foundation.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
+import 'features/pdf_structure/services/pdf_structure_service.dart';
 
 void main() async {
   if (kDebugMode) {
@@ -49,6 +50,9 @@ void main() async {
   // Open scrapnote_pages box for ScrapNote page management
   await Hive.openBox<String>('scrapnote_pages');
 
+  // Log PDF toolchain availability (non-blocking)
+  _logPdfToolchainStatus();
+
   runApp(
     const ProviderScope(
       child: GmaApp(),
@@ -80,6 +84,19 @@ Future<void> _migrateDrawingElements(Box<String> box) async {
   }
   if (fixed > 0) {
     debugPrint('[Migration] Fixed $fixed drawing elements (capture → drawing)');
+  }
+}
+
+/// Log PDF toolchain (Java + jar) status at startup.
+void _logPdfToolchainStatus() async {
+  try {
+    final javaOk = await PdfStructureService.isJavaAvailable();
+    debugPrint('[Startup] Java available: $javaOk');
+
+    final jarPath = await PdfStructureService.ensureJarExtracted();
+    debugPrint('[Startup] opendataloader-pdf jar: $jarPath');
+  } catch (e) {
+    debugPrint('[Startup] opendataloader-pdf jar NOT found: $e');
   }
 }
 

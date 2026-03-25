@@ -69,6 +69,9 @@ _$WorkspaceStateImpl _$$WorkspaceStateImplFromJson(
   pendingScrapTextRect: const PdfRectConverter().fromJson(
     json['pendingScrapTextRect'] as Map<String, dynamic>?,
   ),
+  pendingScrapLineRects: const PdfRectListConverter().fromJson(
+    json['pendingScrapLineRects'] as List?,
+  ),
   pendingScrapElementType: $enumDecodeNullable(
     _$ElementTypeEnumMap,
     json['pendingScrapElementType'],
@@ -81,6 +84,11 @@ _$WorkspaceStateImpl _$$WorkspaceStateImplFromJson(
   pendingMarkerTextRect: const PdfRectConverter().fromJson(
     json['pendingMarkerTextRect'] as Map<String, dynamic>?,
   ),
+  isStructureOverlayVisible:
+      json['isStructureOverlayVisible'] as bool? ?? false,
+  pdfViewMode:
+      $enumDecodeNullable(_$PdfViewModeEnumMap, json['pdfViewMode']) ??
+      PdfViewMode.continuous,
 );
 
 Map<String, dynamic> _$$WorkspaceStateImplToJson(
@@ -110,6 +118,9 @@ Map<String, dynamic> _$$WorkspaceStateImplToJson(
   'pendingScrapTextRect': const PdfRectConverter().toJson(
     instance.pendingScrapTextRect,
   ),
+  'pendingScrapLineRects': const PdfRectListConverter().toJson(
+    instance.pendingScrapLineRects,
+  ),
   'pendingScrapElementType':
       _$ElementTypeEnumMap[instance.pendingScrapElementType],
   'isHighlightMode': instance.isHighlightMode,
@@ -120,6 +131,8 @@ Map<String, dynamic> _$$WorkspaceStateImplToJson(
   'pendingMarkerTextRect': const PdfRectConverter().toJson(
     instance.pendingMarkerTextRect,
   ),
+  'isStructureOverlayVisible': instance.isStructureOverlayVisible,
+  'pdfViewMode': _$PdfViewModeEnumMap[instance.pdfViewMode]!,
 };
 
 const _$SidebarModeEnumMap = {
@@ -137,4 +150,9 @@ const _$ElementTypeEnumMap = {
   ElementType.capture: 'capture',
   ElementType.drawing: 'drawing',
   ElementType.lasso: 'lasso',
+};
+
+const _$PdfViewModeEnumMap = {
+  PdfViewMode.continuous: 'continuous',
+  PdfViewMode.facing: 'facing',
 };

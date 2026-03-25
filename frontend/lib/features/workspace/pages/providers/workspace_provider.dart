@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,8 +17,7 @@ import '../../../note_editor/pages/providers/note_editor_provider.dart';
 import '../../../note_editor/pages/providers/note_provider.dart';
 import '../../../scrapnote/providers/note_scrap_provider.dart';
 import '../../../pdf_viewer/drawing/models/drawing_model.dart';
-import '../../../ocr/ocr_service.dart';
-import '../../../ocr/pages/providers/ocr_provider.dart';
+import '../../../pdf_structure/services/pdf_text_extraction_service.dart';
 import '../../../scrapnote/models/element_model.dart';
 import '../../../scrapnote/models/scrapnote_canvas_model.dart';
 import '../../../scrapnote/pages/providers/scrapnote_canvas_provider.dart';
@@ -29,6 +29,7 @@ import '../../../scrapnote/utils/scrapnote_block_editor.dart';
 import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
 import '../../../pdf_viewer/pages/providers/pdf_marker_provider.dart';
 import '../../../scrapnote/providers/pdf_registry_provider.dart';
+import '../../../pdf_structure/providers/pdf_structure_provider.dart';
 import '../../models/pdf_marker_model.dart';
 import '../../services/workspace_persistence.dart';
 import '../../models/workspace_state.dart';
@@ -38,6 +39,9 @@ part 'workspace_provider.g.dart';
 /// Main workspace provider managing PDF-Note bidirectional linking
 @Riverpod(keepAlive: true)
 class WorkspaceProvider extends _$WorkspaceProvider {
+  /// Guard: current loadNote operation ID (prevents re-entrant interleave)
+  int _loadNoteGeneration = 0;
+
   @override
   FutureOr<WorkspaceState> build() async {
     // All persistence through WorkspacePersistence
@@ -47,22 +51,21 @@ class WorkspaceProvider extends _$WorkspaceProvider {
         : const PanelSizes();
 
     final session = await WorkspacePersistence.loadLastSession();
-    final restoredGroups = await WorkspacePersistence.loadGroups();
 
     final initialState = WorkspaceState(
       panelSizes: panelSizes,
-      scrapGroups: restoredGroups,
     );
 
     final lastNoteId = session.noteId;
     final lastPdfPath = session.pdfPath;
 
-    // Schedule async restore after build
-    if (lastNoteId != null || lastPdfPath != null) {
+    // Schedule async restore after build.
+    // loadNote() reads linkedPdfPath from the note's frontmatter.
+    // lastPdfPath is passed as hint ONLY for legacy notes without frontmatter.
+    if (lastNoteId != null) {
       Future.microtask(() async {
         try {
-          if (lastNoteId != null) await loadNote(lastNoteId);
-          if (lastPdfPath != null) await loadPdf(lastPdfPath);
+          await loadNote(lastNoteId, linkedPdfPath: lastPdfPath);
         } catch (e) {
           debugPrint('[WorkspaceProvider.build] restore failed: $e');
         }
@@ -78,10 +81,12 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     state = AsyncData(WorkspaceState(
       currentNoteId: noteId,
       panelSizes: s.panelSizes,
-      scrapGroups: s.scrapGroups,
+      // Empty groups for new note (don't carry over from previous note)
     ));
     // Clear last PDF so it doesn't auto-restore
     WorkspacePersistence.saveLastSession(noteId: noteId, pdfPath: '');
+    // Clear PDF structure cache
+    ref.read(pdfStructureProvider.notifier).clear();
   }
 
   /// Load a PDF file into the workspace.
@@ -125,8 +130,12 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       ),
     );
 
-    // Persist last PDF path
-    await WorkspacePersistence.saveLastSession(pdfPath: pdfPath);
+    // Persist note + PDF pair together
+    final noteId = state.valueOrNull?.currentNoteId;
+    await WorkspacePersistence.saveLastSession(
+      noteId: noteId,
+      pdfPath: pdfPath,
+    );
 
     // Load the actual PDF document for rendering
     if (isAsset) {
@@ -148,6 +157,11 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     if (isAsset && state.valueOrNull?.currentNoteId == null) {
       final virtualNoteId = 'web-sample-${DateTime.now().millisecondsSinceEpoch}';
       state = AsyncData(state.value!.copyWith(currentNoteId: virtualNoteId));
+    }
+
+    // Trigger PDF structure analysis in background (non-blocking)
+    if (!kIsWeb && !isAsset) {
+      ref.read(pdfStructureProvider.notifier).analyze(pdfPath);
     }
   }
 
@@ -178,6 +192,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
           openPdfPaths: [],
           markers: [],
         ));
+        ref.read(pdfStructureProvider.notifier).clear();
       } else {
         final newIdx = idx.clamp(0, openPdfs.length - 1);
         state = AsyncData(currentState.copyWith(
@@ -191,10 +206,22 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     }
   }
 
-  /// Load a note into the workspace
-  /// Optionally loads the note content from filesystem if available
-  Future<String?> loadNote(String noteId) async {
-    debugPrint('[WorkspaceProvider.loadNote] noteId: $noteId');
+  /// Load a note into the workspace.
+  ///
+  /// Handles PDF association: if the note has a linkedPdfPath in frontmatter,
+  /// load that PDF. Otherwise clear the current PDF so stale state doesn't
+  /// leak across notes.
+  ///
+  /// Pass [linkedPdfPath] if the caller already knows it (e.g. from
+  /// NoteMetadata). Otherwise the method reads it from the note's frontmatter.
+  Future<String?> loadNote(
+    String noteId, {
+    String? linkedPdfPath,
+  }) async {
+    // Re-entrance guard: bump generation so any in-flight loadNote bails out
+    final generation = ++_loadNoteGeneration;
+    debugPrint('[WorkspaceProvider.loadNote] noteId: $noteId (gen=$generation)');
+
     var currentState = state.valueOrNull;
     if (currentState == null) {
       try {
@@ -206,31 +233,86 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     }
     debugPrint('[WorkspaceProvider.loadNote] previousNoteId: ${currentState.currentNoteId}');
 
-    // Update workspace state with current note ID
+    // Update workspace state with current note ID and clear stale PDF
     state = AsyncData(
-      currentState.copyWith(currentNoteId: noteId),
+      currentState.copyWith(
+        currentNoteId: noteId,
+        currentPdfPath: null,
+        openPdfPaths: [],
+        markers: [],
+      ),
     );
 
-    // Persist last note ID
-    await WorkspacePersistence.saveLastSession(noteId: noteId);
+    // Persist session
+    await WorkspacePersistence.saveLastSession(noteId: noteId, pdfPath: '');
+
+    // Bail out if a newer loadNote was called while we awaited
+    if (_loadNoteGeneration != generation) {
+      debugPrint('[WorkspaceProvider.loadNote] superseded (gen=$generation < $_loadNoteGeneration), aborting');
+      return null;
+    }
 
     // Load note content from filesystem using NoteStorageService
     final noteStorage = ref.read(noteStorageServiceProvider);
     final content = await noteStorage.loadNote(noteId: noteId);
     debugPrint('[WorkspaceProvider.loadNote] loaded content length: ${content?.length ?? 0}');
 
+    if (_loadNoteGeneration != generation) return null;
+
     // Ensure ::: scrapnote block exists in loaded note
     var latestContent = content;
     if (content != null && !ScrapnoteBlockEditor.hasBlock(content)) {
       debugPrint('[WorkspaceProvider.loadNote] adding ::: scrapnote block to existing note');
       latestContent = ScrapnoteBlockEditor.ensureBlock(content);
-      await noteStorage.saveNoteImmediate(noteId: noteId, content: latestContent!);
+      await noteStorage.saveNoteImmediate(noteId: noteId, content: latestContent);
+    }
+
+    if (_loadNoteGeneration != generation) return null;
+
+    // Refresh element store for the new note context
+    ref.invalidate(elementStoreProvider);
+
+    // Restore per-note scrap groups
+    final groups = await WorkspacePersistence.loadGroups(noteId);
+    final latestState = state.valueOrNull;
+    if (latestState != null) {
+      state = AsyncData(latestState.copyWith(scrapGroups: groups));
     }
 
     // Backfill: sync existing Hive elements into ::: scrapnote block
     await syncElementsToBlock(noteId);
 
+    if (_loadNoteGeneration != generation) return null;
+
+    // Resolve linked PDF from frontmatter (source of truth).
+    // Caller hint is only used when the note has NO frontmatter at all
+    // (e.g. legacy notes). If frontmatter exists but linkedPdfPath is absent,
+    // that means the note intentionally has no PDF.
+    String? pdfToLoad;
+    if (content != null && content.startsWith('---')) {
+      pdfToLoad = _extractLinkedPdfPath(content);
+    } else {
+      pdfToLoad = linkedPdfPath;
+    }
+    if (pdfToLoad != null && pdfToLoad.isNotEmpty) {
+      // Directly await PDF load (no more fragile microtask scheduling)
+      await loadPdf(pdfToLoad);
+    } else {
+      ref.read(pdfStructureProvider.notifier).clear();
+    }
+
     return latestContent;
+  }
+
+  /// Extract linkedPdfPath from note frontmatter content.
+  static String? _extractLinkedPdfPath(String content) {
+    final fmMatch = RegExp(r'^---\n([\s\S]*?)\n---').firstMatch(content);
+    if (fmMatch == null) return null;
+    final fm = fmMatch.group(1)!;
+    final match = RegExp(r'^linkedPdfPath:\s*(.+)$', multiLine: true).firstMatch(fm);
+    if (match == null) return null;
+    final value = match.group(1)!.trim();
+    return value.isNotEmpty ? value : null;
   }
 
   /// Sync existing Hive elements into the ::: scrapnote block of a note.
@@ -460,10 +542,11 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     required MarkerColor color,
     String? selectedText,
     PdfRect? textRect,
+    List<PdfRect>? lineRects,
     String? capturedImagePath,
     ElementType? elementTypeOverride,
   }) async {
-    debugPrint('[WorkspaceProvider.createMarker] page: $pageNumber, color: ${color.name}, text: ${selectedText != null ? selectedText.substring(0, selectedText.length.clamp(0, 50)) : null}, hasImage: ${capturedImagePath != null}');
+    debugPrint('[WorkspaceProvider.createMarker] page: $pageNumber, color: ${color.name}, text: ${selectedText != null ? selectedText.substring(0, selectedText.length.clamp(0, 50)) : null}, hasImage: ${capturedImagePath != null}, lineRects: ${lineRects?.length}');
     final currentState = state.valueOrNull;
     if (currentState == null) {
       throw Exception('Workspace state not initialized');
@@ -482,6 +565,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       color: color,
       selectedText: selectedText,
       textRect: textRect,
+      lineRects: lineRects,
       capturedImagePath: capturedImagePath,
     );
 
@@ -498,6 +582,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
             color: color,
             selectedText: selectedText,
             textRect: textRect,
+            lineRects: lineRects,
             capturedImagePath: capturedImagePath,
           );
     } catch (e) {
@@ -619,6 +704,51 @@ class WorkspaceProvider extends _$WorkspaceProvider {
             existingElements,
           );
 
+          // Compute card size from actual capture image dimensions
+          double cardWidth;
+          double cardHeight;
+          if (capturedImagePath != null) {
+            // Read actual image size for accurate aspect ratio
+            ui.Size? imgSize;
+            try {
+              final capturesDir =
+                  await ref.read(capturesDirectoryProvider.future);
+              final imgFile =
+                  File(p.join(capturesDir.path, capturedImagePath));
+              if (await imgFile.exists()) {
+                final bytes = await imgFile.readAsBytes();
+                final codec =
+                    await ui.instantiateImageCodec(bytes);
+                final frame = await codec.getNextFrame();
+                imgSize = ui.Size(
+                  frame.image.width.toDouble(),
+                  frame.image.height.toDouble(),
+                );
+                frame.image.dispose();
+                codec.dispose();
+              }
+            } catch (_) {}
+
+            if (imgSize != null && imgSize.width > 0 && imgSize.height > 0) {
+              const maxDim = 400.0;
+              if (imgSize.width >= imgSize.height) {
+                // landscape or square
+                cardWidth = maxDim;
+                cardHeight = maxDim * imgSize.height / imgSize.width;
+              } else {
+                // portrait
+                cardHeight = maxDim;
+                cardWidth = maxDim * imgSize.width / imgSize.height;
+              }
+            } else {
+              cardWidth = 300;
+              cardHeight = 300;
+            }
+          } else {
+            cardWidth = 500;
+            cardHeight = 80;
+          }
+
           final canvasElement = CanvasElement(
             id: marker.id,
             type: capturedImagePath != null
@@ -626,8 +756,8 @@ class WorkspaceProvider extends _$WorkspaceProvider {
                 : CanvasElementType.highlight,
             x: pos.x,
             y: pos.y,
-            width: capturedImagePath != null ? 400 : 500,
-            height: capturedImagePath != null ? 300 : 80,
+            width: cardWidth,
+            height: cardHeight,
             imagePath: capturedImagePath,
             selectedText: selectedText,
             colorValue: color.color.toARGB32(),
@@ -694,38 +824,29 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     );
   }
 
-  /// Run OCR on a full PDF page and insert result as marker/text.
+  /// Extract text from a full PDF page using opendataloader-pdf submodule.
   ///
-  /// Requires a [PdfViewerController] to access the document pages.
   /// The extracted text is inserted as a marker in the current note.
   Future<void> ocrCurrentPage({
     required int pageNumber,
-    required PdfViewerController controller,
   }) async {
     final currentState = state.valueOrNull;
     if (currentState == null) return;
 
-    final ocrSettings = await ref.read(ocrSettingsProvider.future);
-    if (!ocrSettings.isEnabled) return;
+    final pdfPath = currentState.currentPdfPath;
+    if (pdfPath == null) return;
 
-    final text = await controller.useDocument<String?>((document) async {
-      if (pageNumber < 1 || pageNumber > document.pages.length) return null;
-      final page = document.pages[pageNumber - 1];
-      return OcrService.recognizePage(
-        page,
-        pageNumber,
-        backendId: ocrSettings.backendId,
-        baseUrl: ocrSettings.ollamaUrl,
-        model: ocrSettings.modelName,
-      );
-    });
-
-    if (text != null && text.trim().isNotEmpty) {
-      await createMarker(
-        pageNumber: pageNumber,
-        color: MarkerColor.blue,
-        selectedText: text,
-      );
+    try {
+      final text = await PdfTextExtractionService.extractPageText(pdfPath, pageNumber);
+      if (text != null && text.trim().isNotEmpty) {
+        await createMarker(
+          pageNumber: pageNumber,
+          color: MarkerColor.blue,
+          selectedText: text,
+        );
+      }
+    } catch (e) {
+      debugPrint('[ocrCurrentPage] submodule extraction failed: $e');
     }
   }
 
@@ -1027,6 +1148,27 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     state = AsyncData(s.copyWith(selectedScrapIds: {}));
   }
 
+  // ─── Structure overlay control ──────────────────────
+
+  /// Toggle PDF view mode between continuous and facing pages.
+  void togglePdfViewMode() {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    final next = s.pdfViewMode == PdfViewMode.continuous
+        ? PdfViewMode.facing
+        : PdfViewMode.continuous;
+    state = AsyncData(s.copyWith(pdfViewMode: next));
+  }
+
+  /// Toggle the structure overlay visibility on the PDF viewer.
+  void toggleStructureOverlay() {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    state = AsyncData(s.copyWith(
+      isStructureOverlayVisible: !s.isStructureOverlayVisible,
+    ));
+  }
+
   // ─── Scrap group control ──────────────────────────
 
   void groupSelectedScraps() {
@@ -1053,7 +1195,9 @@ class WorkspaceProvider extends _$WorkspaceProvider {
   }
 
   Future<void> _persistGroups(List<List<String>> groups) async {
-    await WorkspacePersistence.saveGroups(groups);
+    final noteId = state.valueOrNull?.currentNoteId;
+    if (noteId == null) return;
+    await WorkspacePersistence.saveGroups(noteId, groups);
   }
 
   /// Find the group containing [elementId], or null.
@@ -1092,6 +1236,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     String? selectedText,
     String? imagePath,
     PdfRect? textRect,
+    List<PdfRect>? lineRects,
     ElementType? elementType,
   }) {
     debugPrint('[WorkspaceProvider.openScrapBoard] page: $pageNumber, text: ${selectedText != null ? selectedText.substring(0, selectedText.length.clamp(0, 50)) : null}, hasImage: ${imagePath != null}, type: ${elementType?.name}');
@@ -1103,6 +1248,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       pendingScrapText: selectedText,
       pendingScrapImagePath: imagePath,
       pendingScrapTextRect: textRect,
+      pendingScrapLineRects: lineRects,
       pendingScrapElementType: elementType,
     ));
   }
@@ -1118,6 +1264,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       pendingScrapText: null,
       pendingScrapImagePath: null,
       pendingScrapTextRect: null,
+      pendingScrapLineRects: null,
       pendingScrapElementType: null,
     ));
   }

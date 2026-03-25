@@ -269,6 +269,9 @@ mixin _$WorkspaceState {
   String? get pendingScrapImagePath => throw _privateConstructorUsedError;
   @PdfRectConverter()
   PdfRect? get pendingScrapTextRect => throw _privateConstructorUsedError;
+  @PdfRectListConverter()
+  List<PdfRect>? get pendingScrapLineRects =>
+      throw _privateConstructorUsedError;
 
   /// Element type override for pending scrap (e.g. lasso vs capture)
   ElementType? get pendingScrapElementType =>
@@ -288,6 +291,12 @@ mixin _$WorkspaceState {
   String? get pendingMarkerText => throw _privateConstructorUsedError;
   @PdfRectConverter()
   PdfRect? get pendingMarkerTextRect => throw _privateConstructorUsedError;
+
+  /// Whether the PDF structure overlay is visible on the viewer
+  bool get isStructureOverlayVisible => throw _privateConstructorUsedError;
+
+  /// PDF page layout mode (continuous scroll vs facing pages)
+  PdfViewMode get pdfViewMode => throw _privateConstructorUsedError;
 
   /// Serializes this WorkspaceState to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -329,6 +338,7 @@ abstract class $WorkspaceStateCopyWith<$Res> {
     String? pendingScrapText,
     String? pendingScrapImagePath,
     @PdfRectConverter() PdfRect? pendingScrapTextRect,
+    @PdfRectListConverter() List<PdfRect>? pendingScrapLineRects,
     ElementType? pendingScrapElementType,
     bool isHighlightMode,
     String highlightModeColorName,
@@ -336,6 +346,8 @@ abstract class $WorkspaceStateCopyWith<$Res> {
     int? pendingMarkerPageNumber,
     String? pendingMarkerText,
     @PdfRectConverter() PdfRect? pendingMarkerTextRect,
+    bool isStructureOverlayVisible,
+    PdfViewMode pdfViewMode,
   });
 
   $PanelSizesCopyWith<$Res> get panelSizes;
@@ -378,6 +390,7 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
     Object? pendingScrapText = freezed,
     Object? pendingScrapImagePath = freezed,
     Object? pendingScrapTextRect = freezed,
+    Object? pendingScrapLineRects = freezed,
     Object? pendingScrapElementType = freezed,
     Object? isHighlightMode = null,
     Object? highlightModeColorName = null,
@@ -385,6 +398,8 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
     Object? pendingMarkerPageNumber = freezed,
     Object? pendingMarkerText = freezed,
     Object? pendingMarkerTextRect = freezed,
+    Object? isStructureOverlayVisible = null,
+    Object? pdfViewMode = null,
   }) {
     return _then(
       _value.copyWith(
@@ -476,6 +491,10 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
                 ? _value.pendingScrapTextRect
                 : pendingScrapTextRect // ignore: cast_nullable_to_non_nullable
                       as PdfRect?,
+            pendingScrapLineRects: freezed == pendingScrapLineRects
+                ? _value.pendingScrapLineRects
+                : pendingScrapLineRects // ignore: cast_nullable_to_non_nullable
+                      as List<PdfRect>?,
             pendingScrapElementType: freezed == pendingScrapElementType
                 ? _value.pendingScrapElementType
                 : pendingScrapElementType // ignore: cast_nullable_to_non_nullable
@@ -504,6 +523,14 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
                 ? _value.pendingMarkerTextRect
                 : pendingMarkerTextRect // ignore: cast_nullable_to_non_nullable
                       as PdfRect?,
+            isStructureOverlayVisible: null == isStructureOverlayVisible
+                ? _value.isStructureOverlayVisible
+                : isStructureOverlayVisible // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            pdfViewMode: null == pdfViewMode
+                ? _value.pdfViewMode
+                : pdfViewMode // ignore: cast_nullable_to_non_nullable
+                      as PdfViewMode,
           )
           as $Val,
     );
@@ -552,6 +579,7 @@ abstract class _$$WorkspaceStateImplCopyWith<$Res>
     String? pendingScrapText,
     String? pendingScrapImagePath,
     @PdfRectConverter() PdfRect? pendingScrapTextRect,
+    @PdfRectListConverter() List<PdfRect>? pendingScrapLineRects,
     ElementType? pendingScrapElementType,
     bool isHighlightMode,
     String highlightModeColorName,
@@ -559,6 +587,8 @@ abstract class _$$WorkspaceStateImplCopyWith<$Res>
     int? pendingMarkerPageNumber,
     String? pendingMarkerText,
     @PdfRectConverter() PdfRect? pendingMarkerTextRect,
+    bool isStructureOverlayVisible,
+    PdfViewMode pdfViewMode,
   });
 
   @override
@@ -601,6 +631,7 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
     Object? pendingScrapText = freezed,
     Object? pendingScrapImagePath = freezed,
     Object? pendingScrapTextRect = freezed,
+    Object? pendingScrapLineRects = freezed,
     Object? pendingScrapElementType = freezed,
     Object? isHighlightMode = null,
     Object? highlightModeColorName = null,
@@ -608,6 +639,8 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
     Object? pendingMarkerPageNumber = freezed,
     Object? pendingMarkerText = freezed,
     Object? pendingMarkerTextRect = freezed,
+    Object? isStructureOverlayVisible = null,
+    Object? pdfViewMode = null,
   }) {
     return _then(
       _$WorkspaceStateImpl(
@@ -699,6 +732,10 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
             ? _value.pendingScrapTextRect
             : pendingScrapTextRect // ignore: cast_nullable_to_non_nullable
                   as PdfRect?,
+        pendingScrapLineRects: freezed == pendingScrapLineRects
+            ? _value._pendingScrapLineRects
+            : pendingScrapLineRects // ignore: cast_nullable_to_non_nullable
+                  as List<PdfRect>?,
         pendingScrapElementType: freezed == pendingScrapElementType
             ? _value.pendingScrapElementType
             : pendingScrapElementType // ignore: cast_nullable_to_non_nullable
@@ -727,6 +764,14 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
             ? _value.pendingMarkerTextRect
             : pendingMarkerTextRect // ignore: cast_nullable_to_non_nullable
                   as PdfRect?,
+        isStructureOverlayVisible: null == isStructureOverlayVisible
+            ? _value.isStructureOverlayVisible
+            : isStructureOverlayVisible // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        pdfViewMode: null == pdfViewMode
+            ? _value.pdfViewMode
+            : pdfViewMode // ignore: cast_nullable_to_non_nullable
+                  as PdfViewMode,
       ),
     );
   }
@@ -758,6 +803,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     this.pendingScrapText,
     this.pendingScrapImagePath,
     @PdfRectConverter() this.pendingScrapTextRect,
+    @PdfRectListConverter() final List<PdfRect>? pendingScrapLineRects,
     this.pendingScrapElementType,
     this.isHighlightMode = false,
     this.highlightModeColorName = 'yellow',
@@ -765,10 +811,13 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     this.pendingMarkerPageNumber,
     this.pendingMarkerText,
     @PdfRectConverter() this.pendingMarkerTextRect,
+    this.isStructureOverlayVisible = false,
+    this.pdfViewMode = PdfViewMode.continuous,
   }) : _markers = markers,
        _openPdfPaths = openPdfPaths,
        _selectedScrapIds = selectedScrapIds,
-       _scrapGroups = scrapGroups;
+       _scrapGroups = scrapGroups,
+       _pendingScrapLineRects = pendingScrapLineRects;
 
   factory _$WorkspaceStateImpl.fromJson(Map<String, dynamic> json) =>
       _$$WorkspaceStateImplFromJson(json);
@@ -884,6 +933,17 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
   @override
   @PdfRectConverter()
   final PdfRect? pendingScrapTextRect;
+  final List<PdfRect>? _pendingScrapLineRects;
+  @override
+  @PdfRectListConverter()
+  List<PdfRect>? get pendingScrapLineRects {
+    final value = _pendingScrapLineRects;
+    if (value == null) return null;
+    if (_pendingScrapLineRects is EqualUnmodifiableListView)
+      return _pendingScrapLineRects;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
 
   /// Element type override for pending scrap (e.g. lasso vs capture)
   @override
@@ -912,9 +972,19 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
   @PdfRectConverter()
   final PdfRect? pendingMarkerTextRect;
 
+  /// Whether the PDF structure overlay is visible on the viewer
+  @override
+  @JsonKey()
+  final bool isStructureOverlayVisible;
+
+  /// PDF page layout mode (continuous scroll vs facing pages)
+  @override
+  @JsonKey()
+  final PdfViewMode pdfViewMode;
+
   @override
   String toString() {
-    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, openPdfPaths: $openPdfPaths, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, focusedPanel: $focusedPanel, isLayoutSwapped: $isLayoutSwapped, selectedScrapIds: $selectedScrapIds, scrapGroups: $scrapGroups, isQuickScrapMode: $isQuickScrapMode, isScrapBoardOpen: $isScrapBoardOpen, pendingScrapPageNumber: $pendingScrapPageNumber, pendingScrapText: $pendingScrapText, pendingScrapImagePath: $pendingScrapImagePath, pendingScrapTextRect: $pendingScrapTextRect, pendingScrapElementType: $pendingScrapElementType, isHighlightMode: $isHighlightMode, highlightModeColorName: $highlightModeColorName, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect)';
+    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, openPdfPaths: $openPdfPaths, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, focusedPanel: $focusedPanel, isLayoutSwapped: $isLayoutSwapped, selectedScrapIds: $selectedScrapIds, scrapGroups: $scrapGroups, isQuickScrapMode: $isQuickScrapMode, isScrapBoardOpen: $isScrapBoardOpen, pendingScrapPageNumber: $pendingScrapPageNumber, pendingScrapText: $pendingScrapText, pendingScrapImagePath: $pendingScrapImagePath, pendingScrapTextRect: $pendingScrapTextRect, pendingScrapLineRects: $pendingScrapLineRects, pendingScrapElementType: $pendingScrapElementType, isHighlightMode: $isHighlightMode, highlightModeColorName: $highlightModeColorName, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect, isStructureOverlayVisible: $isStructureOverlayVisible, pdfViewMode: $pdfViewMode)';
   }
 
   @override
@@ -971,6 +1041,10 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
                 other.pendingScrapImagePath == pendingScrapImagePath) &&
             (identical(other.pendingScrapTextRect, pendingScrapTextRect) ||
                 other.pendingScrapTextRect == pendingScrapTextRect) &&
+            const DeepCollectionEquality().equals(
+              other._pendingScrapLineRects,
+              _pendingScrapLineRects,
+            ) &&
             (identical(
                   other.pendingScrapElementType,
                   pendingScrapElementType,
@@ -990,7 +1064,14 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
             (identical(other.pendingMarkerText, pendingMarkerText) ||
                 other.pendingMarkerText == pendingMarkerText) &&
             (identical(other.pendingMarkerTextRect, pendingMarkerTextRect) ||
-                other.pendingMarkerTextRect == pendingMarkerTextRect));
+                other.pendingMarkerTextRect == pendingMarkerTextRect) &&
+            (identical(
+                  other.isStructureOverlayVisible,
+                  isStructureOverlayVisible,
+                ) ||
+                other.isStructureOverlayVisible == isStructureOverlayVisible) &&
+            (identical(other.pdfViewMode, pdfViewMode) ||
+                other.pdfViewMode == pdfViewMode));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1019,6 +1100,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     pendingScrapText,
     pendingScrapImagePath,
     pendingScrapTextRect,
+    const DeepCollectionEquality().hash(_pendingScrapLineRects),
     pendingScrapElementType,
     isHighlightMode,
     highlightModeColorName,
@@ -1026,6 +1108,8 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     pendingMarkerPageNumber,
     pendingMarkerText,
     pendingMarkerTextRect,
+    isStructureOverlayVisible,
+    pdfViewMode,
   ]);
 
   /// Create a copy of WorkspaceState
@@ -1069,6 +1153,7 @@ abstract class _WorkspaceState implements WorkspaceState {
     final String? pendingScrapText,
     final String? pendingScrapImagePath,
     @PdfRectConverter() final PdfRect? pendingScrapTextRect,
+    @PdfRectListConverter() final List<PdfRect>? pendingScrapLineRects,
     final ElementType? pendingScrapElementType,
     final bool isHighlightMode,
     final String highlightModeColorName,
@@ -1076,6 +1161,8 @@ abstract class _WorkspaceState implements WorkspaceState {
     final int? pendingMarkerPageNumber,
     final String? pendingMarkerText,
     @PdfRectConverter() final PdfRect? pendingMarkerTextRect,
+    final bool isStructureOverlayVisible,
+    final PdfViewMode pdfViewMode,
   }) = _$WorkspaceStateImpl;
 
   factory _WorkspaceState.fromJson(Map<String, dynamic> json) =
@@ -1148,6 +1235,9 @@ abstract class _WorkspaceState implements WorkspaceState {
   @override
   @PdfRectConverter()
   PdfRect? get pendingScrapTextRect;
+  @override
+  @PdfRectListConverter()
+  List<PdfRect>? get pendingScrapLineRects;
 
   /// Element type override for pending scrap (e.g. lasso vs capture)
   @override
@@ -1173,6 +1263,14 @@ abstract class _WorkspaceState implements WorkspaceState {
   @override
   @PdfRectConverter()
   PdfRect? get pendingMarkerTextRect;
+
+  /// Whether the PDF structure overlay is visible on the viewer
+  @override
+  bool get isStructureOverlayVisible;
+
+  /// PDF page layout mode (continuous scroll vs facing pages)
+  @override
+  PdfViewMode get pdfViewMode;
 
   /// Create a copy of WorkspaceState
   /// with the given fields replaced by the non-null parameter values.

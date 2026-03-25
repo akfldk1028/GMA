@@ -110,10 +110,12 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
   }
 
   /// Ensure every element has a position. Auto-layout to fit panel width.
+  /// Capture cards use their PdfRect aspect ratio for height;
+  /// highlight cards use a compact fixed height.
   void _ensureLayoutFit(List<ScrapElement> elements, double cardW, double panelW) {
     final startX = panelW * _kPaddingRatio;
     final startY = panelW * _kPaddingRatio;
-    final cardH = panelW * _kCardHeightRatio;
+    final defaultCardH = panelW * _kCardHeightRatio;
     final spacing = panelW * _kCardSpacingRatio;
 
     double nextY = startY;
@@ -124,6 +126,17 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     }
     for (final el in elements) {
       if (!_layout.containsKey(el.id)) {
+        double cardH = defaultCardH;
+        // For capture/lasso: compute height from source rect aspect ratio
+        if ((el.type == ElementType.capture || el.type == ElementType.lasso) &&
+            el.rect != null) {
+          final rectW = (el.rect!.right - el.rect!.left).abs();
+          final rectH = (el.rect!.top - el.rect!.bottom).abs();
+          if (rectW > 0 && rectH > 0) {
+            cardH = cardW * rectH / rectW;
+            cardH = cardH.clamp(60.0, panelW * 1.5);
+          }
+        }
         _layout[el.id] = Rect.fromLTWH(startX, nextY, cardW, cardH);
         nextY += cardH + spacing;
       }

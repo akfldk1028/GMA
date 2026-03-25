@@ -32,6 +32,42 @@ class PdfRectConverter implements JsonConverter<PdfRect?, Map<String, dynamic>?>
   }
 }
 
+/// Converter for List<PdfRect> to/from JSON (per-line highlight rects).
+class PdfRectListConverter
+    implements JsonConverter<List<PdfRect>?, List<dynamic>?> {
+  const PdfRectListConverter();
+
+  @override
+  List<PdfRect>? fromJson(List<dynamic>? json) {
+    if (json == null) return null;
+    return json
+        .whereType<Map>()
+        .map((m) {
+          final j = Map<String, dynamic>.from(m);
+          return PdfRect(
+            (j['left'] as num).toDouble(),
+            (j['top'] as num).toDouble(),
+            (j['right'] as num).toDouble(),
+            (j['bottom'] as num).toDouble(),
+          );
+        })
+        .toList();
+  }
+
+  @override
+  List<dynamic>? toJson(List<PdfRect>? rects) {
+    if (rects == null) return null;
+    return rects
+        .map((r) => {
+              'left': r.left,
+              'top': r.top,
+              'right': r.right,
+              'bottom': r.bottom,
+            })
+        .toList();
+  }
+}
+
 @freezed
 class PdfMarker with _$PdfMarker {
   const factory PdfMarker({
@@ -40,6 +76,7 @@ class PdfMarker with _$PdfMarker {
     required MarkerColor color,
     String? selectedText,
     @PdfRectConverter() PdfRect? textRect,
+    @PdfRectListConverter() List<PdfRect>? lineRects,
     String? capturedImagePath,
   }) = _PdfMarker;
 

@@ -65,7 +65,7 @@ class CanvasScrapCard extends StatelessWidget {
                   ? Image.file(
                       File(imgPath),
                       width: double.infinity,
-                      fit: BoxFit.contain,
+                      fit: BoxFit.fill,
                       errorBuilder: (_, __, ___) => _placeholder(),
                     )
                   : _placeholder(),

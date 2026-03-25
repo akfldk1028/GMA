@@ -23,7 +23,7 @@ final fileManagerProvider =
 
 typedef _$FileManager = AutoDisposeAsyncNotifier<List<NoteMetadata>>;
 String _$createNoteMutationHash() =>
-    r'8b6110afd99c9715f3c12d12abb085ee88434329';
+    r'5756e9e7f1be5d244cc43488c3800f5d65f3bdff';
 
 /// Mutation provider for creating a new note
 ///

@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
+import 'package:pdfrx/pdfrx.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../pdf_structure/widgets/heading_tree_widget.dart';
 import '../../../scrapnote/models/element_model.dart';
 import '../../../scrapnote/providers/element_store.dart';
 import '../../../scrapnote/providers/note_scrap_provider.dart';
@@ -20,6 +22,7 @@ class ScrapThumbnailsSidebar extends ConsumerStatefulWidget {
     this.width = 140,
     this.onPageTap,
     this.onElementTap,
+    this.onHeadingTap,
     this.capturesDir,
     this.canvasOrder,
   });
@@ -27,6 +30,8 @@ class ScrapThumbnailsSidebar extends ConsumerStatefulWidget {
   final double width;
   final void Function(int page)? onPageTap;
   final void Function(String elementId)? onElementTap;
+  /// Called when a heading is tapped in the structure tab (for PDF page jump).
+  final void Function(int pageNumber, PdfRect? pdfRect)? onHeadingTap;
   final String? capturesDir;
   /// Canvas-provided element order (y→x sorted). If set, overrides provider order.
   final List<String>? canvasOrder;
@@ -36,7 +41,7 @@ class ScrapThumbnailsSidebar extends ConsumerStatefulWidget {
       _ScrapThumbnailsSidebarState();
 }
 
-enum _SidebarTab { all, capture, highlight }
+enum _SidebarTab { all, capture, highlight, structure }
 
 class _FlatEntry {
   final Widget widget;
@@ -73,6 +78,8 @@ class _ScrapThumbnailsSidebarState
         return elements
             .where((e) => e.type == ElementType.highlight)
             .toList();
+      case _SidebarTab.structure:
+        return elements; // structure tab uses HeadingTreeWidget, not filtered list
     }
   }
 
@@ -134,36 +141,46 @@ class _ScrapThumbnailsSidebarState
                     elements
                         .where((e) => e.type == ElementType.highlight)
                         .length),
+                _buildTab(theme, _SidebarTab.structure, '구조', null),
               ],
             ),
           ),
 
-          // ─── Flat list (markdown order) ───
+          // ─── Content area ───
           Expanded(
-            child: filtered.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        'No scraps yet',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: theme.colorScheme.mutedForeground,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 4, horizontal: 6),
-                    itemCount: _buildFlatList(filtered, ws.scrapGroups).length,
-                    itemBuilder: (context, index) {
-                      final flatItems = _buildFlatList(filtered, ws.scrapGroups);
-                      final entry = flatItems[index];
-                      return entry.widget;
+            child: _currentTab == _SidebarTab.structure
+                ? HeadingTreeWidget(
+                    onHeadingTap: (heading) {
+                      widget.onHeadingTap?.call(
+                        heading.pageNumber,
+                        heading.toPdfRect(),
+                      );
                     },
-                  ),
+                  )
+                : filtered.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            'No scraps yet',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: theme.colorScheme.mutedForeground,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 4, horizontal: 6),
+                        itemCount: _buildFlatList(filtered, ws.scrapGroups).length,
+                        itemBuilder: (context, index) {
+                          final flatItems = _buildFlatList(filtered, ws.scrapGroups);
+                          final entry = flatItems[index];
+                          return entry.widget;
+                        },
+                      ),
           ),
         ],
       ),
@@ -343,7 +360,7 @@ class _ScrapThumbnailsSidebarState
   }
 
   Widget _buildTab(
-      ShadThemeData theme, _SidebarTab tab, String label, int count) {
+      ShadThemeData theme, _SidebarTab tab, String label, int? count) {
     final isActive = _currentTab == tab;
     return Expanded(
       child: GestureDetector(
@@ -361,7 +378,7 @@ class _ScrapThumbnailsSidebarState
             ),
           ),
           child: Text(
-            '$label $count',
+            count != null ? '$label $count' : label,
             style: TextStyle(
               fontSize: 9,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
