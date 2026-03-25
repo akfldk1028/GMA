@@ -52,18 +52,26 @@ class WorkspaceProvider extends _$WorkspaceProvider {
 
     final session = await WorkspacePersistence.loadLastSession();
 
-    final initialState = WorkspaceState(
-      panelSizes: panelSizes,
-    );
+    // If user already called loadNote/resetForNewNote while we were awaiting,
+    // don't override their state and don't schedule session restore.
+    if (_loadNoteGeneration > 0) {
+      final current = state.valueOrNull;
+      debugPrint('[WorkspaceProvider.build] user already navigated (gen=$_loadNoteGeneration), preserving state');
+      return current?.copyWith(panelSizes: panelSizes)
+          ?? WorkspaceState(panelSizes: panelSizes);
+    }
 
     final lastNoteId = session.noteId;
     final lastPdfPath = session.pdfPath;
 
-    // Schedule async restore after build.
-    // loadNote() reads linkedPdfPath from the note's frontmatter.
-    // lastPdfPath is passed as hint ONLY for legacy notes without frontmatter.
+    // Schedule async session restore after build (only when no user action).
     if (lastNoteId != null) {
       Future.microtask(() async {
+        // Double-check: user might call loadNote between build return and microtask
+        if (_loadNoteGeneration > 0) {
+          debugPrint('[WorkspaceProvider.build] restore skipped — user already navigated');
+          return;
+        }
         try {
           await loadNote(lastNoteId, linkedPdfPath: lastPdfPath);
         } catch (e) {
@@ -72,11 +80,13 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       });
     }
 
-    return initialState;
+    return WorkspaceState(panelSizes: panelSizes);
   }
 
   /// Reset workspace to clean state (new note without PDF).
   void resetForNewNote(String noteId) {
+    // Bump generation so any pending session restore aborts
+    _loadNoteGeneration++;
     final s = state.valueOrNull ?? const WorkspaceState();
     state = AsyncData(WorkspaceState(
       currentNoteId: noteId,
@@ -159,10 +169,9 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       state = AsyncData(state.value!.copyWith(currentNoteId: virtualNoteId));
     }
 
-    // Trigger PDF structure analysis in background (non-blocking)
-    if (!kIsWeb && !isAsset) {
-      ref.read(pdfStructureProvider.notifier).analyze(pdfPath);
-    }
+    // PDF structure analysis is now lazy — triggered only when user opens
+    // the "구조" (Structure) tab, not on every PDF load. This avoids
+    // spawning a JVM process (1-3s cold start) on each PDF open.
   }
 
   /// Switch to an already-open PDF tab.
@@ -1164,9 +1173,17 @@ class WorkspaceProvider extends _$WorkspaceProvider {
   void toggleStructureOverlay() {
     final s = state.valueOrNull;
     if (s == null) return;
+    final willShow = !s.isStructureOverlayVisible;
     state = AsyncData(s.copyWith(
-      isStructureOverlayVisible: !s.isStructureOverlayVisible,
+      isStructureOverlayVisible: willShow,
     ));
+    // Lazy trigger: if turning on and no analysis yet, start it
+    if (willShow && s.currentPdfPath != null) {
+      final structState = ref.read(pdfStructureProvider);
+      if (structState.result == null && !structState.isAnalyzing) {
+        ref.read(pdfStructureProvider.notifier).analyze(s.currentPdfPath!);
+      }
+    }
   }
 
   // ─── Scrap group control ──────────────────────────

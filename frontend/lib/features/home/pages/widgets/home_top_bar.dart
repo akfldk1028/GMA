@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../constants/app_colors.dart';
@@ -53,7 +54,8 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
   Future<void> _handleNewNote() async {
     try {
       final mutation = ref.read(createNoteMutationProvider.notifier);
-      final note = await mutation.call(title: 'Untitled Note');
+      final title = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
+      final note = await mutation.call(title: title);
       if (mounted) {
         ref
             .read(workspaceProviderProvider.notifier)
@@ -95,8 +97,9 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
         } else if (linkChoice.createNew) {
           // Create new note linked to this PDF
           final mutation = ref.read(createNoteMutationProvider.notifier);
+          final pdfTitle = '${p.basenameWithoutExtension(pdfPath)}_note';
           final note = await mutation.call(
-            title: 'Untitled Note',
+            title: pdfTitle,
             linkedPdfPath: pdfPath,
           );
           await ref

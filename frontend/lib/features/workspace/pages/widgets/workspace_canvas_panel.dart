@@ -182,9 +182,7 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
         ),
         if (_annotateMode) _buildAnnotationToolbar(),
         Expanded(
-          child: filtered.isEmpty
-              ? _buildEmptyState()
-              : LayoutBuilder(
+          child: LayoutBuilder(
                   builder: (context, constraints) {
                     final panelW = constraints.maxWidth;
                     final panelH = constraints.maxHeight;
@@ -357,36 +355,36 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
         onTap: _annotateMode
             ? null
             : () {
+                // Single tap → select card + navigate to PDF page
                 setState(() {
                   final group = ref.read(workspaceProviderProvider.notifier)
                       .findGroupOf(el.id);
-
                   if (group != null) {
-                    final allGroupSelected =
-                        group.every((id) => _selectedCardIds.contains(id));
-                    if (allGroupSelected) {
-                      // Group already selected → navigate
-                      widget.onNavigateToPage(el.pageNumber);
-                    } else {
-                      // Select entire group
-                      _selectedCardIds.clear();
-                      _selectedCardIds.addAll(group);
-                    }
-                  } else if (isSelected && _selectedCardIds.length == 1) {
-                    widget.onNavigateToPage(el.pageNumber);
-                  } else if (isSelected) {
-                    _selectedCardIds.remove(el.id);
-                  } else if (_selectedCardIds.isNotEmpty) {
+                    _selectedCardIds.clear();
+                    _selectedCardIds.addAll(group);
+                  } else {
+                    _selectedCardIds.clear();
                     _selectedCardIds.add(el.id);
+                  }
+                  _syncSelectionToWorkspace();
+                });
+                if (el.pageNumber > 0) {
+                  widget.onNavigateToPage(el.pageNumber);
+                }
+              },
+        onLongPress: _annotateMode
+            ? null
+            : () {
+                // Long press → toggle selection (for multi-select/group)
+                setState(() {
+                  if (isSelected) {
+                    _selectedCardIds.remove(el.id);
                   } else {
                     _selectedCardIds.add(el.id);
                   }
                   _syncSelectionToWorkspace();
                 });
               },
-        onDoubleTap: _annotateMode
-            ? null
-            : () => widget.onNavigateToPage(el.pageNumber),
         onPanUpdate: _annotateMode
             ? null
             : (details) {
@@ -999,24 +997,4 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.note_add_outlined, size: 40, color: Colors.grey),
-          SizedBox(height: 8),
-          Text('ScrapNote',
-              style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500)),
-          SizedBox(height: 4),
-          Text('Capture or lasso on the PDF\nto add scraps here',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 11)),
-        ],
-      ),
-    );
-  }
 }

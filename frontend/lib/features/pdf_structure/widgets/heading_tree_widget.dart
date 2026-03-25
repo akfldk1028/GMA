@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../workspace/pages/providers/workspace_provider.dart';
 import '../models/pdf_structure_model.dart';
 import '../providers/pdf_structure_provider.dart';
 
@@ -21,6 +22,19 @@ class HeadingTreeWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final structureState = ref.watch(pdfStructureProvider);
     final theme = ShadTheme.of(context);
+
+    // Lazy analysis: trigger on first view if not yet analyzed
+    if (structureState.result == null &&
+        !structureState.isAnalyzing &&
+        structureState.error == null) {
+      final pdfPath = ref.read(workspaceProviderProvider).valueOrNull?.currentPdfPath;
+      if (pdfPath != null) {
+        // Schedule after build to avoid modifying provider during build
+        Future.microtask(() {
+          ref.read(pdfStructureProvider.notifier).analyze(pdfPath);
+        });
+      }
+    }
 
     if (structureState.isAnalyzing) {
       return const Center(
