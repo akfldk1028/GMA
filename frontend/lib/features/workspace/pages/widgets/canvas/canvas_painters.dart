@@ -86,6 +86,9 @@ class GroupStrokePainter extends CustomPainter {
     required this.canvasOriginY,
     this.scaleX = 1.0,
     this.scaleY = 1.0,
+    this.rotation = 0.0,
+    this.centerX = 0.0,
+    this.centerY = 0.0,
   });
 
   final List<StrokeData> strokes;
@@ -95,9 +98,21 @@ class GroupStrokePainter extends CustomPainter {
   final double canvasOriginY;
   final double scaleX;
   final double scaleY;
+  /// Rotation angle in radians around (centerX, centerY).
+  final double rotation;
+  final double centerX;
+  final double centerY;
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Apply rotation around group center if needed
+    if (rotation != 0.0) {
+      canvas.save();
+      canvas.translate(centerX, centerY);
+      canvas.rotate(rotation);
+      canvas.translate(-centerX, -centerY);
+    }
+
     for (final s in strokes) {
       if (s.points.length < 2) continue;
       final paint = Paint()
@@ -113,6 +128,10 @@ class GroupStrokePainter extends CustomPainter {
         path.lineTo(pt.dx, pt.dy);
       }
       canvas.drawPath(path, paint);
+    }
+
+    if (rotation != 0.0) {
+      canvas.restore();
     }
   }
 

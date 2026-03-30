@@ -149,6 +149,31 @@ class WorkspacePersistence {
     return results;
   }
 
+  // ─── Canvas strokes (per note) ─────────────────────
+
+  static String _strokesKey(String noteId) => 'canvas_strokes_$noteId';
+
+  static Future<void> saveCanvasStrokes(
+    String noteId,
+    List<Map<String, dynamic>> strokes,
+  ) async {
+    final box = await _getBox();
+    await box.put(_strokesKey(noteId), jsonEncode(strokes));
+  }
+
+  static Future<List<Map<String, dynamic>>> loadCanvasStrokes(
+      String noteId) async {
+    final box = await _getBox();
+    final raw = box.get(_strokesKey(noteId));
+    if (raw is! String) return [];
+    try {
+      final list = jsonDecode(raw) as List;
+      return list.cast<Map<String, dynamic>>();
+    } catch (_) {
+      return [];
+    }
+  }
+
   // ─── Panel sizes ──────────────────────────────────
 
   static Future<void> savePanelSizes(Map<String, dynamic> sizes) async {

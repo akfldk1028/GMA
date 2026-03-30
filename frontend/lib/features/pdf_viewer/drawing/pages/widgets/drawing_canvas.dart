@@ -1,3 +1,5 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
@@ -58,12 +60,14 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
       return IgnorePointer(child: child);
     }
 
+    // Stylus draws, finger passes through to PDF viewer for scroll/zoom.
+    // HitTestBehavior.translucent lets finger events reach the PDF viewer.
     return Listener(
       onPointerDown: _onPointerDown,
       onPointerMove: _onPointerMove,
       onPointerUp: _onPointerUp,
       onPointerCancel: _onPointerCancel,
-      behavior: HitTestBehavior.opaque,
+      behavior: HitTestBehavior.translucent,
       child: child,
     );
   }
@@ -71,6 +75,9 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
   void _onPointerDown(PointerDownEvent event) {
     // Only track a single pointer (ignore second finger for pinch-zoom)
     if (_activePointerId != null) return;
+    // Finger → pass through to PDF viewer for scroll/zoom
+    // Stylus/mouse → draw
+    if (event.kind == PointerDeviceKind.touch) return;
     _activePointerId = event.pointer;
 
     final box = context.findRenderObject() as RenderBox;

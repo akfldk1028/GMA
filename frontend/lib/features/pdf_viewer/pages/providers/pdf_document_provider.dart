@@ -31,23 +31,24 @@ class PdfDocumentState {
 
 /// Provider for managing PDF document loading state and PdfViewerController.
 /// Handles PDF file loading and controller lifecycle.
+/// Caches PdfDocumentRef per file path to avoid re-parsing on tab switch.
 @Riverpod(keepAlive: true)
 class PdfDocument extends _$PdfDocument {
+  final Map<String, PdfDocumentRef> _cache = {};
+
   @override
   PdfDocumentState build() {
-    // Initialize with a controller but no document
     final controller = PdfViewerController();
     return PdfDocumentState(controller: controller);
   }
 
   /// Load a PDF from a file path.
-  /// Creates a new PdfDocumentRef and associates it with the controller.
+  /// Uses cached PdfDocumentRef if available for the same path.
   Future<void> loadFromFile(String filePath) async {
     try {
-      // Create document reference from file path
-      final documentRef = PdfDocumentRefFile(
+      final documentRef = _cache.putIfAbsent(
         filePath,
-        useProgressiveLoading: true,
+        () => PdfDocumentRefFile(filePath, useProgressiveLoading: true),
       );
 
       state = state.copyWith(
@@ -55,23 +56,30 @@ class PdfDocument extends _$PdfDocument {
         filePath: filePath,
       );
     } catch (e) {
-      // On error, clear the document but keep the controller
-      state = PdfDocumentState(
-        controller: state.controller,
-      );
+      _cache.remove(filePath);
+      state = PdfDocumentState(controller: state.controller);
       rethrow;
     }
+  }
+
+  /// Evict a specific path from cache (e.g. when closing a tab).
+  void evict(String filePath) {
+    _cache.remove(filePath);
   }
 
   /// Load a PDF from a Flutter asset path (e.g. 'assets/sample/sample_math.pdf').
   Future<void> loadFromAsset(String assetPath) async {
     try {
-      final documentRef = PdfDocumentRefAsset(assetPath);
+      final documentRef = _cache.putIfAbsent(
+        assetPath,
+        () => PdfDocumentRefAsset(assetPath),
+      );
       state = state.copyWith(
         documentRef: documentRef,
         filePath: assetPath,
       );
     } catch (e) {
+      _cache.remove(assetPath);
       state = PdfDocumentState(controller: state.controller);
       rethrow;
     }
@@ -79,6 +87,7 @@ class PdfDocument extends _$PdfDocument {
 
   /// Clear the current document while keeping the controller.
   void clearDocument() {
+    _cache.clear();
     state = PdfDocumentState(
       controller: state.controller,
     );

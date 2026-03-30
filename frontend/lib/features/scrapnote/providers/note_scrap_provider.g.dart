@@ -6,7 +6,7 @@ part of 'note_scrap_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$noteScrapHash() => r'53846dd2fdfbe274482611688dab5e7e747646ec';
+String _$noteScrapHash() => r'c793069ac2aa8d258740649a448bf405be847f9c';
 
 /// Copied from Dart SDK
 class _SystemHash {

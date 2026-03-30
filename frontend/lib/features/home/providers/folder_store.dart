@@ -79,6 +79,19 @@ class FolderStore extends _$FolderStore {
       ..sort((a, b) => a.order.compareTo(b.order));
   }
 
+  /// Returns ancestor chain from root to the given folder (inclusive).
+  List<FolderModel> getAncestors(String folderId) {
+    final ancestors = <FolderModel>[];
+    String? currentId = folderId;
+    while (currentId != null) {
+      final folder = getById(currentId);
+      if (folder == null) break;
+      ancestors.insert(0, folder);
+      currentId = folder.parentId;
+    }
+    return ancestors;
+  }
+
   List<FolderModel> all() {
     final results = <FolderModel>[];
     for (final key in _box.keys) {

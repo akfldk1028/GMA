@@ -58,8 +58,7 @@ class CanvasScrapCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // No header -- clean card
-            // Image -- fill remaining space
+            // Image
             Expanded(
               child: imgPath != null
                   ? Image.file(
@@ -70,6 +69,21 @@ class CanvasScrapCard extends StatelessWidget {
                     )
                   : _placeholder(),
             ),
+            // Memo text (if any)
+            if (element.selectedText != null && element.selectedText!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                child: Text(
+                  element.selectedText!,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey.shade700,
+                    height: 1.3,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
           ],
         ),
       ),

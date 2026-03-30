@@ -298,6 +298,9 @@ mixin _$WorkspaceState {
   /// PDF page layout mode (continuous scroll vs facing pages)
   PdfViewMode get pdfViewMode => throw _privateConstructorUsedError;
 
+  /// Whether the AI agent panel is open
+  bool get isAiPanelOpen => throw _privateConstructorUsedError;
+
   /// Serializes this WorkspaceState to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -348,6 +351,7 @@ abstract class $WorkspaceStateCopyWith<$Res> {
     @PdfRectConverter() PdfRect? pendingMarkerTextRect,
     bool isStructureOverlayVisible,
     PdfViewMode pdfViewMode,
+    bool isAiPanelOpen,
   });
 
   $PanelSizesCopyWith<$Res> get panelSizes;
@@ -400,6 +404,7 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
     Object? pendingMarkerTextRect = freezed,
     Object? isStructureOverlayVisible = null,
     Object? pdfViewMode = null,
+    Object? isAiPanelOpen = null,
   }) {
     return _then(
       _value.copyWith(
@@ -531,6 +536,10 @@ class _$WorkspaceStateCopyWithImpl<$Res, $Val extends WorkspaceState>
                 ? _value.pdfViewMode
                 : pdfViewMode // ignore: cast_nullable_to_non_nullable
                       as PdfViewMode,
+            isAiPanelOpen: null == isAiPanelOpen
+                ? _value.isAiPanelOpen
+                : isAiPanelOpen // ignore: cast_nullable_to_non_nullable
+                      as bool,
           )
           as $Val,
     );
@@ -589,6 +598,7 @@ abstract class _$$WorkspaceStateImplCopyWith<$Res>
     @PdfRectConverter() PdfRect? pendingMarkerTextRect,
     bool isStructureOverlayVisible,
     PdfViewMode pdfViewMode,
+    bool isAiPanelOpen,
   });
 
   @override
@@ -641,6 +651,7 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
     Object? pendingMarkerTextRect = freezed,
     Object? isStructureOverlayVisible = null,
     Object? pdfViewMode = null,
+    Object? isAiPanelOpen = null,
   }) {
     return _then(
       _$WorkspaceStateImpl(
@@ -772,6 +783,10 @@ class __$$WorkspaceStateImplCopyWithImpl<$Res>
             ? _value.pdfViewMode
             : pdfViewMode // ignore: cast_nullable_to_non_nullable
                   as PdfViewMode,
+        isAiPanelOpen: null == isAiPanelOpen
+            ? _value.isAiPanelOpen
+            : isAiPanelOpen // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -813,6 +828,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     @PdfRectConverter() this.pendingMarkerTextRect,
     this.isStructureOverlayVisible = false,
     this.pdfViewMode = PdfViewMode.continuous,
+    this.isAiPanelOpen = false,
   }) : _markers = markers,
        _openPdfPaths = openPdfPaths,
        _selectedScrapIds = selectedScrapIds,
@@ -982,9 +998,14 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
   @JsonKey()
   final PdfViewMode pdfViewMode;
 
+  /// Whether the AI agent panel is open
+  @override
+  @JsonKey()
+  final bool isAiPanelOpen;
+
   @override
   String toString() {
-    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, openPdfPaths: $openPdfPaths, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, focusedPanel: $focusedPanel, isLayoutSwapped: $isLayoutSwapped, selectedScrapIds: $selectedScrapIds, scrapGroups: $scrapGroups, isQuickScrapMode: $isQuickScrapMode, isScrapBoardOpen: $isScrapBoardOpen, pendingScrapPageNumber: $pendingScrapPageNumber, pendingScrapText: $pendingScrapText, pendingScrapImagePath: $pendingScrapImagePath, pendingScrapTextRect: $pendingScrapTextRect, pendingScrapLineRects: $pendingScrapLineRects, pendingScrapElementType: $pendingScrapElementType, isHighlightMode: $isHighlightMode, highlightModeColorName: $highlightModeColorName, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect, isStructureOverlayVisible: $isStructureOverlayVisible, pdfViewMode: $pdfViewMode)';
+    return 'WorkspaceState(currentPdfPath: $currentPdfPath, currentNoteId: $currentNoteId, markers: $markers, openPdfPaths: $openPdfPaths, panelSizes: $panelSizes, sidebarMode: $sidebarMode, isEditorModalOpen: $isEditorModalOpen, isFileBrowserOpen: $isFileBrowserOpen, isMarkerEditModalOpen: $isMarkerEditModalOpen, isStickyNoteVisible: $isStickyNoteVisible, isPageNavOpen: $isPageNavOpen, isLiveScrapsOpen: $isLiveScrapsOpen, focusedPanel: $focusedPanel, isLayoutSwapped: $isLayoutSwapped, selectedScrapIds: $selectedScrapIds, scrapGroups: $scrapGroups, isQuickScrapMode: $isQuickScrapMode, isScrapBoardOpen: $isScrapBoardOpen, pendingScrapPageNumber: $pendingScrapPageNumber, pendingScrapText: $pendingScrapText, pendingScrapImagePath: $pendingScrapImagePath, pendingScrapTextRect: $pendingScrapTextRect, pendingScrapLineRects: $pendingScrapLineRects, pendingScrapElementType: $pendingScrapElementType, isHighlightMode: $isHighlightMode, highlightModeColorName: $highlightModeColorName, editingMarkerId: $editingMarkerId, pendingMarkerPageNumber: $pendingMarkerPageNumber, pendingMarkerText: $pendingMarkerText, pendingMarkerTextRect: $pendingMarkerTextRect, isStructureOverlayVisible: $isStructureOverlayVisible, pdfViewMode: $pdfViewMode, isAiPanelOpen: $isAiPanelOpen)';
   }
 
   @override
@@ -1071,7 +1092,9 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
                 ) ||
                 other.isStructureOverlayVisible == isStructureOverlayVisible) &&
             (identical(other.pdfViewMode, pdfViewMode) ||
-                other.pdfViewMode == pdfViewMode));
+                other.pdfViewMode == pdfViewMode) &&
+            (identical(other.isAiPanelOpen, isAiPanelOpen) ||
+                other.isAiPanelOpen == isAiPanelOpen));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1110,6 +1133,7 @@ class _$WorkspaceStateImpl implements _WorkspaceState {
     pendingMarkerTextRect,
     isStructureOverlayVisible,
     pdfViewMode,
+    isAiPanelOpen,
   ]);
 
   /// Create a copy of WorkspaceState
@@ -1163,6 +1187,7 @@ abstract class _WorkspaceState implements WorkspaceState {
     @PdfRectConverter() final PdfRect? pendingMarkerTextRect,
     final bool isStructureOverlayVisible,
     final PdfViewMode pdfViewMode,
+    final bool isAiPanelOpen,
   }) = _$WorkspaceStateImpl;
 
   factory _WorkspaceState.fromJson(Map<String, dynamic> json) =
@@ -1271,6 +1296,10 @@ abstract class _WorkspaceState implements WorkspaceState {
   /// PDF page layout mode (continuous scroll vs facing pages)
   @override
   PdfViewMode get pdfViewMode;
+
+  /// Whether the AI agent panel is open
+  @override
+  bool get isAiPanelOpen;
 
   /// Create a copy of WorkspaceState
   /// with the given fields replaced by the non-null parameter values.

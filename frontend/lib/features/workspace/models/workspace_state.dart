@@ -94,6 +94,8 @@ class WorkspaceState with _$WorkspaceState {
     @Default(false) bool isStructureOverlayVisible,
     /// PDF page layout mode (continuous scroll vs facing pages)
     @Default(PdfViewMode.continuous) PdfViewMode pdfViewMode,
+    /// Whether the AI agent panel is open
+    @Default(false) bool isAiPanelOpen,
   }) = _WorkspaceState;
 
   factory WorkspaceState.fromJson(Map<String, dynamic> json) =>

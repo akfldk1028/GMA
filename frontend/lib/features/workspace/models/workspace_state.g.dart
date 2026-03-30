@@ -89,6 +89,7 @@ _$WorkspaceStateImpl _$$WorkspaceStateImplFromJson(
   pdfViewMode:
       $enumDecodeNullable(_$PdfViewModeEnumMap, json['pdfViewMode']) ??
       PdfViewMode.continuous,
+  isAiPanelOpen: json['isAiPanelOpen'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$$WorkspaceStateImplToJson(
@@ -133,6 +134,7 @@ Map<String, dynamic> _$$WorkspaceStateImplToJson(
   ),
   'isStructureOverlayVisible': instance.isStructureOverlayVisible,
   'pdfViewMode': _$PdfViewModeEnumMap[instance.pdfViewMode]!,
+  'isAiPanelOpen': instance.isAiPanelOpen,
 };
 
 const _$SidebarModeEnumMap = {

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 
-import '../../models/drawing_model.dart';
 import '../providers/drawing_provider.dart';
 import 'drawing_canvas.dart';
 
@@ -15,14 +14,12 @@ class DrawingOverlay {
   static PdfPageOverlaysBuilder createOverlaysBuilder({
     required String noteId,
     required WidgetRef ref,
-    void Function(int pageNumber, DrawingStroke stroke)? onStrokeAdded,
   }) {
     return (BuildContext context, Rect pageRectInViewer, PdfPage page) {
       return [
         _DrawingPageOverlay(
           noteId: noteId,
           pageNumber: page.pageNumber,
-          onStrokeAdded: onStrokeAdded,
         ),
       ];
     };
@@ -34,12 +31,10 @@ class _DrawingPageOverlay extends ConsumerWidget {
   const _DrawingPageOverlay({
     required this.noteId,
     required this.pageNumber,
-    this.onStrokeAdded,
   });
 
   final String noteId;
   final int pageNumber;
-  final void Function(int pageNumber, DrawingStroke stroke)? onStrokeAdded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -58,7 +53,6 @@ class _DrawingPageOverlay extends ConsumerWidget {
         pageNumber: pageNumber,
         onStrokeCompleted: (stroke) {
           ref.read(drawingStrokesProvider(noteId).notifier).addStroke(stroke);
-          onStrokeAdded?.call(pageNumber, stroke);
         },
       ),
     );

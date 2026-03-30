@@ -37,7 +37,6 @@ List<ScrapElement> noteScrap(NoteScrapRef ref, String noteId) {
   // If note has ::: scrapnote block with @el references, use those as source of truth
   if (content != null && content.isNotEmpty && ScrapnoteBlockEditor.hasBlock(content)) {
     final ids = ScrapnoteBlockEditor.getElementIds(content);
-    debugPrint('[noteScrapProvider] block found, ${ids.length} element IDs');
     if (ids.isNotEmpty) {
       final elements = elementStore.getByIds(ids)
           .where((e) => e.type != ElementType.drawing)
@@ -60,8 +59,6 @@ List<ScrapElement> noteScrap(NoteScrapRef ref, String noteId) {
   final elements = elementStore.getByPdfId(pdfId)
       .where((e) => e.type != ElementType.drawing)
       .toList();
-  debugPrint('[noteScrapProvider] fallback: ${elements.length} elements for pdfId $pdfId');
-
   // Trigger async backfill so next rebuild uses block path instead of fallback.
   // syncElementsToBlock invalidates noteStateProvider when it writes,
   // which triggers noteEditorProvider → this provider rebuild automatically.

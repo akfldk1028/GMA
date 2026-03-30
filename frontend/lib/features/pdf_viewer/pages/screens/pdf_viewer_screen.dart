@@ -16,7 +16,6 @@ import '../../capture/pages/providers/capture_provider.dart';
 import '../../capture/pages/providers/lasso_provider.dart';
 import '../../capture/pages/widgets/capture_overlay.dart';
 import '../../capture/pages/widgets/lasso_overlay.dart';
-import '../../drawing/models/drawing_model.dart';
 import '../../drawing/pages/providers/drawing_provider.dart';
 import '../../drawing/pages/widgets/drawing_overlay.dart';
 import '../../drawing/pages/widgets/drawing_toolbar.dart';
@@ -233,7 +232,6 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     final drawingBuilder = DrawingOverlay.createOverlaysBuilder(
       noteId: widget.noteId!,
       ref: ref,
-      onStrokeAdded: _handleDrawingStrokeAdded,
     );
     final captureBuilder = CaptureOverlay.createOverlaysBuilder(
       ref: ref,
@@ -398,82 +396,6 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       return await PdfTextExtractionService.extractTextInRect(pdfPath, pageNumber, pdfRect);
     } catch (e) {
       debugPrint('[_extractTextFromRect] submodule failed: $e');
-      return null;
-    }
-  }
-
-  /// Handle drawing stroke added — extract nearby PDF text and insert pen marker.
-  Future<void> _handleDrawingStrokeAdded(
-    int pageNumber,
-    DrawingStroke stroke,
-  ) async {
-    // Eraser strokes don't need a marker
-    if (stroke.toolId == 'eraser') return;
-
-    try {
-      // Extract text near the stroke location from the PDF
-      final extractedText = await _extractTextNearStroke(pageNumber, stroke);
-
-      // Compute stroke bounding box for navigation
-      PdfRect? strokeRect;
-      if (stroke.points.length >= 2) {
-        double minX = stroke.points[0].x, maxX = stroke.points[0].x;
-        double minY = stroke.points[0].y, maxY = stroke.points[0].y;
-        for (final pt in stroke.points.skip(1)) {
-          if (pt.x < minX) minX = pt.x;
-          if (pt.x > maxX) maxX = pt.x;
-          if (pt.y < minY) minY = pt.y;
-          if (pt.y > maxY) maxY = pt.y;
-        }
-        strokeRect =
-            await _normalizedToPdfRect(pageNumber, minX, minY, maxX, maxY);
-      }
-
-      final workspaceNotifier = ref.read(workspaceProviderProvider.notifier);
-      await workspaceNotifier.createDrawingMarker(
-        pageNumber: pageNumber,
-        extractedText: extractedText,
-        textRect: strokeRect,
-        strokes: [stroke],
-      );
-    } catch (e) {
-      if (mounted) {
-        ShadToaster.of(context).show(
-          ShadToast.destructive(
-            title: const Text('Error'),
-            description: Text('Failed to insert drawing marker: $e'),
-          ),
-        );
-      }
-    }
-  }
-
-  /// Extract PDF text near a drawing stroke using submodule.
-  Future<String?> _extractTextNearStroke(
-    int pageNumber,
-    DrawingStroke stroke,
-  ) async {
-    if (stroke.points.length < 2) return null;
-    final pdfPath = ref.read(workspaceProviderProvider).valueOrNull?.currentPdfPath;
-    if (pdfPath == null) return null;
-
-    // Calculate stroke bounding box in normalized [0,1] coords
-    double minX = stroke.points[0].x, maxX = stroke.points[0].x;
-    double minY = stroke.points[0].y, maxY = stroke.points[0].y;
-    for (final pt in stroke.points.skip(1)) {
-      if (pt.x < minX) minX = pt.x;
-      if (pt.x > maxX) maxX = pt.x;
-      if (pt.y < minY) minY = pt.y;
-      if (pt.y > maxY) maxY = pt.y;
-    }
-
-    final pdfRect = await _normalizedToPdfRect(pageNumber, minX, minY, maxX, maxY);
-    if (pdfRect == null) return null;
-
-    try {
-      return await PdfTextExtractionService.extractTextInRect(pdfPath, pageNumber, pdfRect);
-    } catch (e) {
-      debugPrint('[_extractTextNearStroke] submodule failed: $e');
       return null;
     }
   }

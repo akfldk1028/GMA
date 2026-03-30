@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -27,6 +28,7 @@ import '../widgets/workspace_canvas_panel.dart';
 import '../widgets/scrap_thumbnails_sidebar.dart';
 import '../widgets/sticky_note_widget.dart';
 import '../widgets/workspace_unified_header.dart';
+import '../../../ai_agent/pages/widgets/agent_chat_panel.dart';
 
 /// Main workspace screen: new 3-panel layout per 260316 기획안.
 ///
@@ -424,6 +426,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       return KeyEventResult.handled;
     }
 
+    if (event.logicalKey == LogicalKeyboardKey.keyI &&
+        HardwareKeyboard.instance.isControlPressed) {
+      notifier.toggleAiPanel();
+      return KeyEventResult.handled;
+    }
+
     return KeyEventResult.ignored;
   }
 
@@ -489,6 +497,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     onToggleScrapnote: () => notifier.toggleLiveScraps(),
                     onOpenPdf: _handleOpenPdf,
                     onMenuAction: _handleMenuAction,
+                    onToggleAiPanel: () => notifier.toggleAiPanel(),
                   ),
 
                   // PDF viewer (full width)
@@ -544,8 +553,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   pdfPath: state.currentPdfPath,
                   textRect: state.pendingScrapTextRect,
                   onConfirm: (memo) async {
-                    await _confirmScrapCreation(state, memo);
                     notifier.closeScrapBoard();
+                    await _confirmScrapCreation(state, memo);
                   },
                   onCancel: () => notifier.closeScrapBoard(),
                 ),
@@ -609,7 +618,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     final leftPanel = isSwapped ? scrapPanel : pdfViewer;
     final rightPanel = isSwapped ? pdfViewer : scrapPanel;
 
-    return Focus(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/home');
+      },
+      child: Focus(
       onKeyEvent: _handleKeyEvent,
       autofocus: true,
       child: Scaffold(
@@ -629,6 +643,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   onToggleScrapnote: () => notifier.toggleLiveScraps(),
                   onOpenPdf: _handleOpenPdf,
                   onMenuAction: _handleMenuAction,
+                  onToggleAiPanel: () => notifier.toggleAiPanel(),
                 ),
 
                 // PDF tab bar
@@ -704,6 +719,16 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 onMarkerClick: _handleMarkerClick,
               ),
 
+            // ── Overlay: AI Agent panel ──
+            if (state.isAiPanelOpen)
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: AgentChatPanel(
+                  onClose: () => notifier.toggleAiPanel(),
+                ),
+              ),
+
             // ── Overlay: Note editor modal ──
             if (state.isEditorModalOpen)
               NoteEditorModal(
@@ -720,8 +745,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 pdfPath: state.currentPdfPath,
                 textRect: state.pendingScrapTextRect,
                 onConfirm: (memo) async {
-                  await _confirmScrapCreation(state, memo);
                   notifier.closeScrapBoard();
+                  await _confirmScrapCreation(state, memo);
                 },
                 onCancel: () => notifier.closeScrapBoard(),
               ),
@@ -731,6 +756,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
           ],
         ),
         ),
+      ),
       ),
     );
   }

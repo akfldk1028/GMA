@@ -107,11 +107,20 @@ class AppShell extends ConsumerWidget {
     return Scaffold(
       body: Row(
         children: [
-          // Sidebar: icon rail or expanded
-          if (isSidebarExpanded)
-            const HomeExpandedSidebar()
-          else
-            const HomeIconRail(),
+          // Sidebar: icon rail or expanded, swipe to toggle
+          GestureDetector(
+            onHorizontalDragEnd: (details) {
+              final velocity = details.primaryVelocity ?? 0;
+              if (velocity > 200 && !isSidebarExpanded) {
+                ref.read(homeStateProvider.notifier).setSidebarExpanded(true);
+              } else if (velocity < -200 && isSidebarExpanded) {
+                ref.read(homeStateProvider.notifier).setSidebarExpanded(false);
+              }
+            },
+            child: isSidebarExpanded
+                ? const HomeExpandedSidebar()
+                : const HomeIconRail(),
+          ),
           // Main content
           Expanded(child: child),
         ],

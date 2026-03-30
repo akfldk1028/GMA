@@ -206,21 +206,26 @@ List<Widget> buildGroupHandles({
     required VoidCallback onTap,
   }) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(6),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 4,
-            ),
-          ],
+      // 44x44 touch target (10px padding around 24x24 visual button)
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(6),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 4,
+              ),
+            ],
+          ),
+          child: Icon(icon, size: 14, color: Colors.white),
         ),
-        child: Icon(icon, size: 14, color: Colors.white),
       ),
     );
   }

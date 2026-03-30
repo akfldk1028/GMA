@@ -37,6 +37,7 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
     required this.onToggleScrapnote,
     required this.onOpenPdf,
     required this.onMenuAction,
+    this.onToggleAiPanel,
   });
 
   final String title;
@@ -45,6 +46,7 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
   final VoidCallback onToggleScrapnote;
   final VoidCallback onOpenPdf;
   final void Function(String action) onMenuAction;
+  final VoidCallback? onToggleAiPanel;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -114,6 +116,12 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
                           } else {
                             notifier.setActive(true);
                             notifier.selectTool(tool.id);
+                            // Exclusive: turn off highlight/capture/lasso
+                            final wsNotifier = ref.read(workspaceProviderProvider.notifier);
+                            final ws = ref.read(workspaceProviderProvider).valueOrNull;
+                            if (ws?.isHighlightMode == true) wsNotifier.toggleHighlightMode();
+                            if (ref.read(captureModeProvider)) ref.read(captureModeProvider.notifier).toggle();
+                            if (ref.read(lassoModeProvider)) ref.read(lassoModeProvider.notifier).toggle();
                           }
                         },
                       ),
@@ -124,10 +132,7 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
                         color: Color(color),
                         isSelected: drawingMode.colorValue == color,
                         onTap: () {
-                          final notifier =
-                              ref.read(drawingModeProvider.notifier);
-                          if (!isDrawing) notifier.toggleActive();
-                          notifier.setColor(color);
+                          ref.read(drawingModeProvider.notifier).setColor(color);
                           // Sync highlight color to closest MarkerColor
                           final hlName = _colorValueToMarkerName(color);
                           ref.read(workspaceProviderProvider.notifier)
@@ -141,10 +146,7 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
                         strokeSize: size,
                         isSelected: drawingMode.strokeSize == size,
                         onTap: () {
-                          final notifier =
-                              ref.read(drawingModeProvider.notifier);
-                          if (!isDrawing) notifier.toggleActive();
-                          notifier.setSize(size);
+                          ref.read(drawingModeProvider.notifier).setSize(size);
                         },
                       ),
                     const ToolbarDivider(),
@@ -160,9 +162,16 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
                             tooltip: isHL ? 'Highlight Mode ON' : 'Highlight Mode',
                             isActive: isHL,
                             activeColor: Colors.green,
-                            onTap: () => ref
-                                .read(workspaceProviderProvider.notifier)
-                                .toggleHighlightMode(),
+                            onTap: () {
+                              final wsNotifier = ref.read(workspaceProviderProvider.notifier);
+                              wsNotifier.toggleHighlightMode();
+                              // Exclusive: turn off drawing/capture/lasso when enabling highlight
+                              if (!isHL) {
+                                ref.read(drawingModeProvider.notifier).setActive(false);
+                                if (ref.read(captureModeProvider)) ref.read(captureModeProvider.notifier).toggle();
+                                if (ref.read(lassoModeProvider)) ref.read(lassoModeProvider.notifier).toggle();
+                              }
+                            },
                           ),
                           if (isHL)
                             ToolbarIconButton(
@@ -183,18 +192,34 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
                       icon: Icons.crop,
                       tooltip: 'Capture',
                       isActive: ref.watch(captureModeProvider),
-                      onTap: () => ref
-                          .read(captureModeProvider.notifier)
-                          .toggle(),
+                      onTap: () {
+                        final isOn = ref.read(captureModeProvider);
+                        ref.read(captureModeProvider.notifier).toggle();
+                        // Exclusive: turn off others when enabling capture
+                        if (!isOn) {
+                          ref.read(drawingModeProvider.notifier).setActive(false);
+                          final ws = ref.read(workspaceProviderProvider).valueOrNull;
+                          if (ws?.isHighlightMode == true) ref.read(workspaceProviderProvider.notifier).toggleHighlightMode();
+                          if (ref.read(lassoModeProvider)) ref.read(lassoModeProvider.notifier).toggle();
+                        }
+                      },
                     ),
                     // Lasso button
                     ToolbarIconButton(
                       icon: Icons.gesture,
                       tooltip: 'Lasso',
                       isActive: ref.watch(lassoModeProvider),
-                      onTap: () => ref
-                          .read(lassoModeProvider.notifier)
-                          .toggle(),
+                      onTap: () {
+                        final isOn = ref.read(lassoModeProvider);
+                        ref.read(lassoModeProvider.notifier).toggle();
+                        // Exclusive: turn off others when enabling lasso
+                        if (!isOn) {
+                          ref.read(drawingModeProvider.notifier).setActive(false);
+                          final ws = ref.read(workspaceProviderProvider).valueOrNull;
+                          if (ws?.isHighlightMode == true) ref.read(workspaceProviderProvider.notifier).toggleHighlightMode();
+                          if (ref.read(captureModeProvider)) ref.read(captureModeProvider.notifier).toggle();
+                        }
+                      },
                     ),
                     const ToolbarDivider(),
                     // Quick scrap toggle (슬라이드 10~12)
@@ -259,6 +284,14 @@ class WorkspaceUnifiedHeader extends ConsumerWidget {
               tooltip: 'ScrapNote',
               onTap: onToggleScrapnote,
             ),
+
+            // AI Agent toggle
+            if (onToggleAiPanel != null)
+              _HeaderIconBtn(
+                icon: Icons.auto_awesome,
+                tooltip: 'AI Agent',
+                onTap: onToggleAiPanel!,
+              ),
 
             // Overflow menu
             _OverflowMenu(onAction: onMenuAction),

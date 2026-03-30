@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../utils/file_system_provider.dart';
 import '../../../pdf_viewer/drawing/models/drawing_model.dart';
+import '../../../pdf_viewer/drawing/pages/providers/drawing_provider.dart';
 import '../../../scrapnote/models/element_model.dart';
 import '../../../scrapnote/providers/note_scrap_provider.dart';
 import '../../../scrapnote/providers/scrap_annotation_provider.dart';
@@ -24,11 +25,6 @@ import 'canvas/scrap_import_dialog.dart';
 const _kCardHeightRatio = 0.25;   // card height = 25% of panel width
 const _kCardSpacingRatio = 0.06;  // spacing = 6% of panel width
 const _kPaddingRatio = 0.04;      // start padding = 4% of panel width
-
-const _kAnnotationColors = <int>[
-  0xFF000000, 0xFF1565C0, 0xFFD32F2F, 0xFF2E7D32, 0xFFE65100,
-];
-const _kAnnotationSizes = <double>[1.0, 2.0, 4.0];
 
 /// draw.io-style infinite canvas for scrap cards.
 ///
@@ -56,9 +52,11 @@ class WorkspaceCanvasPanel extends ConsumerStatefulWidget {
 }
 
 class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
-  bool _annotateMode = false;
-  int _strokeColor = 0xFF1565C0;
-  double _strokeSize = 2.0;
+
+  /// Whether drawing mode is active (reads from main toolbar DrawingMode provider).
+  bool get _annotateMode => ref.read(drawingModeProvider).isActive;
+  int get _strokeColor => ref.read(drawingModeProvider).colorValue;
+  double get _strokeSize => ref.read(drawingModeProvider).strokeSize;
 
   // Canvas card positions: elementId → Rect(x, y, w, h)
   final Map<String, Rect> _layout = {};
@@ -73,6 +71,57 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
   bool _isRotating = false; // Prevent card move during rotation
 
   final TransformationController _transformCtrl = TransformationController();
+
+  /// Reset zoom/pan to fit all cards in the viewport.
+  void _fitAllCards() {
+    if (_layout.isEmpty) {
+      setState(() => _transformCtrl.value = Matrix4.identity());
+      return;
+    }
+    final viewSize = context.size;
+    if (viewSize == null) return;
+
+    // Compute bounding box of all cards
+    double minX = double.infinity, minY = double.infinity;
+    double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+    for (final r in _layout.values) {
+      if (r.left < minX) minX = r.left;
+      if (r.top < minY) minY = r.top;
+      if (r.right > maxX) maxX = r.right;
+      if (r.bottom > maxY) maxY = r.bottom;
+    }
+    final contentW = maxX - minX;
+    final contentH = maxY - minY;
+    if (contentW <= 0 || contentH <= 0) {
+      setState(() => _transformCtrl.value = Matrix4.identity());
+      return;
+    }
+
+    // Scale to fit with padding
+    const padding = 40.0;
+    final availW = viewSize.width - padding * 2;
+    final availH = viewSize.height - 36 - padding * 2; // subtract header
+    final scale = (min(availW / contentW, availH / contentH)).clamp(0.3, 1.0);
+    final tx = padding - minX * scale + (availW - contentW * scale) / 2;
+    final ty = padding - minY * scale + (availH - contentH * scale) / 2;
+
+    setState(() {
+      // ignore: deprecated_member_use
+      _transformCtrl.value = Matrix4.identity()..translate(tx, ty)..scale(scale, scale);
+    });
+  }
+
+  /// Zoom canvas by [factor] centered on viewport.
+  void _zoom(double factor) {
+    final m = _transformCtrl.value.clone();
+    // Current scale
+    final currentScale = m.getMaxScaleOnAxis();
+    final newScale = (currentScale * factor).clamp(0.3, 3.0);
+    final scaleDelta = newScale / currentScale;
+    // Scale around center of viewport
+    m.scale(scaleDelta, scaleDelta);
+    setState(() => _transformCtrl.value = m);
+  }
 
   /// Convert screen position to canvas coordinates using current transform.
   Offset _screenToCanvas(Offset screenPos) {
@@ -101,6 +150,7 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     super.initState();
     _loadGroupEditsFromHive();
     _loadCanvasLayout();
+    _loadCanvasStrokes();
   }
 
   @override
@@ -154,6 +204,8 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     final capturesDir =
         ref.watch(capturesDirectoryProvider).valueOrNull?.path;
     ref.watch(scrapAnnotationStoreProvider);
+    // Watch drawing mode so canvas rebuilds when toolbar changes
+    ref.watch(drawingModeProvider);
 
     final filtered = elements
         .where((e) =>
@@ -165,9 +217,6 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
       children: [
         CanvasHeader(
           totalCount: filtered.length,
-          annotateMode: _annotateMode,
-          onAnnotateToggled: () =>
-              setState(() => _annotateMode = !_annotateMode),
           onImportPressed: widget.noteId != null
               ? () => ScrapImportDialog.show(
                     context: context,
@@ -175,12 +224,14 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                     currentNoteId: widget.noteId!,
                   )
               : null,
+          onZoomIn: () => _zoom(1.3),
+          onZoomOut: () => _zoom(0.7),
+          onZoomReset: () => _fitAllCards(),
           onSwapLayout: () =>
               ref.read(workspaceProviderProvider.notifier).swapLayout(),
           onFoldPanel: () =>
               ref.read(workspaceProviderProvider.notifier).toggleLiveScraps(),
         ),
-        if (_annotateMode) _buildAnnotationToolbar(),
         Expanded(
           child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -188,13 +239,16 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                     final panelH = constraints.maxHeight;
                     final cardW = (panelW * 0.85).clamp(200.0, panelW - 20);
                     _ensureLayoutFit(filtered, cardW, panelW);
-                    // Fixed width, infinite vertical (always room to scroll)
+                    // Infinite canvas: wide enough for free panning
                     const minCanvasH = 5000.0;
+                    const minCanvasW = 3000.0;
                     final maxBottom = _layout.values.fold(
                         minCanvasH, (v, r) => max(v, r.bottom + panelH));
+                    final maxRight = _layout.values.fold(
+                        minCanvasW, (v, r) => max(v, r.right + panelW));
 
                     final canvasContent = SizedBox(
-                      width: panelW,
+                      width: max(panelW, maxRight),
                       height: max(panelH, maxBottom),
                       child: Stack(
                         children: [
@@ -212,19 +266,7 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                                   painter: NotebookBgPainter()),
                             ),
                           ),
-                          for (final el in filtered)
-                            _buildPositionedCard(
-                                el, capturesDir, cardW, filtered, panelW),
-                          // Group bounding box handles (multi-select OR grouped card selected)
-                          if (_selectedCardIds.isNotEmpty && !_annotateMode &&
-                              (_selectedCardIds.length > 1 || _isAnySelectedInGroup()))
-                            ..._buildGroupHandlesWidgets(),
-                          // Rotation handle
-                          if (_selectedCardIds.isNotEmpty && !_annotateMode)
-                            _buildRotationHandleForSelection(),
-                          // Group edit strokes (rendered per group)
-                          ..._buildGroupEditStrokes(filtered),
-                          // Drawing strokes always visible
+                          // Drawing strokes behind cards (notebook writing layer)
                           Positioned.fill(
                             child: IgnorePointer(
                               ignoring: true,
@@ -248,6 +290,18 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                               ),
                             ),
                           ),
+                          for (final el in filtered)
+                            _buildPositionedCard(
+                                el, capturesDir, cardW, filtered, panelW),
+                          // Group bounding box handles (multi-select OR grouped card selected)
+                          if (_selectedCardIds.isNotEmpty && !_annotateMode &&
+                              (_selectedCardIds.length > 1 || _isAnySelectedInGroup()))
+                            ..._buildGroupHandlesWidgets(),
+                          // Rotation handle
+                          if (_selectedCardIds.isNotEmpty && !_annotateMode)
+                            _buildRotationHandleForSelection(),
+                          // Group edit strokes (rendered per group)
+                          ..._buildGroupEditStrokes(filtered),
                         ],
                       ),
                     );
@@ -296,6 +350,7 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                                     colorValue: _strokeColor,
                                     size: _strokeSize,
                                   ));
+                                  _persistCanvasStrokes();
                                 }
                                 setState(
                                     () => _panelCurrentPoints = []);
@@ -318,7 +373,7 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                       child: InteractiveViewer(
                       transformationController: _transformCtrl,
                       constrained: false,
-                      boundaryMargin: EdgeInsets.zero,
+                      boundaryMargin: const EdgeInsets.all(1000),
                       minScale: 0.3,
                       maxScale: 3.0,
                       child: canvasContent,
@@ -355,20 +410,24 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
         onTap: _annotateMode
             ? null
             : () {
-                // Single tap → select card + navigate to PDF page
+                // Single tap → toggle selection (multi-select friendly)
+                final wasSelected = isSelected;
                 setState(() {
-                  final group = ref.read(workspaceProviderProvider.notifier)
-                      .findGroupOf(el.id);
-                  if (group != null) {
-                    _selectedCardIds.clear();
-                    _selectedCardIds.addAll(group);
+                  if (wasSelected) {
+                    _selectedCardIds.remove(el.id);
                   } else {
-                    _selectedCardIds.clear();
-                    _selectedCardIds.add(el.id);
+                    final group = ref.read(workspaceProviderProvider.notifier)
+                        .findGroupOf(el.id);
+                    if (group != null) {
+                      _selectedCardIds.addAll(group);
+                    } else {
+                      _selectedCardIds.add(el.id);
+                    }
                   }
                   _syncSelectionToWorkspace();
                 });
-                if (el.pageNumber > 0) {
+                // Navigate to PDF page only when selecting, not deselecting
+                if (!wasSelected && el.pageNumber > 0) {
                   widget.onNavigateToPage(el.pageNumber);
                 }
               },
@@ -400,11 +459,11 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                   for (final id in movable) {
                     final old = _layout[id];
                     if (old == null) continue;
-                    final newLeft = (old.left + details.delta.dx)
-                        .clamp(0.0, max(0.0, canvasW - old.width));
+                    final newLeft = max(0.0, old.left + details.delta.dx);
+                    final newTop = max(0.0, old.top + details.delta.dy);
                     _layout[id] = Rect.fromLTWH(
-                      newLeft.toDouble(),
-                      old.top + details.delta.dy,
+                      newLeft,
+                      newTop,
                       old.width,
                       old.height,
                     );
@@ -445,14 +504,15 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
             // Individual handles (ungrouped single selection only)
             if (showIndividualHandles && !_annotateMode) ...[
               buildHandle(elId: el.id, pos: HandlePos.topLeft, onResize: _onHandleResize),
-              buildHandle(elId: el.id, pos: HandlePos.topRight, onResize: _onHandleResize),
               buildHandle(elId: el.id, pos: HandlePos.bottomLeft, onResize: _onHandleResize),
               buildHandle(elId: el.id, pos: HandlePos.bottomRight, onResize: _onHandleResize),
               buildHandle(elId: el.id, pos: HandlePos.bottomCenter, onResize: _onHandleResize),
+              // X button (top-right, replaces topRight resize handle)
               Positioned(
-                right: -12,
-                top: -12,
+                right: -16,
+                top: -16,
                 child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () {
                     setState(() {
                       _selectedCardIds.remove(el.id);
@@ -461,14 +521,19 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                     _showCardMenu(context, el);
                   },
                   child: Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade400,
-                      shape: BoxShape.circle,
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade400,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close,
+                          size: 14, color: Colors.white),
                     ),
-                    child: const Icon(Icons.close,
-                        size: 12, color: Colors.white),
                   ),
                 ),
               ),
@@ -566,6 +631,18 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
       final scaleX = editW > 0 ? curW / editW : 1.0;
       final scaleY = editH > 0 ? curH / editH : 1.0;
 
+      // Compute average rotation of group members
+      double avgRotation = 0.0;
+      int rotCount = 0;
+      for (final id in group) {
+        final r = _rotations[id];
+        if (r != null && r != 0.0) {
+          avgRotation += r;
+          rotCount++;
+        }
+      }
+      if (rotCount > 0) avgRotation /= rotCount;
+
       widgets.add(Positioned.fill(
         child: IgnorePointer(
           child: CustomPaint(
@@ -577,6 +654,9 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
               canvasOriginY: curMinY,
               scaleX: scaleX,
               scaleY: scaleY,
+              rotation: avgRotation,
+              centerX: (curMinX + curMaxX) / 2,
+              centerY: (curMinY + curMaxY) / 2,
             ),
           ),
         ),
@@ -604,7 +684,7 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     await WorkspacePersistence.saveCanvasRotations(widget.noteId!, _rotations);
   }
 
-  /// Load saved canvas layout on init.
+  /// Load saved canvas layout on init, then auto-fit.
   Future<void> _loadCanvasLayout() async {
     if (widget.noteId == null) return;
     final saved = await WorkspacePersistence.loadCanvasLayout(widget.noteId!);
@@ -616,6 +696,35 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
     }
     final rotations = await WorkspacePersistence.loadCanvasRotations(widget.noteId!);
     _rotations.addAll(rotations);
+    if (mounted) {
+      setState(() {});
+      // Auto-fit after layout is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _layout.isNotEmpty) _fitAllCards();
+      });
+    }
+  }
+
+  /// Save canvas strokes to persistence.
+  Future<void> _persistCanvasStrokes() async {
+    if (widget.noteId == null) return;
+    final data = _panelStrokes.map((s) => s.toJson()).toList();
+    await WorkspacePersistence.saveCanvasStrokes(widget.noteId!, data);
+  }
+
+  /// Load saved canvas strokes on init.
+  Future<void> _loadCanvasStrokes() async {
+    if (widget.noteId == null) return;
+    final saved = await WorkspacePersistence.loadCanvasStrokes(widget.noteId!);
+    if (saved.isNotEmpty && mounted) {
+      setState(() {
+        for (final json in saved) {
+          try {
+            _panelStrokes.add(DrawingStroke.fromJson(json));
+          } catch (_) {}
+        }
+      });
+    }
   }
 
   // ─── Group / Delete actions ────────────────────────
@@ -625,8 +734,71 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
   }
 
   void _ungroupSelectedCards() {
+    // Migrate group edit strokes to panel strokes before dissolving
+    _migrateGroupStrokesToPanel(_selectedCardIds);
     ref.read(workspaceProviderProvider.notifier)
         .ungroupScraps(_selectedCardIds);
+  }
+
+  /// Convert group edit strokes to absolute panel strokes.
+  void _migrateGroupStrokesToPanel(Set<String> ids) {
+    final key = _groupKey(ids);
+    final result = _groupEditResults[key];
+    if (result == null || result.strokes.isEmpty) return;
+
+    // Compute current group bounding box
+    double curMinX = double.infinity, curMinY = double.infinity;
+    double curMaxX = -double.infinity, curMaxY = -double.infinity;
+    for (final id in ids) {
+      final rect = _layout[id];
+      if (rect == null) continue;
+      if (rect.left < curMinX) curMinX = rect.left;
+      if (rect.top < curMinY) curMinY = rect.top;
+      if (rect.right > curMaxX) curMaxX = rect.right;
+      if (rect.bottom > curMaxY) curMaxY = rect.bottom;
+    }
+    if (curMinX == double.infinity) return;
+
+    // Edit-time bounding box
+    double editMinX = double.infinity, editMinY = double.infinity;
+    double editMaxX = -double.infinity, editMaxY = -double.infinity;
+    for (final id in ids) {
+      final cs = result.cardStates[id];
+      if (cs == null) continue;
+      if (cs.layout.left < editMinX) editMinX = cs.layout.left;
+      if (cs.layout.top < editMinY) editMinY = cs.layout.top;
+      if (cs.layout.right > editMaxX) editMaxX = cs.layout.right;
+      if (cs.layout.bottom > editMaxY) editMaxY = cs.layout.bottom;
+    }
+    if (editMinX == double.infinity) return;
+
+    final editW = editMaxX - editMinX;
+    final editH = editMaxY - editMinY;
+    final curW = curMaxX - curMinX;
+    final curH = curMaxY - curMinY;
+    final scaleX = editW > 0 ? curW / editW : 1.0;
+    final scaleY = editH > 0 ? curH / editH : 1.0;
+
+    // Convert each group stroke to a DrawingStroke in canvas coords
+    for (final s in result.strokes) {
+      final points = s.points.map((p) {
+        final cx = curMinX + (p.dx - editMinX) * scaleX;
+        final cy = curMinY + (p.dy - editMinY) * scaleY;
+        return StrokePoint(x: cx, y: cy);
+      }).toList();
+      _panelStrokes.add(DrawingStroke(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        pageNumber: 0,
+        points: points,
+        toolId: 'pen',
+        colorValue: s.color,
+        size: s.size,
+      ));
+    }
+
+    // Remove from group edit results and persist
+    _groupEditResults.remove(key);
+    _persistCanvasStrokes();
   }
 
   void _deleteSelectedCards() {
@@ -917,80 +1089,6 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAnnotationToolbar() {
-    return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-      ),
-      child: Row(
-        children: [
-          for (final c in _kAnnotationColors)
-            GestureDetector(
-              onTap: () => setState(() => _strokeColor = c),
-              child: Container(
-                width: 16,
-                height: 16,
-                margin: const EdgeInsets.only(right: 4),
-                decoration: BoxDecoration(
-                  color: Color(c),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _strokeColor == c
-                        ? Colors.blue.shade700
-                        : Colors.grey.shade300,
-                    width: _strokeColor == c ? 2 : 1,
-                  ),
-                ),
-              ),
-            ),
-          const SizedBox(width: 8),
-          Container(width: 1, height: 16, color: Colors.grey.shade300),
-          const SizedBox(width: 8),
-          for (final s in _kAnnotationSizes)
-            GestureDetector(
-              onTap: () => setState(() => _strokeSize = s),
-              child: Container(
-                width: 20,
-                height: 20,
-                margin: const EdgeInsets.only(right: 4),
-                decoration: BoxDecoration(
-                  color: _strokeSize == s
-                      ? Colors.blue.shade50
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: Center(
-                  child: Container(
-                    width: s * 3,
-                    height: s * 3,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade700,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          const Spacer(),
-          GestureDetector(
-            onTap: () {
-              if (_panelStrokes.isNotEmpty) {
-                setState(() => _panelStrokes.removeLast());
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Icon(Icons.undo, size: 16, color: Colors.grey.shade600),
-            ),
           ),
         ],
       ),

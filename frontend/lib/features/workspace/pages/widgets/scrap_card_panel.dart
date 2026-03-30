@@ -142,11 +142,9 @@ class ScrapCardPanel extends ConsumerWidget {
                               .setScrapSelection(ids);
                         },
                         onTap: () {
-                          if (isEditMode) {
-                            ref
-                                .read(workspaceProviderProvider.notifier)
-                                .toggleScrapSelection(element.id);
-                          }
+                          ref
+                              .read(workspaceProviderProvider.notifier)
+                              .toggleScrapSelection(element.id);
                         },
                       );
                     },

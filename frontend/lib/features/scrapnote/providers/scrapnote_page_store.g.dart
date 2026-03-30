@@ -7,7 +7,7 @@ part of 'scrapnote_page_store.dart';
 // **************************************************************************
 
 String _$scrapNotePageStoreHash() =>
-    r'8350833724c73e8e6b2baeb8f5b7296022e36840';
+    r'3be6f8facdfb9333937b036c7598d8c8c936384e';
 
 /// Persistent store for ScrapNote pages using Hive.
 ///

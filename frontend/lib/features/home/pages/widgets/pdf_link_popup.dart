@@ -7,11 +7,12 @@ import '../../../file_manager/pages/providers/file_manager_provider.dart';
 class PdfLinkChoice {
   final String? noteId;
   final bool createNew;
+  final String? noteName;
 
-  const PdfLinkChoice({this.noteId, this.createNew = false});
-  const PdfLinkChoice.newNote() : noteId = null, createNew = true;
-  const PdfLinkChoice.none() : noteId = null, createNew = false;
-  const PdfLinkChoice.existing(String id) : noteId = id, createNew = false;
+  const PdfLinkChoice({this.noteId, this.createNew = false, this.noteName});
+  const PdfLinkChoice.newNote([String? name]) : noteId = null, createNew = true, noteName = name;
+  const PdfLinkChoice.none() : noteId = null, createNew = false, noteName = null;
+  const PdfLinkChoice.existing(String id) : noteId = id, createNew = false, noteName = null;
 }
 
 Future<PdfLinkChoice?> showPdfLinkPopup(
@@ -31,9 +32,20 @@ class _PdfLinkDialog extends ConsumerStatefulWidget {
 
 class _PdfLinkDialogState extends ConsumerState<_PdfLinkDialog> {
   bool _showNotePicker = false;
+  bool _showNameInput = false;
+  final _nameController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_showNameInput) {
+      return _buildNameInput();
+    }
     if (_showNotePicker) {
       return _buildNotePicker();
     }
@@ -49,8 +61,7 @@ class _PdfLinkDialogState extends ConsumerState<_PdfLinkDialog> {
             icon: Icons.add_circle_outline,
             label: 'Create New Note',
             subtitle: 'Start a new note linked to this PDF',
-            onTap: () =>
-                Navigator.pop(context, const PdfLinkChoice.newNote()),
+            onTap: () => setState(() => _showNameInput = true),
           ),
           const SizedBox(height: 8),
           _OptionTile(
@@ -70,6 +81,44 @@ class _PdfLinkDialogState extends ConsumerState<_PdfLinkDialog> {
         ],
       ),
     );
+  }
+
+  Widget _buildNameInput() {
+    return AlertDialog(
+      title: Row(
+        children: [
+          IconButton(
+            onPressed: () => setState(() => _showNameInput = false),
+            icon: const Icon(Icons.arrow_back, size: 20),
+          ),
+          const Text('Note Name'),
+        ],
+      ),
+      content: TextField(
+        controller: _nameController,
+        autofocus: true,
+        decoration: const InputDecoration(
+          hintText: 'Enter note name',
+          isDense: true,
+        ),
+        onSubmitted: (_) => _confirmCreate(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: _confirmCreate,
+          child: const Text('Create'),
+        ),
+      ],
+    );
+  }
+
+  void _confirmCreate() {
+    final name = _nameController.text.trim();
+    Navigator.pop(context, PdfLinkChoice.newNote(name.isEmpty ? null : name));
   }
 
   Widget _buildNotePicker() {

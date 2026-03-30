@@ -52,9 +52,39 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
   }
 
   Future<void> _handleNewNote() async {
+    final controller = TextEditingController(
+      text: DateFormat('yyyyMMdd_HHmm').format(DateTime.now()),
+    );
+    final title = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New Note', style: TextStyle(fontSize: 16)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Note name',
+            isDense: true,
+          ),
+          onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (title == null || title.isEmpty) return;
+
     try {
       final mutation = ref.read(createNoteMutationProvider.notifier);
-      final title = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
       final note = await mutation.call(title: title);
       if (mounted) {
         ref
@@ -97,7 +127,7 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
         } else if (linkChoice.createNew) {
           // Create new note linked to this PDF
           final mutation = ref.read(createNoteMutationProvider.notifier);
-          final pdfTitle = '${p.basenameWithoutExtension(pdfPath)}_note';
+          final pdfTitle = linkChoice.noteName ?? '${p.basenameWithoutExtension(pdfPath)}_note';
           final note = await mutation.call(
             title: pdfTitle,
             linkedPdfPath: pdfPath,
@@ -152,7 +182,7 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
           if (!isTrash) ...[
             IconButton(
               onPressed: _handleNewNote,
-              icon: const Icon(Icons.edit_note_rounded, size: 22),
+              icon: const Icon(Icons.note_add_outlined, size: 22),
               tooltip: 'New Note',
               color: AppColors.textSecondary,
             ),
@@ -166,7 +196,7 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
             else
               IconButton(
                 onPressed: _handleOpenPdf,
-                icon: const Icon(Icons.file_open_outlined, size: 22),
+                icon: const Icon(Icons.picture_as_pdf_outlined, size: 22),
                 tooltip: 'Open PDF',
                 color: AppColors.textSecondary,
               ),

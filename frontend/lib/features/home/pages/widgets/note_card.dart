@@ -45,6 +45,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     ref.read(homeStateProvider.notifier).toggleNoteSelection(widget.note.id);
   }
 
+
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeStateProvider);

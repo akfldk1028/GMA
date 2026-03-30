@@ -4,19 +4,21 @@ class CanvasHeader extends StatelessWidget {
   const CanvasHeader({
     super.key,
     required this.totalCount,
-    required this.annotateMode,
-    required this.onAnnotateToggled,
     this.onImportPressed,
     required this.onSwapLayout,
     required this.onFoldPanel,
+    this.onZoomIn,
+    this.onZoomOut,
+    this.onZoomReset,
   });
 
   final int totalCount;
-  final bool annotateMode;
-  final VoidCallback onAnnotateToggled;
   final VoidCallback? onImportPressed;
   final VoidCallback onSwapLayout;
   final VoidCallback onFoldPanel;
+  final VoidCallback? onZoomIn;
+  final VoidCallback? onZoomOut;
+  final VoidCallback? onZoomReset;
 
   @override
   Widget build(BuildContext context) {
@@ -41,25 +43,19 @@ class CanvasHeader extends StatelessWidget {
                   color: Colors.grey.shade400,
                   fontWeight: FontWeight.w500)),
           const Spacer(),
+          if (onZoomOut != null) _iconBtn(Icons.remove, 'Zoom Out', onZoomOut!),
+          if (onZoomReset != null)
+            GestureDetector(
+              onTap: onZoomReset,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
+                child: Text('fit', style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+              ),
+            ),
+          if (onZoomIn != null) _iconBtn(Icons.add, 'Zoom In', onZoomIn!),
+          const SizedBox(width: 4),
           _iconBtn(Icons.swap_horiz, 'Swap', onSwapLayout),
           _iconBtn(Icons.chevron_right, 'Fold', onFoldPanel),
-          GestureDetector(
-            onTap: onAnnotateToggled,
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: annotateMode
-                    ? Colors.blue.shade50
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Icon(Icons.edit, size: 14,
-                  color: annotateMode
-                      ? Colors.blue.shade700
-                      : Colors.grey.shade400),
-            ),
-          ),
           if (onImportPressed != null)
             _iconBtn(Icons.add, 'Import', onImportPressed!),
         ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../constants/app_colors.dart';
+import '../../../../utils/note_storage_service.dart';
 import '../../../file_manager/pages/providers/file_manager_provider.dart';
 import '../../providers/home_state_provider.dart';
 import 'folder_picker_dialog.dart';
@@ -184,12 +185,22 @@ class MultiSelectBottomBar extends ConsumerWidget {
   }
 
   void _showMoreActions(BuildContext context, WidgetRef ref) {
+    final selectedIds = ref.read(homeStateProvider).selectedNoteIds;
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (selectedIds.length == 1)
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Rename'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _renameSelected(context, ref);
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.push_pin_outlined),
               title: const Text('Pin / Unpin'),
@@ -202,6 +213,58 @@ class MultiSelectBottomBar extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _renameSelected(BuildContext context, WidgetRef ref) async {
+    final selectedIds = ref.read(homeStateProvider).selectedNoteIds;
+    if (selectedIds.length != 1) return;
+    final noteId = selectedIds.first;
+
+    final notes = await ref.read(fileManagerProvider.future);
+    final note = notes.where((n) => n.id == noteId).firstOrNull;
+    if (note == null) return;
+
+    final controller = TextEditingController(text: note.title);
+    if (!context.mounted) return;
+    final newTitle = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rename Note', style: TextStyle(fontSize: 16)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Note title',
+            isDense: true,
+          ),
+          onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: const Text('Rename'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (newTitle == null || newTitle.isEmpty || newTitle == note.title) return;
+
+    final noteStorage = ref.read(noteStorageServiceProvider);
+    final content = await noteStorage.loadNote(noteId: noteId);
+    if (content == null) return;
+
+    final updated = content.replaceFirst(
+      RegExp(r'^title:.*$', multiLine: true),
+      'title: $newTitle',
+    );
+    await noteStorage.saveNoteImmediate(noteId: noteId, content: updated);
+    ref.read(fileManagerProvider.notifier).refresh();
+    ref.read(homeStateProvider.notifier).exitMultiSelect();
   }
 
   Future<void> _pinSelected(WidgetRef ref) async {

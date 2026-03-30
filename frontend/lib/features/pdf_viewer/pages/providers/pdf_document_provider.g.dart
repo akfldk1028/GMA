@@ -44,10 +44,11 @@ final currentPdfPageProvider = AutoDisposeProvider<int?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CurrentPdfPageRef = AutoDisposeProviderRef<int?>;
-String _$pdfDocumentHash() => r'7fbac3efabd8b56efc980e08624240e05a56fcc7';
+String _$pdfDocumentHash() => r'a86b2453363355c25174b7f308807ce11097e212';
 
 /// Provider for managing PDF document loading state and PdfViewerController.
 /// Handles PDF file loading and controller lifecycle.
+/// Caches PdfDocumentRef per file path to avoid re-parsing on tab switch.
 ///
 /// Copied from [PdfDocument].
 @ProviderFor(PdfDocument)
