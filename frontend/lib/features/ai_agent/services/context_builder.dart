@@ -1,3 +1,4 @@
+import '../core/ai_message.dart';
 import '../skills/agent_skill.dart';
 
 /// Builds LLM message lists from skill + user input + PDF context.
@@ -12,19 +13,16 @@ class ContextBuilder {
   /// [userMessage] is what the user asked.
   /// [pdfPageText] is the current PDF page text (if available).
   /// [existingNoteContent] is the current note content (if available).
-  static List<Map<String, String>> build({
+  static List<AiMessage> build({
     required AgentSkill skill,
     required String userMessage,
     String? pdfPageText,
     String? existingNoteContent,
   }) {
-    final messages = <Map<String, String>>[];
+    final messages = <AiMessage>[];
 
     // System prompt from skill
-    messages.add({
-      'role': 'system',
-      'content': skill.systemPrompt,
-    });
+    messages.add(AiMessage.text(AiRole.system, skill.systemPrompt));
 
     // Build user message with context
     final buffer = StringBuffer();
@@ -48,10 +46,7 @@ class ContextBuilder {
     buffer.writeln('## 요청:');
     buffer.writeln(userMessage);
 
-    messages.add({
-      'role': 'user',
-      'content': buffer.toString(),
-    });
+    messages.add(AiMessage.text(AiRole.user, buffer.toString()));
 
     return messages;
   }

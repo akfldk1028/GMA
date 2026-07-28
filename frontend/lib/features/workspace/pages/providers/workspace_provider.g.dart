@@ -63,7 +63,7 @@ final currentMarkersProvider = AutoDisposeProvider<List<PdfMarker>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CurrentMarkersRef = AutoDisposeProviderRef<List<PdfMarker>>;
-String _$workspaceProviderHash() => r'58d8dc002980a32d67d7049bdeb5acdbdda21aa7';
+String _$workspaceProviderHash() => r'bd1c5a2c205266654fdb51428c99397d6409ef26';
 
 /// Main workspace provider managing PDF-Note bidirectional linking
 ///

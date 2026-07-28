@@ -1,12 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gma_frontend/features/ai_agent/backends/ollama_ai_backend.dart';
+import 'package:gma_frontend/features/ai_agent/backends/ollama_backend.dart';
+import 'package:gma_frontend/features/ai_agent/core/ai_capability.dart';
+import 'package:gma_frontend/features/ai_agent/core/ai_message.dart';
 
 void main() {
-  group('OllamaAiBackend', () {
-    late OllamaAiBackend backend;
+  group('OllamaBackend', () {
+    late OllamaBackend backend;
 
     setUp(() {
-      backend = OllamaAiBackend();
+      backend = OllamaBackend(baseUrl: 'http://localhost:59999');
     });
 
     test('has correct id and label', () {
@@ -14,20 +16,24 @@ void main() {
       expect(backend.label, 'Ollama');
     });
 
+    test('has text capability only', () {
+      expect(backend.capabilities, {AiCapability.text});
+    });
+
+    test('priority is 20 (local server)', () {
+      expect(backend.priority, 20);
+    });
+
     test('isAvailable returns false when no server running', () async {
-      // Use a port that's definitely not running Ollama
-      final available = await backend.isAvailable(
-        baseUrl: 'http://localhost:59999',
-      );
+      final available = await backend.isAvailable();
       expect(available, isFalse);
     });
 
     test('generate throws on unreachable server', () async {
       expect(
-        () => backend.generate(
-          [{'role': 'user', 'content': 'test'}],
-          baseUrl: 'http://localhost:59999',
-        ),
+        () => backend.generate([
+          AiMessage.text(AiRole.user, 'test'),
+        ]),
         throwsException,
       );
     });

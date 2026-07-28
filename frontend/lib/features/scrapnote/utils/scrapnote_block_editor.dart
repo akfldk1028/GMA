@@ -63,7 +63,7 @@ class ScrapnoteBlockEditor {
 
   /// Whether [content] contains at least one `::: scrapnote` block.
   static bool hasBlock(String content) {
-    return _blockStartRegex.hasMatch(content);
+    return findBlocks(content).isNotEmpty;
   }
 
   /// Ensures at least one `::: scrapnote` block exists.

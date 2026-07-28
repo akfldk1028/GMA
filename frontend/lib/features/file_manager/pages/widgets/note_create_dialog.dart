@@ -39,6 +39,7 @@ class _NoteCreateDialogState extends ConsumerState<NoteCreateDialog> {
   Future<void> _handleCreate() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    ref.invalidate(createNoteMutationProvider);
     final mutation = ref.read(createNoteMutationProvider.notifier);
     try {
       await mutation.call(

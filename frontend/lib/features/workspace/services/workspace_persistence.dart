@@ -7,11 +7,16 @@ import 'package:hive_flutter/hive_flutter.dart';
 /// Single point of truth for Hive read/write — no scattered box access.
 class WorkspacePersistence {
   static const _boxName = 'workspace_data';
-  static Box? _box;
+  static const _legacySettingsBoxName = 'workspace_settings';
 
+  /// Get the pre-opened workspace_data box.
+  /// Box is opened in main.dart at startup to avoid lazy-open race conditions.
   static Future<Box> _getBox() async {
-    _box ??= await Hive.openBox(_boxName);
-    return _box!;
+    if (Hive.isBoxOpen(_boxName)) {
+      return Hive.box(_boxName);
+    }
+    // Fallback: open if not yet open (e.g. in tests)
+    return await Hive.openBox(_boxName);
   }
 
   // ─── Last session ─────────────────────────────────
@@ -174,6 +179,37 @@ class WorkspacePersistence {
     }
   }
 
+  // ─── Notebook card props (per note) ───────────────
+  // Per-card width ratio (0..1 of panel), height (px), rotation (radians).
+  // Used by NotebookScrapPanel for in-slot scale/rotate.
+
+  static String _notebookCardKey(String noteId) => 'notebook_card_props_$noteId';
+
+  static Future<void> saveNotebookCardProps(
+    String noteId,
+    Map<String, Map<String, double>> props,
+  ) async {
+    final box = await _getBox();
+    await box.put(_notebookCardKey(noteId), jsonEncode(props));
+  }
+
+  static Future<Map<String, Map<String, double>>> loadNotebookCardProps(
+      String noteId) async {
+    final box = await _getBox();
+    final raw = box.get(_notebookCardKey(noteId));
+    if (raw is! String) return {};
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return decoded.map((k, v) => MapEntry(
+          k,
+          (v as Map<String, dynamic>)
+              .map((k2, v2) => MapEntry(k2, (v2 as num).toDouble()))));
+    } catch (e) {
+      debugPrint('[WorkspacePersistence] notebook card props parse error: $e');
+      return {};
+    }
+  }
+
   // ─── Panel sizes ──────────────────────────────────
 
   static Future<void> savePanelSizes(Map<String, dynamic> sizes) async {
@@ -185,6 +221,18 @@ class WorkspacePersistence {
     final box = await _getBox();
     final saved = box.get('panel_sizes');
     if (saved is Map) return Map<String, dynamic>.from(saved);
+
+    // v1.0.9 and older stored panel sizes in a separate box. Keep this
+    // fallback so existing users and older tests retain their layout.
+    final legacyBox = Hive.isBoxOpen(_legacySettingsBoxName)
+        ? Hive.box(_legacySettingsBoxName)
+        : await Hive.openBox(_legacySettingsBoxName);
+    final legacySaved = legacyBox.get('panel_sizes');
+    if (legacySaved is Map) {
+      final migrated = Map<String, dynamic>.from(legacySaved);
+      await box.put('panel_sizes', migrated);
+      return migrated;
+    }
     return null;
   }
 }

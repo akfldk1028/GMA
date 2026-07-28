@@ -1,0 +1,557 @@
+/* components.css — XOK Note Component Styles */
+
+/* ════════════════════════════
+   Sidebar (통합 컴포넌트)
+════════════════════════════ */
+
+/* 헤더: 토글 버튼 + 앱 이름 */
+.app-sidebar__header {
+  height: var(--appbar-height);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sidebar-toggle-btn {
+  width: var(--sidebar-collapsed-width);
+  height: var(--appbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-primary);
+  transition: background var(--transition-fast);
+}
+
+
+/* 로고: 축소 시 숨김, 확장 시 표시 */
+.app-sidebar__logo {
+  display: block;
+  flex-shrink: 0;
+  width: 100px;
+  height: 44px;
+  object-fit: contain;
+  object-position: left 70%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.app-sidebar--expanded .app-sidebar__logo {
+  opacity: 1;
+}
+
+/* 내비게이션 */
+.app-sidebar__nav {
+  flex: 1;
+  padding: var(--space-2) 0;   /* 좌우 패딩 없음 — icon-wrap이 정렬 전담 */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.sidebar-nav__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  transition: color var(--transition-fast);
+  overflow: hidden;
+}
+
+.sidebar-nav__item--active {
+  color: var(--color-accent);
+}
+
+.sidebar-nav__item--active::before {
+  content: '';
+  position: absolute;
+  inset: 2px 8px;
+  background: var(--color-hover);
+  border-radius: var(--radius-sm);
+  z-index: 0;
+}
+
+.sidebar-nav__item > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 아이콘 영역: 항상 64px 고정 → 축소/확장 모두 정렬 일치 */
+.sidebar-nav__icon-wrap {
+  width: var(--sidebar-collapsed-width);
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-nav__icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* 레이블: 축소 시 숨김, 확장 시 표시 */
+.sidebar-nav__label {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.app-sidebar--expanded .sidebar-nav__label {
+  opacity: 1;
+}
+
+/* ════════════════════════════
+   AppBar
+════════════════════════════ */
+.appbar {
+  display: flex;
+  align-items: center;
+  height: var(--appbar-height);
+  padding: 0 var(--space-6);
+  background: var(--color-background);
+  border-bottom: var(--border-default);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 20;
+}
+
+.appbar--hidden {
+  display: none;
+}
+
+.appbar__title {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  flex: 1;
+  line-height: var(--line-height-heading);
+}
+
+.appbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.appbar__icon-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  transition: background var(--transition-fast);
+}
+
+.appbar__icon-btn:hover {
+  background: var(--color-hover);
+}
+
+/* ════════════════════════════
+   Search AppBar
+════════════════════════════ */
+.search-appbar {
+  display: none;
+  align-items: center;
+  height: var(--appbar-height);
+  padding: 0 var(--space-6);
+  background: var(--color-background);
+  border-bottom: var(--border-default);
+  flex-shrink: 0;
+  gap: var(--space-2);
+}
+
+.search-appbar--active {
+  display: flex;
+}
+
+.search-appbar__back-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.search-appbar__back-btn:hover {
+  background: var(--color-hover);
+}
+
+.search-appbar__input {
+  flex: 1;
+  font-size: var(--font-size-body);
+  font-family: var(--font-family);
+  color: var(--color-primary);
+  background: transparent;
+}
+
+.search-appbar__input::placeholder {
+  color: var(--color-disabled);
+}
+
+/* ════════════════════════════
+   Sort Bar & Dropdown
+════════════════════════════ */
+.sort-bar {
+  display: flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-8);
+  flex-shrink: 0;
+}
+
+.sort-bar__btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-body);
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.sort-bar__btn:hover {
+  background: var(--color-hover);
+  color: var(--color-primary);
+}
+
+.sort-bar__wrap {
+  position: relative;
+}
+
+.sort-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-menu);
+  border: var(--border-default);
+  min-width: 200px;
+  z-index: 200;
+  overflow: hidden;
+  padding: var(--space-1) 0;
+}
+
+.sort-dropdown--open {
+  display: block;
+}
+
+.sort-dropdown__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-small);
+  font-family: var(--font-family);
+  color: var(--color-primary);
+  text-align: left;
+  transition: background var(--transition-fast);
+  line-height: var(--line-height-body);
+}
+
+.sort-dropdown__item:hover {
+  background: var(--color-hover);
+}
+
+.sort-dropdown__item--active {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ════════════════════════════
+   Note Card
+════════════════════════════ */
+.note-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  border: var(--border-default);
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.note-card:hover {
+  border-color: var(--color-border-hover);
+  transform: translateY(-1px);
+}
+
+.note-card__thumbnail {
+  width: 100%;
+  height: 156px;
+  overflow: hidden;
+  position: relative;
+}
+
+.note-card__thumbnail--dark  { background: var(--color-thumbnail-dark); }
+.note-card__thumbnail--light { background: var(--color-thumbnail-light); }
+
+.note-card__thumbnail-lines {
+  position: absolute;
+  inset: 0;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow: hidden;
+}
+
+.thumbnail-line {
+  height: 6px;
+  border-radius: 3px;
+}
+
+.thumbnail-line--title {
+  height: 9px;
+}
+
+.note-card__thumbnail--dark .thumbnail-line        { background: rgba(255, 255, 255, 0.25); }
+.note-card__thumbnail--dark .thumbnail-line--title { background: rgba(255, 255, 255, 0.80); }
+
+.note-card__thumbnail--light .thumbnail-line        { background: rgba(31, 41, 55, 0.18); }
+.note-card__thumbnail--light .thumbnail-line--title { background: rgba(31, 41, 55, 0.55); }
+
+/* thumbnail-line width modifiers */
+.thumbnail-line--w-40 { width: 40%; }
+.thumbnail-line--w-50 { width: 50%; }
+.thumbnail-line--w-55 { width: 55%; }
+.thumbnail-line--w-60 { width: 60%; }
+.thumbnail-line--w-65 { width: 65%; }
+.thumbnail-line--w-70 { width: 70%; }
+.thumbnail-line--w-72 { width: 72%; }
+.thumbnail-line--w-75 { width: 75%; }
+.thumbnail-line--w-80 { width: 80%; }
+
+/* thumbnail-line opacity modifiers */
+.thumbnail-line--opacity-15 { opacity: 0.15; }
+.thumbnail-line--opacity-20 { opacity: 0.20; }
+.thumbnail-line--opacity-25 { opacity: 0.25; }
+.thumbnail-line--opacity-30 { opacity: 0.30; }
+
+.note-card__info {
+  padding: var(--space-3);
+  border-top: var(--border-default);
+}
+
+.note-card__title {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: var(--space-1);
+  line-height: var(--line-height-caption);
+}
+
+.note-card__date {
+  font-size: var(--font-size-caption);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-caption);
+}
+
+/* ════════════════════════════
+   오버플로우 메뉴 (컨텍스트 메뉴)
+════════════════════════════ */
+.overflow-menu {
+  display: none;
+  position: absolute;
+  top: calc(var(--appbar-height) - 4px);
+  right: var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-menu);
+  border: var(--border-default);
+  width: 216px;
+  z-index: 200;
+  overflow: hidden;
+  padding: var(--space-1) 0;
+}
+
+.overflow-menu--open {
+  display: block;
+}
+
+.overflow-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-small);
+  font-family: var(--font-family);
+  color: var(--color-primary);
+  width: 100%;
+  text-align: left;
+  transition: background var(--transition-fast);
+  line-height: var(--line-height-body);
+}
+
+.overflow-menu__item:hover {
+  background: var(--color-hover);
+}
+
+.overflow-menu__item svg {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.overflow-menu__divider {
+  height: 1px;
+  background: var(--color-divider);
+  margin: var(--space-1) 0;
+}
+
+/* 위치 변형: 트리거를 감싼 relative wrapper 기준 바로 아래에 앵커 */
+.overflow-menu--anchored {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+}
+
+/* ════════════════════════════
+   Icon Button (범용 아이콘 버튼)
+════════════════════════════ */
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  flex-shrink: 0;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.icon-btn:hover {
+  background: var(--color-hover);
+}
+
+.icon-btn--active {
+  background: var(--color-hover);
+  color: var(--color-accent);
+}
+
+.icon-btn--sm {
+  width: 32px;
+  height: 32px;
+}
+
+/* 아이콘 크기 통일 — 마크업의 svg width/height 값과 무관하게 버튼 크기별로 고정
+   (기본 40px 버튼 = 22px 아이콘, --sm 32px 버튼 = 16px 아이콘) */
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.icon-btn--sm svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ════════════════════════════
+   Chip (알약형 버튼 — 아이콘 + 라벨)
+════════════════════════════ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  border: var(--border-default);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: var(--font-size-small);
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-medium);
+  line-height: 1; /* 상속된 본문 행간(1.6)이 만드는 세로 쏠림 제거 — 필 안 정중앙 정렬 */
+  white-space: nowrap;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.chip:hover {
+  background: var(--color-hover);
+  border-color: var(--color-border-hover);
+}
+
+.chip__icon {
+  width: 12px;
+  height: 12px;
+  /* 시각 보정: 번개 글리프는 위가 뾰족해 반 픽셀 내려야 텍스트와 수평이 맞는다 */
+  transform: translateY(0.5px);
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════
+   Color Swatch / Size Dot (도구 선택자)
+════════════════════════════ */
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+/* 스와치끼리는 간격을 넓혀 활성 원판(outline 4px)이 답답해 보이지 않게 한다 */
+.color-swatch + .color-swatch {
+  margin-left: var(--space-2);
+}
+
+/* 활성: 펜 버튼(icon-btn--active)·굵기 점(size-dot--active)과 완전히 동일한
+   베이지 플레이트(hover 토큰)를 요소 뒤에 깔아 톤을 통일 — outline은 흰 배경에서
+   더 밝게 보여서 box-shadow(뒤에 깔리는 소프트 플레이트)로 맞춘다.
+   검정 잉크를 선택해도 표시가 보인다. */
+.color-swatch--active {
+  /* 스와치는 옆 색상 원과 붙어 있어 hover 톤이 옅어 보여, 한 단계 진한 divider 톤으로 보정 */
+  box-shadow: 0 0 0 4px var(--color-divider);
+}
+
+.size-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+
+.size-dot::before {
+  content: '';
+  display: block;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+}
+
+.size-dot--sm::before { width: 4px;  height: 4px; }
+.size-dot--md::before { width: 7px;  height: 7px; }
+.size-dot--lg::before { width: 10px; height: 10px; }
+
+.size-dot--active {
+  background: var(--color-hover);
+}
+
+.size-dot--active::before {
+  background: var(--color-accent);
+}

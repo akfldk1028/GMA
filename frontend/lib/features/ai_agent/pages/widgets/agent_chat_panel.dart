@@ -6,6 +6,7 @@ import '../../../ai_assistant/models/chat_message_model.dart';
 import '../../providers/ai_agent_provider.dart';
 import '../../services/block_extractor.dart';
 import '../../skills/skill_registry.dart';
+import 'model_download_widget.dart';
 import 'skill_picker.dart';
 
 class AgentChatPanel extends ConsumerStatefulWidget {
@@ -34,7 +35,9 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
     if (text.trim().isEmpty) return;
 
     if (_selectedSkillId != null) {
-      ref.read(aiAgentProvider.notifier).executeSkillById(_selectedSkillId!, text);
+      ref
+          .read(aiAgentProvider.notifier)
+          .executeSkillById(_selectedSkillId!, text);
       setState(() => _selectedSkillId = null);
     } else {
       ref.read(aiAgentProvider.notifier).sendMessage(text);
@@ -55,7 +58,9 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
   }
 
   void _insertBlock(String messageId) {
-    final ok = ref.read(aiAgentProvider.notifier).insertBlockFromMessage(messageId);
+    final ok = ref
+        .read(aiAgentProvider.notifier)
+        .insertBlockFromMessage(messageId);
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -70,15 +75,18 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
   Widget build(BuildContext context) {
     final agentState = ref.watch(aiAgentProvider);
     final messages = agentState.messages;
+    final media = MediaQuery.sizeOf(context);
+    final panelWidth = (media.width - 32).clamp(320.0, 400.0).toDouble();
+    final panelHeight = (media.height - 160).clamp(280.0, 520.0).toDouble();
 
     return Container(
-      width: 380,
-      height: 500,
+      width: panelWidth,
+      height: panelHeight,
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.elevatedShadow,
+        color: AppColors.sokSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.sokDivider),
+        boxShadow: AppColors.sokFloatingShadow,
       ),
       child: Column(
         children: [
@@ -93,20 +101,21 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+        border: Border(bottom: BorderSide(color: AppColors.sokDivider)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.auto_awesome, size: 16, color: AppColors.primary),
-          const SizedBox(width: 6),
+          const Icon(Icons.auto_awesome, size: 16, color: AppColors.sokAccent),
+          const SizedBox(width: 8),
           const Text(
             'AI Agent',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: AppColors.sokPrimary,
             ),
           ),
           const Spacer(),
@@ -116,7 +125,7 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
             iconSize: 16,
             constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
             tooltip: 'Clear chat',
-            color: AppColors.textMuted,
+            color: AppColors.sokSecondary,
           ),
           if (widget.onClose != null)
             IconButton(
@@ -125,7 +134,7 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
               iconSize: 16,
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               tooltip: 'Close',
-              color: AppColors.textMuted,
+              color: AppColors.sokSecondary,
             ),
         ],
       ),
@@ -138,19 +147,23 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      color: AppColors.primaryLight,
+      color: AppColors.sokHover,
       child: Row(
         children: [
-          const Icon(Icons.build_circle, size: 14, color: AppColors.primary),
+          const Icon(Icons.build_circle, size: 14, color: AppColors.sokAccent),
           const SizedBox(width: 4),
           Text(
             '${skill.label} 스킬',
-            style: const TextStyle(fontSize: 11, color: AppColors.primary),
+            style: const TextStyle(fontSize: 11, color: AppColors.sokAccent),
           ),
           const Spacer(),
           GestureDetector(
             onTap: () => setState(() => _selectedSkillId = null),
-            child: const Icon(Icons.close, size: 12, color: AppColors.primary),
+            child: const Icon(
+              Icons.close,
+              size: 12,
+              color: AppColors.sokAccent,
+            ),
           ),
         ],
       ),
@@ -165,13 +178,19 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.auto_awesome, size: 32, color: AppColors.textMuted),
+              const Icon(
+                Icons.auto_awesome,
+                size: 30,
+                color: AppColors.sokAccent,
+              ),
               const SizedBox(height: 8),
               const Text(
                 'PDF 내용을 분석하고\n다이어그램을 생성합니다',
-                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 12, color: AppColors.sokSecondary),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 16),
+              const ModelDownloadWidget(),
               const SizedBox(height: 16),
               Wrap(
                 spacing: 6,
@@ -180,10 +199,12 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
                 children: skillRegistry.take(5).map((s) {
                   return ActionChip(
                     label: Text(s.label, style: const TextStyle(fontSize: 11)),
-                    avatar: const Icon(Icons.bolt, size: 14),
                     onPressed: () {
                       setState(() => _selectedSkillId = s.id);
                     },
+                    side: const BorderSide(color: AppColors.sokDivider),
+                    backgroundColor: AppColors.sokSurface,
+                    labelStyle: const TextStyle(color: AppColors.sokPrimary),
                     visualDensity: VisualDensity.compact,
                   );
                 }).toList(),
@@ -203,7 +224,8 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
         return _ChatBubble(
           key: ValueKey(msg.id),
           message: msg,
-          onInsertBlock: msg.role == ChatRole.assistant &&
+          onInsertBlock:
+              msg.role == ChatRole.assistant &&
                   BlockExtractor.hasBlock(msg.content)
               ? () => _insertBlock(msg.id)
               : null,
@@ -216,7 +238,7 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.border)),
+        border: Border(top: BorderSide(color: AppColors.sokDivider)),
       ),
       child: Row(
         children: [
@@ -233,7 +255,7 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
             icon: const Icon(Icons.dashboard_customize, size: 18),
             tooltip: 'Skills',
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            color: AppColors.textMuted,
+            color: AppColors.sokSecondary,
           ),
           const SizedBox(width: 4),
           Expanded(
@@ -243,23 +265,23 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
                 hintText: _selectedSkillId != null
-                    ? '내용을 입력하세요...'
+                    ? '내용을 입력하세요'
                     : '메시지 입력 (또는 스킬 선택)',
                 hintStyle: const TextStyle(
                   fontSize: 13,
-                  color: AppColors.textMuted,
+                  color: AppColors.sokDisabled,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderSide: const BorderSide(color: AppColors.sokDivider),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderSide: const BorderSide(color: AppColors.sokDivider),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.primary),
+                  borderSide: const BorderSide(color: AppColors.sokAccent),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -275,7 +297,7 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
             icon: const Icon(Icons.send_rounded, size: 18),
             tooltip: 'Send',
             style: IconButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.sokAccent,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -290,11 +312,7 @@ class _AgentChatPanelState extends ConsumerState<AgentChatPanel> {
 }
 
 class _ChatBubble extends StatelessWidget {
-  const _ChatBubble({
-    super.key,
-    required this.message,
-    this.onInsertBlock,
-  });
+  const _ChatBubble({super.key, required this.message, this.onInsertBlock});
 
   final ChatMessage message;
   final VoidCallback? onInsertBlock;
@@ -306,12 +324,14 @@ class _ChatBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
-        crossAxisAlignment:
-            isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isUser
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment:
-                isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: isUser
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (!isUser)
@@ -319,11 +339,11 @@ class _ChatBubble extends StatelessWidget {
                   padding: EdgeInsets.only(right: 6, top: 2),
                   child: CircleAvatar(
                     radius: 12,
-                    backgroundColor: AppColors.surfaceDim,
+                    backgroundColor: AppColors.sokHover,
                     child: Icon(
                       Icons.auto_awesome,
                       size: 14,
-                      color: AppColors.primary,
+                      color: AppColors.sokAccent,
                     ),
                   ),
                 ),
@@ -334,14 +354,14 @@ class _ChatBubble extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: isUser ? AppColors.primary : AppColors.surfaceDim,
+                    color: isUser ? AppColors.sokAccent : AppColors.sokHover,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: SelectableText(
                     message.content,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isUser ? Colors.white : AppColors.textPrimary,
+                      color: isUser ? Colors.white : AppColors.sokPrimary,
                       height: 1.4,
                     ),
                   ),
@@ -356,10 +376,12 @@ class _ChatBubble extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: onInsertBlock,
                 icon: const Icon(Icons.add_to_photos, size: 14),
-                label: const Text('Insert to note',
-                    style: TextStyle(fontSize: 11)),
+                label: const Text(
+                  'Insert to note',
+                  style: TextStyle(fontSize: 11),
+                ),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
+                  foregroundColor: AppColors.sokAccent,
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),

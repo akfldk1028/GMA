@@ -187,11 +187,11 @@ DNA -- 전사 --> RNA
         );
 
         // System message contains block syntax
-        final system = messages[0]['content']!;
+        final system = messages[0].textContent;
         expect(system, isNotEmpty);
 
         // User message contains the request
-        final user = messages[1]['content']!;
+        final user = messages[1].textContent;
         expect(user, contains('test input'));
       }
     });

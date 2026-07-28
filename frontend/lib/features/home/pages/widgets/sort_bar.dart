@@ -10,70 +10,95 @@ class SortBar extends ConsumerWidget {
   String _sortLabel(NoteSortOption option) {
     switch (option) {
       case NoteSortOption.createdDesc:
-        return 'Created (newest)';
+        return '생성일 (최신순)';
       case NoteSortOption.createdAsc:
-        return 'Created (oldest)';
+        return '생성일 (오래된순)';
       case NoteSortOption.modifiedDesc:
-        return 'Modified (newest)';
+        return '수정일 (최신순)';
       case NoteSortOption.modifiedAsc:
-        return 'Modified (oldest)';
+        return '수정일 (오래된순)';
       case NoteSortOption.titleAsc:
-        return 'Title (A-Z)';
+        return '제목 (가나다순)';
       case NoteSortOption.titleDesc:
-        return 'Title (Z-A)';
+        return '제목 (가나다 역순)';
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sortOption = ref.watch(
-        homeStateProvider.select((s) => s.sortOption));
+    final sortOption = ref.watch(homeStateProvider.select((s) => s.sortOption));
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.fromLTRB(32, 16, 32, 8),
       child: Row(
         children: [
           PopupMenuButton<NoteSortOption>(
             onSelected: (option) =>
                 ref.read(homeStateProvider.notifier).setSortOption(option),
             offset: const Offset(0, 36),
+            color: AppColors.sokSurface,
+            elevation: 8,
+            shadowColor: AppColors.sokPrimary.withValues(alpha: 0.18),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.sort_rounded,
-                    size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 6),
-                Text(
-                  _sortLabel(sortOption),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(width: 2),
-                const Icon(Icons.arrow_downward,
-                    size: 14, color: AppColors.textSecondary),
-              ],
+              borderRadius: BorderRadius.circular(12),
             ),
-            itemBuilder: (context) => NoteSortOption.values
-                .map((opt) => PopupMenuItem(
-                      value: opt,
-                      child: Text(
-                        _sortLabel(opt),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: opt == sortOption
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                          color: opt == sortOption
-                              ? AppColors.primary
-                              : AppColors.textPrimary,
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                hoverColor: AppColors.sokHover,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.sort_rounded,
+                        size: 16,
+                        color: AppColors.sokSecondary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _sortLabel(sortOption),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.sokSecondary,
                         ),
                       ),
-                    ))
+                      const SizedBox(width: 6),
+                      const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 16,
+                        color: AppColors.sokSecondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            itemBuilder: (context) => NoteSortOption.values
+                .map(
+                  (opt) => PopupMenuItem(
+                    value: opt,
+                    child: Text(
+                      _sortLabel(opt),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: opt == sortOption
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                        color: opt == sortOption
+                            ? AppColors.sokAccent
+                            : AppColors.sokPrimary,
+                      ),
+                    ),
+                  ),
+                )
                 .toList(),
           ),
           const Spacer(),

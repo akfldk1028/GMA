@@ -1,0 +1,99 @@
+/* tokens.css — XOK Note Design System Tokens */
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+:root {
+  /* ── Color ── */
+  --color-background:      #F7F3EE;
+  --color-surface:         #FFFFFF;
+  --color-primary:         #1F2937;
+  --color-accent:          #D9462F;
+  --color-divider:         #E7DED4;
+  --color-text-secondary:  #6B7280;
+  --color-disabled:        #B6B6B6;
+  --color-hover:           #F2EEE8;
+  --color-success:         #2E8B57;
+  --color-warning:         #E09F3E;
+  --color-error:           #C0392B;
+
+  /* ── Typography ── */
+  --font-family:           'Pretendard', 'Inter', sans-serif;
+
+  --font-size-display:     32px;
+  --font-size-h1:          28px;
+  --font-size-h2:          24px;
+  --font-size-h3:          20px;
+  --font-size-body:        16px;
+  --font-size-small:       14px;
+  --font-size-caption:     12px;
+
+  --font-weight-bold:      700;
+  --font-weight-semibold:  600;
+  --font-weight-medium:    500;
+  --font-weight-regular:   400;
+
+  --line-height-heading:   1.3;
+  --line-height-body:      1.6;
+  --line-height-caption:   1.4;
+
+  /* ── Radius ── */
+  --radius-sm:             8px;
+  --radius-md:             12px;
+  --radius-lg:             20px;
+  --radius-floating:       24px;
+  --radius-full:           9999px;
+
+  /* ── Spacing (8px Grid) ── */
+  --space-1:               4px;
+  --space-2:               8px;
+  --space-3:               12px;
+  --space-4:               16px;
+  --space-6:               24px;
+  --space-8:               32px;
+  --space-12:              48px;
+  --space-16:              64px;
+
+  /* ── Extended Colors ── */
+  --color-preview-backdrop:  #D6D0C8;
+  --color-border-hover:      #C9BFB3;
+  --color-thumbnail-dark:    #0D1020;
+  --color-thumbnail-light:   #DAE6F5;
+
+  /* ── PDF Placeholder (Note 화면 예시 문서 전용 — 앱 크롬에는 사용 금지) ── */
+  --color-pdf-cover-bg:      #2E3350;
+  --color-pdf-cover-line:    rgba(255, 255, 255, 0.45);
+  --color-pdf-page-bg:       #FAF8F4;
+  --color-pdf-line:          #D8D2C9;
+  --color-pdf-line-strong:   #B9B1A4;
+
+  /* ── Pen Ink (콘텐츠 저작 색 — 펜 잉크. 디자인 토큰이 아닌 사용자 필기 색) ── */
+  --ink-black:  #1F2937;
+  --ink-red:    #C0392B;
+  --ink-blue:   #2F6FCE;
+  --ink-green:  #2E8B57;
+  --ink-yellow: #E09F3E;
+
+  /* ── Note 편집 화면 레이아웃 수치 ── */
+  --note-rail-width:          152px;
+  --note-topbar-height:       56px;
+  --note-tabbar-height:       40px;
+  --note-panel-header-height: 40px;
+  --ai-agent-width:           400px;
+  --ai-agent-height:          520px;
+
+  /* ── Shadow (minimal) ── */
+  --shadow-dialog:         0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --shadow-menu:           0 4px 16px rgba(0, 0, 0, 0.10), 0 0 0 1px rgba(0, 0, 0, 0.05);
+
+  /* ── Border ── */
+  --border-default:        1px solid var(--color-divider);
+
+  /* ── Layout ── */
+  --sidebar-collapsed-width: 64px;
+  --sidebar-expanded-width:  312px;
+  --appbar-height:           64px;
+
+  /* ── Transition ── */
+  --transition-fast:       150ms ease;
+  --transition-base:       220ms ease;
+}

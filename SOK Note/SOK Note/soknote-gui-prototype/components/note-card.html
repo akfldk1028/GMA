@@ -1,0 +1,48 @@
+<!-- components/note-card.html — NoteCard 컴포넌트 조각 (예시 카드들) -->
+
+<!-- 기본 카드 -->
+<article class="note-card">
+  <h2 class="note-card__title">회의 메모</h2>
+  <p class="note-card__body">다음 스프린트 계획 관련 논의 사항 정리. 백로그 우선순위 재조정 필요.</p>
+  <footer class="note-card__footer">
+    <span class="note-card__date">6월 28일</span>
+    <button class="note-card__more-btn" aria-label="더 보기">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="8" cy="3"  r="1.2" fill="currentColor"/>
+        <circle cx="8" cy="8"  r="1.2" fill="currentColor"/>
+        <circle cx="8" cy="13" r="1.2" fill="currentColor"/>
+      </svg>
+    </button>
+  </footer>
+</article>
+
+<!-- 핀 고정 카드 -->
+<article class="note-card note-card--pinned">
+  <h2 class="note-card__title">장보기 목록</h2>
+  <p class="note-card__body">우유, 계란, 두부, 양파, 마늘, 참기름</p>
+  <footer class="note-card__footer">
+    <span class="note-card__date">6월 30일</span>
+    <button class="note-card__more-btn" aria-label="더 보기">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="8" cy="3"  r="1.2" fill="currentColor"/>
+        <circle cx="8" cy="8"  r="1.2" fill="currentColor"/>
+        <circle cx="8" cy="13" r="1.2" fill="currentColor"/>
+      </svg>
+    </button>
+  </footer>
+</article>
+
+<!-- 내용 없는 카드 -->
+<article class="note-card">
+  <h2 class="note-card__title">빈 노트</h2>
+  <footer class="note-card__footer">
+    <span class="note-card__date">6월 25일</span>
+    <button class="note-card__more-btn" aria-label="더 보기">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="8" cy="3"  r="1.2" fill="currentColor"/>
+        <circle cx="8" cy="8"  r="1.2" fill="currentColor"/>
+        <circle cx="8" cy="13" r="1.2" fill="currentColor"/>
+      </svg>
+    </button>
+  </footer>
+</article>

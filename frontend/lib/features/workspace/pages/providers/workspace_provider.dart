@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,19 +15,16 @@ import '../../../note_editor/pages/providers/note_editor_provider.dart';
 import '../../../note_editor/pages/providers/note_provider.dart';
 import '../../../pdf_structure/services/pdf_text_extraction_service.dart';
 import '../../../scrapnote/models/element_model.dart';
-import '../../../scrapnote/models/scrapnote_canvas_model.dart';
-import '../../../scrapnote/pages/providers/scrapnote_canvas_provider.dart';
 import '../../../scrapnote/providers/element_store.dart';
 import '../../../scrapnote/providers/note_scrap_provider.dart';
 import '../../../scrapnote/providers/scrap_annotation_provider.dart';
-import '../../../scrapnote/providers/scrapnote_service_provider.dart';
-import '../../../scrapnote/services/scrap_insertion_service.dart';
 import '../../../scrapnote/utils/scrapnote_block_editor.dart';
 import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
 import '../../../pdf_viewer/pages/providers/pdf_marker_provider.dart';
 import '../../../scrapnote/providers/pdf_registry_provider.dart';
 import '../../../pdf_structure/providers/pdf_structure_provider.dart';
 import '../../models/pdf_marker_model.dart';
+import '../../services/marker_creation_service.dart';
 import '../../services/workspace_persistence.dart';
 import '../../models/workspace_state.dart';
 
@@ -66,15 +62,10 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     if (lastNoteId != null) {
       Future.microtask(() async {
         // Double-check: user might call loadNote between build return and microtask
-        if (_loadNoteGeneration > 0) {
-          // Restore skipped — user already navigated
-          return;
-        }
+        if (_loadNoteGeneration > 0) return;
         try {
           await loadNote(lastNoteId, linkedPdfPath: lastPdfPath);
-        } catch (e) {
-          debugPrint('[WorkspaceProvider.build] restore failed: $e');
-        }
+        } catch (_) {}
       });
     }
 
@@ -89,10 +80,12 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     state = AsyncData(WorkspaceState(
       currentNoteId: noteId,
       panelSizes: s.panelSizes,
-      // Empty groups for new note (don't carry over from previous note)
+      // markers=[], openPdfPaths=[], currentPdfPath=null → clean slate
     ));
     // Clear last PDF so it doesn't auto-restore
     WorkspacePersistence.saveLastSession(noteId: noteId, pdfPath: '');
+    // Clear cached PDF document so previous PDF doesn't show
+    ref.read(pdfDocumentProvider.notifier).clearDocument();
     // Clear PDF structure cache
     ref.read(pdfStructureProvider.notifier).clear();
   }
@@ -101,6 +94,8 @@ class WorkspaceProvider extends _$WorkspaceProvider {
   /// Also loads the document into pdfDocumentProvider for rendering.
   /// Auto-creates a linked note if no note is currently open.
   Future<void> loadPdf(String pdfPath) async {
+    // Capture generation to detect if another loadNote cancelled us
+    final gen = _loadNoteGeneration;
     var currentState = state.valueOrNull;
     if (currentState == null) {
       try {
@@ -110,15 +105,29 @@ class WorkspaceProvider extends _$WorkspaceProvider {
         state = AsyncData(currentState);
       }
     }
+    if (_loadNoteGeneration != gen) return; // cancelled
+
     final isAsset = pdfPath.startsWith('assets/');
 
-    // Verify PDF file exists (skip for assets and web)
+    // Verify PDF file exists (skip for assets and web).
+    // Missing file is treated as a soft failure: clear the persisted path
+    // so a stale Hive entry from a cleared OS cache does not break the
+    // session restore. Caller can re-pick the file via the file picker.
     if (!isAsset && !kIsWeb) {
       final file = File(pdfPath);
       if (!await file.exists()) {
-        throw Exception('PDF file not found: $pdfPath');
+        debugPrint('[loadPdf] PDF not found, clearing path: $pdfPath');
+        final clearedState = (state.valueOrNull ?? const WorkspaceState())
+            .copyWith(currentPdfPath: null);
+        state = AsyncData(clearedState);
+        await WorkspacePersistence.saveLastSession(
+          noteId: clearedState.currentNoteId,
+          pdfPath: '',
+        );
+        return;
       }
     }
+    if (_loadNoteGeneration != gen) return; // cancelled
 
     // Update open tabs list — add if not already open
     final openPdfs = List<String>.from(currentState.openPdfPaths);
@@ -141,6 +150,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       noteId: noteId,
       pdfPath: pdfPath,
     );
+    if (_loadNoteGeneration != gen) return; // cancelled
 
     // Load the actual PDF document for rendering
     if (isAsset) {
@@ -148,14 +158,24 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     } else {
       await ref.read(pdfDocumentProvider.notifier).loadFromFile(pdfPath);
     }
+    if (_loadNoteGeneration != gen) return; // cancelled
 
     // Register PDF in PdfRegistry for ScrapNote UUID tracking
     await ref.read(pdfRegistryProvProvider.notifier).register(pdfPath);
+    if (_loadNoteGeneration != gen) return; // cancelled
 
     // Auto-create a linked note if none is currently open (skip on web for assets)
     if (currentState.currentNoteId == null && !isAsset) {
       // No note open — auto-create linked note
       await _autoCreateNote(pdfPath);
+    } else if (!isAsset) {
+      // Note already open — keep its frontmatter linkedPdfPath in sync.
+      // This makes session restore reliable: next time we'll extract the
+      // current path from frontmatter, not a stale cache path.
+      final noteId = currentState.currentNoteId;
+      if (noteId != null) {
+        await _writeLinkedPdfPathToFrontmatter(noteId, pdfPath);
+      }
     }
 
     // On web with asset PDF, create virtual note ID for UI (capture button needs noteId)
@@ -163,10 +183,53 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       final virtualNoteId = 'web-sample-${DateTime.now().millisecondsSinceEpoch}';
       state = AsyncData(state.value!.copyWith(currentNoteId: virtualNoteId));
     }
+  }
 
-    // PDF structure analysis is now lazy — triggered only when user opens
-    // the "구조" (Structure) tab, not on every PDF load. This avoids
-    // spawning a JVM process (1-3s cold start) on each PDF open.
+  /// Update or insert `linkedPdfPath` in the note's YAML frontmatter so the
+  /// next session restore can find the PDF without relying on Hive caches.
+  ///
+  /// Operates on disk content directly — NOT on `noteEditorProvider`
+  /// controller text — because note_provider strips frontmatter when
+  /// constructing Note.content. Reading controller.text would return body
+  /// only and writing it back would wipe the frontmatter.
+  Future<void> _writeLinkedPdfPathToFrontmatter(
+      String noteId, String pdfPath) async {
+    try {
+      final noteStorage = ref.read(noteStorageServiceProvider);
+      final original = await noteStorage.loadNote(noteId: noteId);
+      if (original == null || original.isEmpty) return;
+
+      String updated;
+      if (original.startsWith('---')) {
+        // Has frontmatter — replace existing key or insert before closing ---
+        final fmEnd = original.indexOf('\n---', 3);
+        if (fmEnd < 0) return; // malformed; bail
+        final fm = original.substring(4, fmEnd); // between opening --- and closing
+        final body = original.substring(fmEnd + 4); // after \n---
+        final keyRe = RegExp(r'^linkedPdfPath:.*$', multiLine: true);
+        String newFm;
+        if (keyRe.hasMatch(fm)) {
+          newFm = fm.replaceFirst(keyRe, 'linkedPdfPath: $pdfPath');
+        } else {
+          newFm = '$fm\nlinkedPdfPath: $pdfPath';
+        }
+        updated = '---\n$newFm\n---$body';
+      } else {
+        // No frontmatter — prepend one
+        final now = DateTime.now().toIso8601String();
+        updated = '---\n'
+            'linkedPdfPath: $pdfPath\n'
+            'createdAt: $now\n'
+            'modifiedAt: $now\n'
+            '---\n\n$original';
+      }
+      if (updated == original) return;
+      await noteStorage.saveNoteImmediate(noteId: noteId, content: updated);
+      // Re-parse so noteStateProvider sees the updated frontmatter.
+      ref.invalidate(noteStateProvider(noteId));
+    } catch (e) {
+      debugPrint('[_writeLinkedPdfPathToFrontmatter] failed: $e');
+    }
   }
 
   /// Switch to an already-open PDF tab.
@@ -235,6 +298,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       }
     }
     // Update workspace state with current note ID and clear stale PDF
+    ref.read(pdfDocumentProvider.notifier).clearDocument();
     state = AsyncData(
       currentState.copyWith(
         currentNoteId: noteId,
@@ -277,21 +341,17 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       state = AsyncData(latestState.copyWith(scrapGroups: groups));
     }
 
-    // Backfill: sync existing Hive elements into ::: scrapnote block
-    await syncElementsToBlock(noteId);
-
     if (_loadNoteGeneration != generation) return null;
 
-    // Resolve linked PDF from frontmatter (source of truth).
-    // Caller hint is only used when the note has NO frontmatter at all
-    // (e.g. legacy notes). If frontmatter exists but linkedPdfPath is absent,
-    // that means the note intentionally has no PDF.
+    // Resolve linked PDF: prefer frontmatter linkedPdfPath, fall back to
+    // caller hint (e.g. last_pdf_path from session restore). Notes created
+    // in older versions may have a frontmatter block without linkedPdfPath;
+    // we still want to restore their PDF from the session record.
     String? pdfToLoad;
     if (content != null && content.startsWith('---')) {
       pdfToLoad = _extractLinkedPdfPath(content);
-    } else {
-      pdfToLoad = linkedPdfPath;
     }
+    pdfToLoad ??= linkedPdfPath;
     if (pdfToLoad != null && pdfToLoad.isNotEmpty) {
       // Directly await PDF load (no more fragile microtask scheduling)
       await loadPdf(pdfToLoad);
@@ -323,9 +383,9 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     final content = await noteStorage.loadNote(noteId: noteId);
     if (content == null || content.isEmpty) return;
 
-    // Need current PDF to find elements
-    final currentState = state.valueOrNull;
-    final pdfPath = currentState?.currentPdfPath;
+    // Use the note's own linkedPdfPath (from frontmatter), NOT state.currentPdfPath.
+    // This prevents leaking elements from a previous session's PDF into a new note.
+    final pdfPath = _extractLinkedPdfPath(content);
     if (pdfPath == null) return;
 
     final pdfId = ref.read(pdfRegistryProvProvider.notifier).getIdByPath(pdfPath);
@@ -384,8 +444,8 @@ class WorkspaceProvider extends _$WorkspaceProvider {
   }
 
   /// Auto-create a note linked to the given PDF. Returns the note ID or null.
-  /// Directly creates file instead of using CreateNoteMutation to avoid
-  /// Riverpod "Future already completed" bug.
+  /// Directly creates file and updates state instead of calling loadNote()
+  /// to avoid recursive loop: _autoCreateNote → loadNote → loadPdf → _autoCreateNote.
   Future<String?> _autoCreateNote(String pdfPath) async {
     try {
       final pdfName = p.basenameWithoutExtension(pdfPath);
@@ -410,9 +470,16 @@ class WorkspaceProvider extends _$WorkspaceProvider {
         ..writeln();
       await noteFile.writeAsString(content.toString());
 
-      // Load the note into workspace and refresh file manager
-      await loadNote(noteUuid);
-      ref.read(fileManagerProvider.notifier).refresh();
+      // Update state directly — do NOT call loadNote() to avoid recursion
+      final s = state.valueOrNull;
+      if (s != null) {
+        state = AsyncData(s.copyWith(currentNoteId: noteUuid));
+      }
+      await WorkspacePersistence.saveLastSession(
+        noteId: noteUuid,
+        pdfPath: pdfPath,
+      );
+      ref.invalidate(fileManagerProvider);
       return noteUuid;
     } catch (e) {
       debugPrint('[WorkspaceProvider._autoCreateNote] error: $e');
@@ -537,8 +604,10 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     }
   }
 
-  /// Create a marker from PDF text selection
-  /// This is called when user selects text in PDF viewer
+  /// Create a marker from PDF text selection.
+  /// This is called when user selects text in PDF viewer.
+  ///
+  /// Heavy lifting delegated to [MarkerCreationService].
   Future<PdfMarker> createMarker({
     required int pageNumber,
     required MarkerColor color,
@@ -552,13 +621,11 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     if (currentState == null) {
       throw Exception('Workspace state not initialized');
     }
-
-    // Validate page number is positive
     if (pageNumber <= 0) {
       throw ArgumentError('Invalid page number: $pageNumber');
     }
 
-    // Create new marker with unique ID
+    // 1. Create marker + update state
     const uuid = Uuid();
     final marker = PdfMarker(
       id: uuid.v4(),
@@ -569,35 +636,26 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       lineRects: lineRects,
       capturedImagePath: capturedImagePath,
     );
-
-    // Add marker to state
-    final updatedMarkers = [...currentState.markers, marker];
     state = AsyncData(
-      currentState.copyWith(markers: updatedMarkers),
+      currentState.copyWith(markers: [...currentState.markers, marker]),
     );
 
-    // Persist to Hive so PdfPageOverlay can render highlights
-    try {
-      await ref.read(pdfMarkerStateProvider.notifier).createMarker(
-            pageNumber: pageNumber,
-            color: color,
-            selectedText: selectedText,
-            textRect: textRect,
-            lineRects: lineRects,
-            capturedImagePath: capturedImagePath,
-          );
-    } catch (e) {
-      debugPrint('[WorkspaceProvider.createMarker] Hive error: $e');
-    }
+    // 2. Persist to Hive
+    await MarkerCreationService.persistToHive(ref, marker: marker, color: color);
 
-    // Insert marker into note editor. Auto-create note if none is open.
+    // 3. Auto-create note if needed
     var currentNoteId = state.valueOrNull?.currentNoteId;
     if (currentNoteId == null && currentState.currentPdfPath != null) {
       currentNoteId = await _autoCreateNote(currentState.currentPdfPath!);
+      if (currentNoteId != null) {
+        await ref.read(noteStateProvider(currentNoteId).future);
+        ref.read(noteEditorProvider(currentNoteId));
+      }
     }
+
+    // 4. Insert into note editor
     if (currentNoteId != null) {
       if (capturedImagePath != null) {
-        // Area capture → insert image markdown with absolute path + context text
         final capturesDir = await ref.read(capturesDirectoryProvider.future);
         await ref
             .read(noteEditorProvider(currentNoteId).notifier)
@@ -608,7 +666,6 @@ class WorkspaceProvider extends _$WorkspaceProvider {
               contextText: selectedText,
             );
       } else {
-        // Text selection or drawing stroke → insert marker line
         await ref
             .read(noteEditorProvider(currentNoteId).notifier)
             .insertMarker(
@@ -619,7 +676,7 @@ class WorkspaceProvider extends _$WorkspaceProvider {
       }
     }
 
-    // Create ScrapElement alongside the marker for ScrapNote system
+    // 5. Create ScrapElement + append @el + add to store
     if (currentState.currentPdfPath != null) {
       try {
         final pdfId = await ref
@@ -648,136 +705,51 @@ class WorkspaceProvider extends _$WorkspaceProvider {
           createdAt: DateTime.now(),
         );
 
-        ref.read(elementStoreProvider.notifier).add(element);
-
-        // Append @el reference to the ::: scrapnote block.
-        // Prefer controller text (has unsaved insertMarker changes),
-        // fall back to disk when controller is null (editor not yet built).
+        // Append @el to scrapnote block BEFORE elementStore.add()
         if (currentNoteId != null) {
           final controller = ref.read(noteEditorProvider(currentNoteId));
           final baseContent = controller?.text;
-
           if (baseContent != null && baseContent.isNotEmpty) {
-            // Controller available — append to live text, save, notify chain
             final updatedContent = ScrapnoteBlockEditor.appendElement(
-              baseContent,
-              element.id,
-            );
+              baseContent, element.id);
             controller!.text = updatedContent;
             await ref
                 .read(noteEditorProvider(currentNoteId).notifier)
                 .saveContent(currentNoteId);
           } else {
-            // No controller — disk-based fallback
             final noteStorage = ref.read(noteStorageServiceProvider);
             final diskContent =
                 await noteStorage.loadNote(noteId: currentNoteId);
             if (diskContent != null && diskContent.isNotEmpty) {
               final updatedContent = ScrapnoteBlockEditor.appendElement(
-                diskContent,
-                element.id,
-              );
+                diskContent, element.id);
               await noteStorage.saveNoteImmediate(
-                noteId: currentNoteId,
-                content: updatedContent,
-              );
+                noteId: currentNoteId, content: updatedContent);
               ref.invalidate(noteStateProvider(currentNoteId));
             }
           }
         }
 
-        // Also create CanvasElement on the scrapnote canvas
-        try {
-          final service = await ref.read(scrapnoteServiceProvProvider.future);
-          final scrapnoteId = await service.getOrCreateScrapnote(
-            currentState.currentPdfPath!,
-          );
+        // Add to Hive — bumps revision, triggers noteScrapProvider
+        ref.read(elementStoreProvider.notifier).add(element);
 
-          // Get existing elements for auto-positioning
-          final canvasData = ref
-              .read(scrapnoteCanvasStateProvider(scrapnoteId))
-              .valueOrNull;
-          final existingElements = canvasData?.elements ?? [];
-          final pos = ScrapInsertionService.calculateAutoPosition(
-            existingElements,
-          );
-
-          // Compute card size from actual capture image dimensions
-          double cardWidth;
-          double cardHeight;
-          if (capturedImagePath != null) {
-            // Read actual image size for accurate aspect ratio
-            ui.Size? imgSize;
-            try {
-              final capturesDir =
-                  await ref.read(capturesDirectoryProvider.future);
-              final imgFile =
-                  File(p.join(capturesDir.path, capturedImagePath));
-              if (await imgFile.exists()) {
-                final bytes = await imgFile.readAsBytes();
-                final codec =
-                    await ui.instantiateImageCodec(bytes);
-                final frame = await codec.getNextFrame();
-                imgSize = ui.Size(
-                  frame.image.width.toDouble(),
-                  frame.image.height.toDouble(),
-                );
-                frame.image.dispose();
-                codec.dispose();
-              }
-            } catch (_) {}
-
-            if (imgSize != null && imgSize.width > 0 && imgSize.height > 0) {
-              const maxDim = 400.0;
-              if (imgSize.width >= imgSize.height) {
-                // landscape or square
-                cardWidth = maxDim;
-                cardHeight = maxDim * imgSize.height / imgSize.width;
-              } else {
-                // portrait
-                cardHeight = maxDim;
-                cardWidth = maxDim * imgSize.width / imgSize.height;
-              }
-            } else {
-              cardWidth = 300;
-              cardHeight = 300;
-            }
-          } else {
-            cardWidth = 500;
-            cardHeight = 80;
-          }
-
-          final canvasElement = CanvasElement(
-            id: marker.id,
-            type: capturedImagePath != null
-                ? CanvasElementType.capture
-                : CanvasElementType.highlight,
-            x: pos.x,
-            y: pos.y,
-            width: cardWidth,
-            height: cardHeight,
-            imagePath: capturedImagePath,
-            selectedText: selectedText,
-            colorValue: color.color.toARGB32(),
-            sourcePageNumber: pageNumber,
-            sourcePdfPath: currentState.currentPdfPath,
-            createdAt: DateTime.now(),
-          );
-
-          ref
-              .read(scrapnoteCanvasStateProvider(scrapnoteId).notifier)
-              .addElement(canvasElement);
-        } catch (e) {
-          debugPrint('Failed to create CanvasElement: $e');
+        // Force noteScrapProvider rebuild
+        if (currentNoteId != null) {
+          ref.invalidate(noteScrapProvider(currentNoteId));
         }
-      } catch (e) {
-        debugPrint('Failed to create ScrapElement: $e');
-      }
-    }
 
-    // Force noteScrapProvider rebuild so canvas/panel picks up the new element
-    if (currentNoteId != null) {
-      ref.invalidate(noteScrapProvider(currentNoteId));
+        // CanvasElement creation (fire-and-forget, non-blocking)
+        MarkerCreationService.createCanvasElement(
+          ref,
+          marker: marker,
+          pdfPath: currentState.currentPdfPath!,
+          capturedImagePath: capturedImagePath,
+          selectedText: selectedText,
+          color: color,
+        );
+      } catch (e, st) {
+        debugPrint('[createMarker] ScrapElement error: $e\n$st');
+      }
     }
 
     return marker;
@@ -979,9 +951,16 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     ref.invalidate(noteStateProvider(noteId));
   }
 
-  /// Reorder ALL capture/lasso elements to match a given ID order.
-  /// Used by canvas panel to sync 2D layout positions to markdown order.
-  Future<void> reorderAllScraps(String noteId, List<String> orderedCaptureIds) async {
+  /// Reorder ALL scrap-card elements (capture/lasso/highlight) to match a
+  /// given ID order. Used by the scrap panel to sync the 2D layout (visual
+  /// order on the right panel) back to the markdown `@el` order so the
+  /// left sidebar thumbnail order tracks where the user dropped each card.
+  ///
+  /// Non-card types (drawing, etc.) are kept in their original markdown
+  /// positions. If [orderedCardIds] contains an id that isn't yet in the
+  /// markdown (e.g., a card that was just appended in another flow), it is
+  /// appended at the end so the entry isn't dropped.
+  Future<void> reorderAllScraps(String noteId, List<String> orderedCardIds) async {
     final noteStorage = ref.read(noteStorageServiceProvider);
     final controller = ref.read(noteEditorProvider(noteId));
 
@@ -994,22 +973,42 @@ class WorkspaceProvider extends _$WorkspaceProvider {
     if (allIds.isEmpty) return;
 
     final elementStore = ref.read(elementStoreProvider.notifier);
-    final orderedSet = orderedCaptureIds.toSet();
+    final orderedSet = orderedCardIds.toSet();
 
-    // Rebuild full ID list: replace capture/lasso IDs with orderedCaptureIds
-    int captureIdx = 0;
+    bool isCardType(ElementType t) =>
+        t == ElementType.capture ||
+        t == ElementType.lasso ||
+        t == ElementType.highlight;
+
+    // Rebuild full ID list: replace each card slot in allIds with the next
+    // entry from orderedCardIds in order. Highlights are reordered just
+    // like capture/lasso so the visual layout stays consistent across
+    // every scrap-card type. Non-card slots stay put.
+    int cardIdx = 0;
     final reorderedIds = <String>[];
+    final placedCardIds = <String>{};
     for (final id in allIds) {
       final el = elementStore.getById(id);
-      if (el != null &&
-          (el.type == ElementType.capture || el.type == ElementType.lasso) &&
-          orderedSet.contains(id)) {
-        if (captureIdx < orderedCaptureIds.length) {
-          reorderedIds.add(orderedCaptureIds[captureIdx++]);
+      final isCard = el != null && isCardType(el.type);
+      if (isCard && orderedSet.contains(id)) {
+        if (cardIdx < orderedCardIds.length) {
+          final replacement = orderedCardIds[cardIdx++];
+          reorderedIds.add(replacement);
+          placedCardIds.add(replacement);
         } else {
           reorderedIds.add(id);
         }
       } else {
+        reorderedIds.add(id);
+      }
+    }
+    // Any orderedCardIds entries that didn't fit a card slot in allIds
+    // (because allIds had fewer card slots than orderedCardIds.length —
+    // e.g., a freshly-added card whose @el line landed somewhere the loop
+    // didn't reach, or markdown duplication mismatch) are appended so they
+    // aren't silently dropped.
+    for (final id in orderedCardIds) {
+      if (!placedCardIds.contains(id)) {
         reorderedIds.add(id);
       }
     }

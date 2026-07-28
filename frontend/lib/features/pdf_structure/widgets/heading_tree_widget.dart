@@ -10,12 +10,9 @@ import '../providers/pdf_structure_provider.dart';
 ///
 /// Each heading is indented by level and tappable to jump to the PDF page.
 class HeadingTreeWidget extends ConsumerWidget {
-  const HeadingTreeWidget({
-    super.key,
-    this.onHeadingTap,
-  });
+  const HeadingTreeWidget({super.key, this.onHeadingTap});
 
-  /// Called when a heading is tapped: (pageNumber, pdfRect).
+  /// Called when a heading is tapped.
   final void Function(StructureElement heading)? onHeadingTap;
 
   @override
@@ -23,13 +20,14 @@ class HeadingTreeWidget extends ConsumerWidget {
     final structureState = ref.watch(pdfStructureProvider);
     final theme = ShadTheme.of(context);
 
-    // Lazy analysis: trigger on first view if not yet analyzed
     if (structureState.result == null &&
         !structureState.isAnalyzing &&
         structureState.error == null) {
-      final pdfPath = ref.read(workspaceProviderProvider).valueOrNull?.currentPdfPath;
+      final pdfPath = ref
+          .read(workspaceProviderProvider)
+          .valueOrNull
+          ?.currentPdfPath;
       if (pdfPath != null) {
-        // Schedule after build to avoid modifying provider during build
         Future.microtask(() {
           ref.read(pdfStructureProvider.notifier).analyze(pdfPath);
         });
@@ -49,7 +47,7 @@ class HeadingTreeWidget extends ConsumerWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               SizedBox(height: 8),
-              Text('분석 중...', style: TextStyle(fontSize: 11)),
+              Text('Analyzing structure...', style: TextStyle(fontSize: 11)),
             ],
           ),
         ),
@@ -60,8 +58,11 @@ class HeadingTreeWidget extends ConsumerWidget {
       return Padding(
         padding: const EdgeInsets.all(12),
         child: Text(
-          'Java 11+ 필요',
-          style: TextStyle(fontSize: 11, color: theme.colorScheme.mutedForeground),
+          'Structure analysis is not available for this PDF.',
+          style: TextStyle(
+            fontSize: 11,
+            color: theme.colorScheme.mutedForeground,
+          ),
         ),
       );
     }
@@ -69,9 +70,48 @@ class HeadingTreeWidget extends ConsumerWidget {
     if (structureState.error != null) {
       return Padding(
         padding: const EdgeInsets.all(12),
-        child: Text(
-          structureState.error!,
-          style: TextStyle(fontSize: 11, color: theme.colorScheme.destructive),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Structure analysis failed',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.foreground,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _friendlyError(structureState.error!),
+              style: TextStyle(
+                fontSize: 11,
+                height: 1.35,
+                color: theme.colorScheme.mutedForeground,
+              ),
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 28),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () {
+                final pdfPath = ref
+                    .read(workspaceProviderProvider)
+                    .valueOrNull
+                    ?.currentPdfPath;
+                if (pdfPath != null) {
+                  ref.read(pdfStructureProvider.notifier).analyze(pdfPath);
+                }
+              },
+              child: const Text('Retry', style: TextStyle(fontSize: 11)),
+            ),
+          ],
         ),
       );
     }
@@ -82,8 +122,13 @@ class HeadingTreeWidget extends ConsumerWidget {
       return Padding(
         padding: const EdgeInsets.all(12),
         child: Text(
-          structureState.result == null ? 'PDF를 열면 구조 분석' : '헤딩 없음',
-          style: TextStyle(fontSize: 11, color: theme.colorScheme.mutedForeground),
+          structureState.result == null
+              ? 'Open a PDF to analyze structure'
+              : 'No headings found',
+          style: TextStyle(
+            fontSize: 11,
+            color: theme.colorScheme.mutedForeground,
+          ),
         ),
       );
     }
@@ -108,9 +153,11 @@ class HeadingTreeWidget extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Level badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: _levelColor(level).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(3),
@@ -125,20 +172,20 @@ class HeadingTreeWidget extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                // Heading text
                 Expanded(
                   child: Text(
                     heading.content ?? '',
                     style: TextStyle(
                       fontSize: level == 1 ? 12 : 11,
-                      fontWeight: level <= 2 ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: level <= 2
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                       color: theme.colorScheme.foreground,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                // Page number
                 Text(
                   'P${heading.pageNumber}',
                   style: TextStyle(
@@ -157,13 +204,26 @@ class HeadingTreeWidget extends ConsumerWidget {
   Color _levelColor(int level) {
     switch (level) {
       case 1:
-        return const Color(0xFF3B82F6); // blue
+        return const Color(0xFF3B82F6);
       case 2:
-        return const Color(0xFF8B5CF6); // purple
+        return const Color(0xFF8B5CF6);
       case 3:
-        return const Color(0xFF10B981); // green
+        return const Color(0xFF10B981);
       default:
-        return const Color(0xFF6B7280); // gray
+        return const Color(0xFF6B7280);
     }
+  }
+
+  String _friendlyError(String error) {
+    if (error.contains('opendataloader-pdf failed')) {
+      return 'The primary PDF parser could not read this file, and the fallback parser did not find headings.';
+    }
+    if (error.contains('not found')) {
+      return 'The bundled PDF structure parser is missing from this build.';
+    }
+    if (error.contains('Java')) {
+      return 'Java was not found, and the fallback parser could not detect headings in this PDF.';
+    }
+    return error;
   }
 }

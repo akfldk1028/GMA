@@ -4,12 +4,16 @@ import 'package:uuid/uuid.dart';
 
 import '../../ai_assistant/models/chat_message_model.dart';
 import '../../note_editor/pages/providers/note_editor_provider.dart';
-import '../../ocr/pages/providers/ocr_provider.dart';
 import '../../pdf_structure/services/pdf_text_extraction_service.dart';
 import '../../pdf_viewer/pages/providers/pdf_document_provider.dart';
 import '../../workspace/pages/providers/workspace_provider.dart';
-import '../backends/ai_backend.dart';
-import '../backends/ollama_ai_backend.dart';
+import '../backends/backend_registry.dart';
+import '../backends/gemma_backend.dart';
+import '../backends/ollama_backend.dart';
+import '../core/ai_backend.dart';
+import '../core/ai_capability.dart';
+import '../core/ai_message.dart';
+import '../services/backend_selector.dart';
 import '../services/block_extractor.dart';
 import '../services/context_builder.dart';
 import '../skills/agent_skill.dart';
@@ -22,31 +26,50 @@ class AiAgentState {
   const AiAgentState({
     this.messages = const [],
     this.isSending = false,
+    this.activeBackendId,
   });
 
   final List<ChatMessage> messages;
   final bool isSending;
+  final String? activeBackendId;
 
   AiAgentState copyWith({
     List<ChatMessage>? messages,
     bool? isSending,
+    String? activeBackendId,
   }) {
     return AiAgentState(
       messages: messages ?? this.messages,
       isSending: isSending ?? this.isSending,
+      activeBackendId: activeBackendId ?? this.activeBackendId,
     );
   }
 }
 
 /// AI Agent with skill-based GMA MD block generation.
+///
+/// Uses BackendSelector for dynamic backend selection based on
+/// skill capabilities (nanoclaw orchestrator pattern).
 @Riverpod(keepAlive: true)
 class AiAgent extends _$AiAgent {
-  late AiBackend _backend;
-
   @override
   AiAgentState build() {
-    _backend = OllamaAiBackend();
+    _initBackends();
     return const AiAgentState();
+  }
+
+  void _initBackends() {
+    // Avoid duplicate registration on provider rebuild
+    if (registeredBackends.isNotEmpty) return;
+
+    // Register all backends
+    registerBackend(GemmaBackend());
+    registerBackend(OllamaBackend());
+
+    // OpenRouter only if API key is configured
+    // TODO: read from settings when SkillConfigProvider is ready
+    // final apiKey = ref.read(settingsProvider).openRouterApiKey;
+    // if (apiKey.isNotEmpty) registerBackend(OpenRouterBackend(apiKey: apiKey));
   }
 
   /// Send a message with automatic skill matching.
@@ -137,11 +160,11 @@ class AiAgent extends _$AiAgent {
   // ─── Private helpers ──────────────────────────────────
 
   ChatMessage _assistantMsg(String content) => ChatMessage(
-        id: const Uuid().v4(),
-        role: ChatRole.assistant,
-        content: content,
-        timestamp: DateTime.now(),
-      );
+    id: const Uuid().v4(),
+    role: ChatRole.assistant,
+    content: content,
+    timestamp: DateTime.now(),
+  );
 
   /// Shared logic: insert [block] text at the current note cursor position.
   bool _insertBlockAtCursor(String block) {
@@ -156,14 +179,20 @@ class AiAgent extends _$AiAgent {
     final selection = controller.selection;
     final insertPos = selection.isValid ? selection.baseOffset : text.length;
 
-    final prefix =
-        insertPos > 0 && !text.substring(0, insertPos).endsWith('\n')
-            ? '\n\n'
-            : '\n';
+    final prefix = insertPos > 0 && !text.substring(0, insertPos).endsWith('\n')
+        ? '\n\n'
+        : '\n';
     controller.text =
         '${text.substring(0, insertPos)}$prefix$block\n${text.substring(insertPos)}';
 
     return true;
+  }
+
+  /// Select backend dynamically based on skill capabilities, then generate.
+  Future<AiBackend> _selectBackend(Set<AiCapability> required) async {
+    final backend = await BackendSelector.select(required);
+    state = state.copyWith(activeBackendId: backend.id);
+    return backend;
   }
 
   Future<String> _executeSkill(AgentSkill skill, String userMessage) async {
@@ -177,19 +206,20 @@ class AiAgent extends _$AiAgent {
       existingNoteContent: noteContent,
     );
 
-    final baseUrl = await _getOllamaUrl();
-    var response = await _backend.generate(messages, baseUrl: baseUrl);
+    final backend = await _selectBackend(skill.requiredCapabilities);
+    var response = await backend.generate(messages);
 
     // Validate output; retry once with format reminder
     if (skill.validator != null && !skill.validator!(response)) {
-      final retryMessages = List<Map<String, String>>.from(messages)
-        ..add({'role': 'assistant', 'content': response})
-        ..add({
-          'role': 'user',
-          'content':
-              '출력 형식이 잘못되었다. 반드시 ::: ${skill.outputBlockType ?? ""} 블록 형식으로 다시 작성해라.',
-        });
-      response = await _backend.generate(retryMessages, baseUrl: baseUrl);
+      final retryMessages = List<AiMessage>.from(messages)
+        ..add(AiMessage.text(AiRole.assistant, response))
+        ..add(
+          AiMessage.text(
+            AiRole.user,
+            '출력 형식이 잘못되었다. 반드시 ::: ${skill.outputBlockType ?? ""} 블록 형식으로 다시 작성해라.',
+          ),
+        );
+      response = await backend.generate(retryMessages);
     }
 
     if (BlockExtractor.hasBlock(response)) {
@@ -199,37 +229,36 @@ class AiAgent extends _$AiAgent {
   }
 
   Future<String> _generalChat(String content) async {
-    final baseUrl = await _getOllamaUrl();
+    final backend = await _selectBackend({AiCapability.text});
 
-    final messages = <Map<String, String>>[
-      {
-        'role': 'system',
-        'content': '너는 GMA 메모앱의 AI 어시스턴트다. '
-            '사용자의 학술 연구와 PDF 분석을 도와준다. '
-            '한국어로 답변해라.',
-      },
+    final messages = <AiMessage>[
+      AiMessage.text(
+        AiRole.system,
+        '너는 GMA 메모앱의 AI 어시스턴트다. '
+        '사용자의 학술 연구와 PDF 분석을 도와준다. '
+        '한국어로 답변해라.',
+      ),
     ];
 
     // History excluding the just-added user message
     final all = state.messages;
-    final history = all.length > 1 ? all.sublist(0, all.length - 1) : <ChatMessage>[];
+    final history = all.length > 1
+        ? all.sublist(0, all.length - 1)
+        : <ChatMessage>[];
     final recent = history.length > 10
         ? history.sublist(history.length - 10)
         : history;
     for (final msg in recent) {
-      messages.add({
-        'role': msg.role == ChatRole.user ? 'user' : 'assistant',
-        'content': msg.content,
-      });
+      messages.add(
+        AiMessage.text(
+          msg.role == ChatRole.user ? AiRole.user : AiRole.assistant,
+          msg.content,
+        ),
+      );
     }
 
-    messages.add({'role': 'user', 'content': content});
-    return _backend.generate(messages, baseUrl: baseUrl);
-  }
-
-  Future<String> _getOllamaUrl() async {
-    final settings = await ref.read(ocrSettingsProvider.future);
-    return settings.ollamaUrl;
+    messages.add(AiMessage.text(AiRole.user, content));
+    return backend.generate(messages);
   }
 
   Future<String?> _getCurrentPdfPageText() async {
@@ -242,7 +271,9 @@ class AiAgent extends _$AiAgent {
 
     try {
       return await PdfTextExtractionService.extractPageText(
-          pdfPath, pageNumber);
+        pdfPath,
+        pageNumber,
+      );
     } catch (e) {
       debugPrint('[AiAgent] PDF text extraction failed: $e');
       return null;
@@ -258,11 +289,17 @@ class AiAgent extends _$AiAgent {
 
   String _formatError(Object e) {
     final msg = e.toString();
-    if (msg.contains('Connection refused') ||
-        msg.contains('SocketException')) {
-      return 'Ollama 서버에 연결할 수 없습니다.\n'
-          '`ollama serve` 로 서버를 시작하고, '
-          '`ollama pull qwen2.5:3b` 로 모델을 설치하세요.';
+    if (msg.contains('AiBackendUnavailableException') ||
+        msg.contains('No available backend')) {
+      return 'AI 백엔드를 사용할 수 없습니다.\n'
+          'Gemma 모델을 다운로드하거나, '
+          'OpenRouter API 키를 설정하거나, '
+          'Ollama 서버를 시작하세요.';
+    }
+    if (msg.contains('Connection refused') || msg.contains('SocketException')) {
+      return 'AI 서버에 연결할 수 없습니다.\n'
+          'Gemma 모델을 다운로드하거나, '
+          'Ollama 서버를 시작하세요.';
     }
     if (msg.contains('TimeoutException')) {
       return '응답 시간이 초과되었습니다. 다시 시도해 주세요.';

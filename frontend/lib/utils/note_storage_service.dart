@@ -86,26 +86,52 @@ class NoteStorageService {
   }
 
   /// Internal method to write note content to filesystem.
+  ///
+  /// Frontmatter preservation: callers (e.g. the note editor controller)
+  /// often pass body-only content because [note_provider] strips the YAML
+  /// frontmatter when loading [Note.content]. To prevent silent frontmatter
+  /// loss, if [content] does not start with `---` and the existing file on
+  /// disk has frontmatter, the frontmatter is re-attached before writing.
   Future<void> _writeNoteToFile({
     required String noteId,
     required String content,
   }) async {
-    // Get notes root directory
     final notesDir = await ref.read(notesRootDirectoryProvider.future);
-
-    // Create note file path (noteId.md)
     final noteFile = File('${notesDir.path}/$noteId.md');
 
-    // Ensure parent directory exists
     final parentDir = noteFile.parent;
     if (!await parentDir.exists()) {
       await parentDir.create(recursive: true);
     }
 
-    // Write content to file
-    await noteFile.writeAsString(content, flush: true);
+    final finalContent =
+        await _mergeFrontmatterIfNeeded(noteFile, content);
 
-    debugPrint('Note saved: $noteId (${content.length} bytes)');
+    await noteFile.writeAsString(finalContent, flush: true);
+
+    debugPrint('Note saved: $noteId (${finalContent.length} bytes)');
+  }
+
+  /// If [content] is body-only (no `---` opening) and the existing file has
+  /// YAML frontmatter, re-attach the frontmatter so it survives the save.
+  Future<String> _mergeFrontmatterIfNeeded(
+      File noteFile, String content) async {
+    if (content.startsWith('---')) return content;
+    if (!await noteFile.exists()) return content;
+    try {
+      final existing = await noteFile.readAsString();
+      if (!existing.startsWith('---')) return content;
+      final fmEnd = existing.indexOf('\n---', 3);
+      if (fmEnd < 0) return content;
+      // Closing marker spans 4 chars: \n---. Include it then a separator
+      // newline before the body.
+      final fm = existing.substring(0, fmEnd + 4);
+      final body = content.startsWith('\n') ? content : '\n$content';
+      return '$fm$body';
+    } catch (e) {
+      debugPrint('[NoteStorage] frontmatter merge failed: $e');
+      return content;
+    }
   }
 
   /// Load note content from filesystem.

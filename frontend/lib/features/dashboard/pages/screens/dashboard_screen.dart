@@ -19,6 +19,7 @@ class DashboardScreen extends ConsumerWidget {
 
   Future<void> _handleNewNote(BuildContext context, WidgetRef ref) async {
     try {
+      ref.invalidate(createNoteMutationProvider);
       final mutation = ref.read(createNoteMutationProvider.notifier);
       final title = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
       final note = await mutation.call(title: title);

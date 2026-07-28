@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../constants/app_colors.dart';
+
 class CanvasHeader extends StatelessWidget {
   const CanvasHeader({
     super.key,
@@ -23,41 +25,52 @@ class CanvasHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 36,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: const BoxDecoration(
+        color: AppColors.sokSurface,
+        border: Border(bottom: BorderSide(color: AppColors.sokDivider)),
       ),
       child: Row(
         children: [
-          Text('Scraps',
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700)),
+          const Text(
+            '스크랩',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.sokPrimary,
+            ),
+          ),
           const SizedBox(width: 6),
-          Text('$totalCount',
-              style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey.shade400,
-                  fontWeight: FontWeight.w500)),
+          Text(
+            '$totalCount',
+            style: TextStyle(
+              fontSize: 11,
+              color: totalCount > 0
+                  ? AppColors.sokAccent
+                  : AppColors.sokSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           const Spacer(),
-          if (onZoomOut != null) _iconBtn(Icons.remove, 'Zoom Out', onZoomOut!),
+          if (onZoomOut != null) _iconBtn(Icons.remove, '축소', onZoomOut!),
           if (onZoomReset != null)
             GestureDetector(
               onTap: onZoomReset,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
-                child: Text('fit', style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+                child: const Text(
+                  'fit',
+                  style: TextStyle(fontSize: 10, color: AppColors.sokSecondary),
+                ),
               ),
             ),
-          if (onZoomIn != null) _iconBtn(Icons.add, 'Zoom In', onZoomIn!),
+          if (onZoomIn != null) _iconBtn(Icons.add, '확대', onZoomIn!),
           const SizedBox(width: 4),
-          _iconBtn(Icons.swap_horiz, 'Swap', onSwapLayout),
-          _iconBtn(Icons.chevron_right, 'Fold', onFoldPanel),
+          _iconBtn(Icons.swap_horiz, '레이아웃 전환', onSwapLayout),
+          _iconBtn(Icons.chevron_right, '접기', onFoldPanel),
           if (onImportPressed != null)
-            _iconBtn(Icons.add, 'Import', onImportPressed!),
+            _iconBtn(Icons.add, '가져오기', onImportPressed!),
         ],
       ),
     );
@@ -70,7 +83,7 @@ class CanvasHeader extends StatelessWidget {
         message: tip,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-          child: Icon(icon, size: 14, color: Colors.grey.shade400),
+          child: Icon(icon, size: 17, color: AppColors.sokPrimary),
         ),
       ),
     );

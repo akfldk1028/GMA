@@ -65,7 +65,7 @@ class CanvasScrapCard extends StatelessWidget {
                       File(imgPath),
                       width: double.infinity,
                       fit: BoxFit.fill,
-                      errorBuilder: (_, __, ___) => _placeholder(),
+                      errorBuilder: (_, _, _) => _placeholder(),
                     )
                   : _placeholder(),
             ),
@@ -90,58 +90,58 @@ class CanvasScrapCard extends StatelessWidget {
     );
   }
 
+  /// Modern highlight card: thin vertical accent on the left, larger text,
+  /// rounded corners, subtle shadow. Sized to fit content (the parent panel
+  /// computes the card height from the text in `_ensurePropsFor`).
   Widget _buildHighlightCard() {
     final text = element.selectedText ?? '';
-    // Determine highlight color from associated marker color
-    final highlightColor = _highlightColor;
+    final accent = _highlightColor;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 6,
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Left accent bar only
-            Container(
-              height: 3,
-              color: highlightColor.withValues(alpha: 0.5),
-            ),
-            // Text content
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(6),
-                child: Text(
-                  text.isNotEmpty ? text : 'Highlight',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade800,
-                    height: 1.4,
+        borderRadius: BorderRadius.circular(10),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Left accent bar
+              Container(width: 3, color: accent),
+              // Text
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  child: Text(
+                    text.isNotEmpty ? text : 'Highlight',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade900,
+                      height: 1.45,
+                      letterSpacing: 0.1,
+                    ),
                   ),
-                  overflow: TextOverflow.fade,
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Color get _highlightColor {
-    // Try to match element's color info -- default to primary purple
-    return Colors.purple.shade400;
+    // Try to match element's color info -- default to a calm amber
+    return const Color(0xFFF59E0B);
   }
 
   Widget _placeholder() {

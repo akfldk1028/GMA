@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../ai_agent/pages/widgets/model_download_widget.dart';
 import '../../../ocr/pages/providers/ocr_provider.dart';
 import '../../../pdf_structure/services/pdf_structure_service.dart';
 import '../../../workspace/pages/providers/theme_provider.dart';
@@ -153,6 +154,13 @@ class SettingsScreen extends ConsumerWidget {
 
                       const SizedBox(height: 32),
 
+                      // AI Agent section
+                      _SectionHeader(title: 'AI Agent', theme: theme),
+                      const SizedBox(height: 12),
+                      const ModelDownloadWidget(),
+
+                      const SizedBox(height: 32),
+
                       // Keyboard Shortcuts section
                       _SectionHeader(title: 'Keyboard Shortcuts', theme: theme),
                       const SizedBox(height: 12),
@@ -171,6 +179,27 @@ class SettingsScreen extends ConsumerWidget {
                         ],
                       ),
 
+                      const SizedBox(height: 32),
+
+                      // Debug section
+                      _SectionHeader(title: 'Debug', theme: theme),
+                      const SizedBox(height: 12),
+                      _SettingsCard(
+                        theme: theme,
+                        children: [
+                          _SettingsRow(
+                            theme: theme,
+                            icon: Icons.bug_report_outlined,
+                            title: 'App Logs',
+                            subtitle: 'View real-time logs, errors, routes, providers',
+                            trailing: ShadButton.outline(
+                              onPressed: () => context.push('/logs'),
+                              size: ShadButtonSize.sm,
+                              child: const Text('Open'),
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 32),
 
                       // About section

@@ -16,7 +16,8 @@ class MultiSelectBottomBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIds = ref.watch(
-        homeStateProvider.select((s) => s.selectedNoteIds));
+      homeStateProvider.select((s) => s.selectedNoteIds),
+    );
 
     return AnimatedSlide(
       offset: selectedIds.isEmpty ? const Offset(0, 1) : Offset.zero,
@@ -24,9 +25,9 @@ class MultiSelectBottomBar extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.sokSurface,
           border: const Border(
-            top: BorderSide(color: AppColors.border, width: 1),
+            top: BorderSide(color: AppColors.sokDivider, width: 1),
           ),
           boxShadow: [
             BoxShadow(
@@ -47,50 +48,50 @@ class MultiSelectBottomBar extends ConsumerWidget {
                     ref.read(homeStateProvider.notifier).exitMultiSelect(),
                 child: Text(
                   'Cancel (${selectedIds.length})',
-                  style: const TextStyle(color: AppColors.textSecondary),
+                  style: const TextStyle(color: AppColors.sokSecondary),
                 ),
               ),
               if (activeTab == HomeTab.trash) ...[
                 _BarAction(
                   icon: Icons.restore,
-                  label: 'Restore',
+                  label: '복원',
                   onTap: () => _restoreSelected(context, ref),
                 ),
                 _BarAction(
                   icon: Icons.delete_forever,
-                  label: 'Delete',
+                  label: '삭제',
                   color: AppColors.error,
                   onTap: () => _permanentDeleteSelected(context, ref),
                 ),
               ] else ...[
                 _BarAction(
                   icon: Icons.drive_file_move_outlined,
-                  label: 'Move',
+                  label: '이동',
                   onTap: () => _moveSelected(context, ref),
                 ),
                 _BarAction(
                   icon: Icons.lock_outline,
-                  label: 'Lock',
+                  label: '잠금',
                   onTap: () {
                     // TODO: note lock feature
                   },
                 ),
                 _BarAction(
                   icon: Icons.share_outlined,
-                  label: 'Share',
+                  label: '공유',
                   onTap: () {
                     // TODO: share feature
                   },
                 ),
                 _BarAction(
                   icon: Icons.delete_outline,
-                  label: 'Delete',
+                  label: '삭제',
                   color: AppColors.error,
                   onTap: () => _deleteSelected(context, ref),
                 ),
                 _BarAction(
                   icon: Icons.more_horiz,
-                  label: 'More',
+                  label: '더 보기',
                   onTap: () => _showMoreActions(context, ref),
                 ),
               ],
@@ -130,13 +131,14 @@ class MultiSelectBottomBar extends ConsumerWidget {
   }
 
   Future<void> _permanentDeleteSelected(
-      BuildContext context, WidgetRef ref) async {
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final confirmed = await showShadDialog<bool>(
       context: context,
       builder: (context) => ShadDialog.alert(
         title: const Text('Permanently Delete'),
-        description: const Text(
-            'This cannot be undone. Are you sure?'),
+        description: const Text('This cannot be undone. Are you sure?'),
         actions: [
           ShadButton.outline(
             onPressed: () => Navigator.of(context).pop(false),
@@ -251,18 +253,64 @@ class MultiSelectBottomBar extends ConsumerWidget {
         ],
       ),
     );
-    controller.dispose();
+    // Dispose the controller AFTER the next frame so the dialog's TextField
+    // tear-down doesn't touch a disposed controller (Flutter sometimes
+    // builds the dialog one more frame after Navigator.pop, especially
+    // with the Korean IME composition still active — disposing
+    // synchronously here triggers "TextEditingController used after
+    // disposed" assertions inside RawGestureDetector).
+    WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
     if (newTitle == null || newTitle.isEmpty || newTitle == note.title) return;
 
     final noteStorage = ref.read(noteStorageServiceProvider);
     final content = await noteStorage.loadNote(noteId: noteId);
     if (content == null) return;
 
-    final updated = content.replaceFirst(
-      RegExp(r'^title:.*$', multiLine: true),
-      'title: $newTitle',
-    );
+    // Replace the existing `title:` frontmatter line if present, otherwise
+    // insert one. Some notes' frontmatter is missing the title field
+    // entirely (parser falls back to the filename UUID), and a plain
+    // `replaceFirst` against a regex that doesn't match silently no-ops,
+    // leaving the note with its UUID name forever.
+    final titleRe = RegExp(r'^title:.*$', multiLine: true);
+    String updated;
+    if (titleRe.hasMatch(content)) {
+      updated = content.replaceFirst(titleRe, 'title: $newTitle');
+    } else {
+      // Insert `title:` right after the opening `---` of the frontmatter.
+      // If there's no frontmatter at all, prepend one so the note becomes
+      // properly indexable next time.
+      final fmStart = content.indexOf('---');
+      if (fmStart == 0) {
+        // existing frontmatter — insert title line after first ---
+        final firstNewline = content.indexOf('\n');
+        if (firstNewline > 0) {
+          updated =
+              '${content.substring(0, firstNewline + 1)}title: $newTitle\n${content.substring(firstNewline + 1)}';
+        } else {
+          updated = '---\ntitle: $newTitle\n${content.substring(3)}';
+        }
+      } else {
+        // no frontmatter at all
+        updated = '---\ntitle: $newTitle\n---\n\n$content';
+      }
+    }
     await noteStorage.saveNoteImmediate(noteId: noteId, content: updated);
+    // Do NOT gate the post-save Riverpod updates on `context.mounted`.
+    // The `context` here is the modal-bottom-sheet's context that was
+    // already popped (`Navigator.pop(context)`) before this method was
+    // invoked from its `onTap`, so by the time the save returns the
+    // context is unmounted and the mounted check would silently abort
+    // the title update — making rename look like it never happened.
+    // ref stays valid as long as the parent widget (MultiSelectBottomBar)
+    // is still alive, which it is until exitMultiSelect runs.
+    //
+    // Optimistic update: swap the in-memory note's title NOW so the grid
+    // re-renders with the new label before the disk rescan completes.
+    ref
+        .read(fileManagerProvider.notifier)
+        .updateNoteLocal(
+          note.copyWith(title: newTitle, modifiedAt: DateTime.now()),
+        );
     ref.read(fileManagerProvider.notifier).refresh();
     ref.read(homeStateProvider.notifier).exitMultiSelect();
   }
@@ -297,7 +345,7 @@ class _BarAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? AppColors.textSecondary;
+    final c = color ?? AppColors.sokSecondary;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),

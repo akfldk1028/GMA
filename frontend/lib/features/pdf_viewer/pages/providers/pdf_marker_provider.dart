@@ -2,10 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:uuid/uuid.dart';
-
 import '../../../../constants/marker_colors.dart';
+import '../../../scrapnote/utils/scrapnote_block_editor.dart';
+import '../../../note_editor/pages/providers/note_editor_provider.dart';
+import '../../../note_editor/pages/providers/note_provider.dart';
 import '../../../workspace/models/pdf_marker_model.dart';
+import '../../../workspace/pages/providers/workspace_provider.dart';
 
 part 'pdf_marker_provider.g.dart';
 
@@ -44,7 +46,10 @@ class PdfMarkerState extends _$PdfMarkerState {
   }
 
   /// Create a new marker and persist to storage.
+  /// [id] must be provided by the caller to keep IDs consistent across
+  /// workspace markers, ScrapElements, and Hive storage.
   Future<PdfMarker> createMarker({
+    required String id,
     required int pageNumber,
     required MarkerColor color,
     String? selectedText,
@@ -57,7 +62,7 @@ class PdfMarkerState extends _$PdfMarkerState {
     }
 
     final marker = PdfMarker(
-      id: const Uuid().v4(),
+      id: id,
       pageNumber: pageNumber,
       color: color,
       selectedText: selectedText,
@@ -148,11 +153,33 @@ class PdfMarkerState extends _$PdfMarkerState {
 }
 
 /// Provider to get markers for a specific page number.
+/// Only returns markers belonging to the current note (by @el IDs in scrapnote block).
 @riverpod
 List<PdfMarker> markersForPage(Ref ref, int pageNumber) {
   final markerState = ref.watch(pdfMarkerStateProvider);
+
+  // Get current note's valid element IDs from the scrapnote block
+  final ws = ref.watch(workspaceProviderProvider).valueOrNull;
+  final noteId = ws?.currentNoteId;
+  Set<String>? validIds;
+  if (noteId != null) {
+    final controller = ref.watch(noteEditorProvider(noteId));
+    final noteState = ref.watch(noteStateProvider(noteId)).valueOrNull;
+    final content = controller?.text ?? noteState?.content;
+    if (content != null && ScrapnoteBlockEditor.hasBlock(content)) {
+      validIds = ScrapnoteBlockEditor.getElementIds(content).toSet();
+    }
+  }
+
   return markerState.when(
-    data: (markers) => markers.where((m) => m.pageNumber == pageNumber).toList(),
+    data: (markers) {
+      var filtered = markers.where((m) => m.pageNumber == pageNumber);
+      // If note has a scrapnote block, only show markers that belong to it
+      if (validIds != null) {
+        filtered = filtered.where((m) => validIds!.contains(m.id));
+      }
+      return filtered.toList();
+    },
     loading: () => [],
     error: (_, _) => [],
   );

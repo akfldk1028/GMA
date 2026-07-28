@@ -21,6 +21,7 @@ _$NoteMetadataImpl _$$NoteMetadataImplFromJson(Map<String, dynamic> json) =>
       deletedAt: json['deletedAt'] == null
           ? null
           : DateTime.parse(json['deletedAt'] as String),
+      coverImagePath: json['coverImagePath'] as String?,
     );
 
 Map<String, dynamic> _$$NoteMetadataImplToJson(_$NoteMetadataImpl instance) =>
@@ -36,4 +37,5 @@ Map<String, dynamic> _$$NoteMetadataImplToJson(_$NoteMetadataImpl instance) =>
       'isPinned': instance.isPinned,
       'isDeleted': instance.isDeleted,
       'deletedAt': instance.deletedAt?.toIso8601String(),
+      'coverImagePath': instance.coverImagePath,
     };

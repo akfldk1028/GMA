@@ -8,54 +8,54 @@ import 'folder_tree_widget.dart';
 class HomeExpandedSidebar extends ConsumerWidget {
   const HomeExpandedSidebar({super.key});
 
-  static const double width = 200.0;
+  static const double width = 312.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeStateProvider);
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.ease,
       width: width,
       decoration: const BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.sokSurface,
         border: Border(
-          right: BorderSide(color: AppColors.border, width: 1),
+          right: BorderSide(color: AppColors.sokDivider, width: 1),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
-          // Header with collapse button
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+          SizedBox(
+            height: 64,
             child: Row(
               children: [
-                IconButton(
-                  onPressed: () =>
-                      ref.read(homeStateProvider.notifier).toggleSidebar(),
-                  icon: const Icon(Icons.menu_open, size: 22),
-                  tooltip: 'Collapse sidebar',
-                ),
-                const SizedBox(width: 4),
-                const Text(
-                  'LinkNote',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                SizedBox(
+                  width: 64,
+                  child: IconButton(
+                    onPressed: () =>
+                        ref.read(homeStateProvider.notifier).toggleSidebar(),
+                    icon: const Icon(Icons.menu_rounded, size: 22),
+                    tooltip: '사이드바 닫기',
+                    color: AppColors.sokPrimary,
                   ),
+                ),
+                Image.asset(
+                  'assets/brand/soknote_logo.png',
+                  width: 100,
+                  height: 44,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.centerLeft,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
           // Nav items
           _SidebarNavItem(
             icon: Icons.description_outlined,
             activeIcon: Icons.description,
-            label: 'All Notes',
+            label: '모든 노트',
             isActive: homeState.activeTab == HomeTab.allNotes,
             onTap: () =>
                 ref.read(homeStateProvider.notifier).setTab(HomeTab.allNotes),
@@ -63,7 +63,7 @@ class HomeExpandedSidebar extends ConsumerWidget {
           _SidebarNavItem(
             icon: Icons.delete_outline,
             activeIcon: Icons.delete,
-            label: 'Trash',
+            label: '휴지통',
             isActive: homeState.activeTab == HomeTab.trash,
             onTap: () =>
                 ref.read(homeStateProvider.notifier).setTab(HomeTab.trash),
@@ -71,14 +71,19 @@ class HomeExpandedSidebar extends ConsumerWidget {
           _SidebarNavItem(
             icon: Icons.folder_outlined,
             activeIcon: Icons.folder,
-            label: 'Folders',
+            label: '폴더',
             isActive: homeState.activeTab == HomeTab.folders,
             onTap: () =>
                 ref.read(homeStateProvider.notifier).setTab(HomeTab.folders),
           ),
           // Folder tree when folders tab is active
           if (homeState.activeTab == HomeTab.folders) ...[
-            const Divider(height: 1, indent: 16, endIndent: 16),
+            const Divider(
+              height: 1,
+              indent: 16,
+              endIndent: 16,
+              color: AppColors.sokDivider,
+            ),
             const Expanded(child: FolderTreeWidget()),
           ] else
             const Spacer(),
@@ -106,32 +111,35 @@ class _SidebarNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Material(
-        color: isActive ? AppColors.primaryLight : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
+        color: isActive ? AppColors.sokHover : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            height: 40,
             child: Row(
               children: [
-                Icon(
-                  isActive ? activeIcon : icon,
-                  size: 20,
-                  color:
-                      isActive ? AppColors.primary : AppColors.textSecondary,
+                SizedBox(
+                  width: 48,
+                  child: Icon(
+                    isActive ? activeIcon : icon,
+                    size: 22,
+                    color: isActive
+                        ? AppColors.sokAccent
+                        : AppColors.sokSecondary,
+                  ),
                 ),
-                const SizedBox(width: 12),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 16,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                     color: isActive
-                        ? AppColors.primary
-                        : AppColors.textPrimary,
+                        ? AppColors.sokAccent
+                        : AppColors.sokPrimary,
                   ),
                 ),
               ],

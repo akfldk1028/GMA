@@ -25,7 +25,7 @@ class FolderChipBar extends StatelessWidget {
     }
 
     return Container(
-      height: 120,
+      height: 132,
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -58,44 +58,56 @@ class _FolderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 110,
-        margin: const EdgeInsets.symmetric(horizontal: 6),
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : null,
+    return SizedBox(
+      width: 110,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Material(
+          color: isSelected ? AppColors.sokHover : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: isSelected
-              ? Border.all(color: AppColors.primary, width: 2)
-              : null,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.folder_rounded,
-              size: 64,
-              color: isSelected
-                  ? AppColors.primary
-                  : AppColors.secondary,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: isSelected
+                    ? Border.all(color: AppColors.sokAccent, width: 2)
+                    : null,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.folder_rounded,
+                    size: 44,
+                    color: isSelected
+                        ? AppColors.sokAccent
+                        : AppColors.sokSecondary,
+                  ),
+                  const SizedBox(height: 4),
+                  Flexible(
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                        color: isSelected
+                            ? AppColors.sokAccent
+                            : AppColors.sokSecondary,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

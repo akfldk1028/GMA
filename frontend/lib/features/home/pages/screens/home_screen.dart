@@ -19,15 +19,37 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeStateProvider);
 
-    return Column(
-      children: [
-        const HomeTopBar(),
-        if (homeState.activeTab == HomeTab.allNotes) const SortBar(),
-        if (homeState.isMultiSelectMode) _buildSelectAllBar(ref, homeState),
-        Expanded(child: _buildBody(homeState, ref)),
-        if (homeState.isMultiSelectMode)
-          MultiSelectBottomBar(activeTab: homeState.activeTab),
-      ],
+    return ColoredBox(
+      color: AppColors.sokBackground,
+      child: Stack(
+        children: [
+          Positioned(
+            right: 72,
+            bottom: 72,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: 0.18,
+                child: Image.asset(
+                  'assets/brand/soknote_deco.png',
+                  width: 460,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              const HomeTopBar(),
+              if (homeState.activeTab == HomeTab.allNotes) const SortBar(),
+              if (homeState.isMultiSelectMode)
+                _buildSelectAllBar(ref, homeState),
+              Expanded(child: _buildBody(homeState, ref)),
+              if (homeState.isMultiSelectMode)
+                MultiSelectBottomBar(activeTab: homeState.activeTab),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -41,10 +63,8 @@ class HomeScreen extends ConsumerWidget {
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.primaryLight,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade200),
-        ),
+        color: AppColors.sokHover,
+        border: Border(bottom: BorderSide(color: AppColors.sokDivider)),
       ),
       child: Row(
         children: [
@@ -81,10 +101,7 @@ class HomeScreen extends ConsumerWidget {
           const Spacer(),
           Text(
             '$selectedCount selected',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.sokSecondary),
           ),
         ],
       ),

@@ -34,8 +34,11 @@ class FoldersView extends ConsumerWidget {
           selectedFolderId: null,
           onSelected: (id) =>
               ref.read(homeStateProvider.notifier).setCurrentFolder(id),
-          onCreateNew: () => showFolderCreateDialog(context, ref,
-              parentId: homeState.currentFolderId),
+          onCreateNew: () => showFolderCreateDialog(
+            context,
+            ref,
+            parentId: homeState.currentFolderId,
+          ),
         ),
         // Breadcrumb (when inside a folder)
         if (ancestors.isNotEmpty)
@@ -50,15 +53,21 @@ class FoldersView extends ConsumerWidget {
                     onTap: () => ref
                         .read(homeStateProvider.notifier)
                         .setCurrentFolder(null),
-                    child: const Icon(Icons.folder_outlined,
-                        size: 16, color: AppColors.textMuted),
+                    child: const Icon(
+                      Icons.folder_outlined,
+                      size: 16,
+                      color: AppColors.sokSecondary,
+                    ),
                   ),
                   // Each ancestor
                   for (final ancestor in ancestors) ...[
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 4),
-                      child: Icon(Icons.chevron_right,
-                          size: 16, color: AppColors.textMuted),
+                      child: Icon(
+                        Icons.chevron_right,
+                        size: 16,
+                        color: AppColors.sokSecondary,
+                      ),
                     ),
                     GestureDetector(
                       onTap: () => ref
@@ -72,8 +81,8 @@ class FoldersView extends ConsumerWidget {
                               ? FontWeight.w600
                               : FontWeight.w500,
                           color: ancestor.id == homeState.currentFolderId
-                              ? AppColors.textPrimary
-                              : AppColors.textSecondary,
+                              ? AppColors.sokPrimary
+                              : AppColors.sokSecondary,
                         ),
                       ),
                     ),

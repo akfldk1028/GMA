@@ -44,7 +44,8 @@ class PdfViewerScreen extends ConsumerStatefulWidget {
     String? selectedText,
     PdfRect? textRect,
     List<PdfRect>? lineRects,
-  })? onAddMarkerPressed;
+  })?
+  onAddMarkerPressed;
 
   /// Current note ID for per-note drawing stroke storage.
   final String? noteId;
@@ -147,12 +148,52 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           params: PdfViewerParams(
             // Layout depends on workspace view mode setting
             layoutPages: _resolvePageLayout(ref),
+            panAxis: PanAxis.vertical,
+            scrollByMouseWheel: 0.35,
+            scrollHorizontallyByMouseWheel: false,
+            scrollByArrowKey: 80,
+            scrollPhysics: PdfViewerParams.getScrollPhysics(context),
             // Disable text selection when drawing or capture mode is active
             textSelectionParams: anyOverlayActive
                 ? const PdfTextSelectionParams()
                 : PdfTextSelectionParams(
                     onTextSelectionChange: _handleTextSelectionChange,
                   ),
+            viewerOverlayBuilder: (context, size, handleLinkTap) => [
+              PdfViewerScrollThumb(
+                controller: controller,
+                orientation: ScrollbarOrientation.right,
+                margin: 6,
+                thumbSize: const Size(28, 48),
+                thumbBuilder: (context, thumbSize, pageNumber, controller) {
+                  final total = controller.pageCount;
+                  return DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.94),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.black12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        total > 0 && pageNumber != null ? '$pageNumber' : '',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
             // Page paint callbacks for markers (repainted when pdfMarkerStateProvider changes)
             pagePaintCallbacks: PdfPageOverlay.createPaintCallbacks(ref),
             // Combined overlays: drawing + capture
@@ -170,8 +211,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
             child: Center(
               child: DrawingToolbar(
                 noteId: widget.noteId,
-                pageNumber:
-                    controller.isReady ? controller.pageNumber : null,
+                pageNumber: controller.isReady ? controller.pageNumber : null,
               ),
             ),
           ),
@@ -204,7 +244,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       final ws = ref.read(workspaceProviderProvider).valueOrNull;
       if (ws?.isHighlightMode == true) {
         final color = MarkerColor.fromName(ws!.highlightModeColorName);
-        ref.read(workspaceProviderProvider.notifier).createMarker(
+        ref
+            .read(workspaceProviderProvider.notifier)
+            .createMarker(
               pageNumber: firstSelection.pageNumber,
               color: color,
               selectedText: firstSelection.text,
@@ -225,7 +267,6 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       // Handle error silently
     }
   }
-
 
   /// Build combined page overlays (drawing + capture + lasso).
   PdfPageOverlaysBuilder _buildCombinedOverlays(WidgetRef ref) {
@@ -265,8 +306,10 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   }) async {
     try {
       // Extract PDF text at the captured area (via submodule)
-      final extractedText =
-          await _extractTextFromRect(pageNumber, normalizedRect);
+      final extractedText = await _extractTextFromRect(
+        pageNumber,
+        normalizedRect,
+      );
 
       // Convert normalized rect to pdfrx PdfRect for navigation
       final pdfRect = await _normalizedToPdfRect(
@@ -283,7 +326,8 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       // Quick scrap mode: skip popup, create instantly
       if (workspaceState?.isQuickScrapMode == true) {
         final selectedColor = MarkerColor.fromName(
-            workspaceState!.highlightModeColorName);
+          workspaceState!.highlightModeColorName,
+        );
         await workspaceNotifier.createMarker(
           pageNumber: pageNumber,
           color: selectedColor,
@@ -326,8 +370,10 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     required List<Offset> lassoPoints,
   }) async {
     try {
-      final extractedText =
-          await _extractTextFromRect(pageNumber, normalizedRect);
+      final extractedText = await _extractTextFromRect(
+        pageNumber,
+        normalizedRect,
+      );
 
       final pdfRect = await _normalizedToPdfRect(
         pageNumber,
@@ -343,7 +389,8 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       // Quick scrap mode: skip popup, create instantly
       if (workspaceState?.isQuickScrapMode == true) {
         final selectedColor = MarkerColor.fromName(
-            workspaceState!.highlightModeColorName);
+          workspaceState!.highlightModeColorName,
+        );
         await workspaceNotifier.createMarker(
           pageNumber: pageNumber,
           color: selectedColor,
@@ -378,8 +425,14 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   }
 
   /// Extract PDF text from a normalized rect area using submodule.
-  Future<String?> _extractTextFromRect(int pageNumber, Rect normalizedRect) async {
-    final pdfPath = ref.read(workspaceProviderProvider).valueOrNull?.currentPdfPath;
+  Future<String?> _extractTextFromRect(
+    int pageNumber,
+    Rect normalizedRect,
+  ) async {
+    final pdfPath = ref
+        .read(workspaceProviderProvider)
+        .valueOrNull
+        ?.currentPdfPath;
     if (pdfPath == null) return null;
 
     // Convert normalized rect to PdfRect
@@ -393,7 +446,11 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     if (pdfRect == null) return null;
 
     try {
-      return await PdfTextExtractionService.extractTextInRect(pdfPath, pageNumber, pdfRect);
+      return await PdfTextExtractionService.extractTextInRect(
+        pdfPath,
+        pageNumber,
+        pdfRect,
+      );
     } catch (e) {
       debugPrint('[_extractTextFromRect] submodule failed: $e');
       return null;
@@ -458,20 +515,49 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _navButton(Icons.chevron_left, 'Previous',
-                  currentPage > 1 ? () => controller.goToPage(pageNumber: currentPage - 1) : null, theme),
+              _navButton(
+                Icons.chevron_left,
+                'Previous',
+                currentPage > 1
+                    ? () => controller.goToPage(pageNumber: currentPage - 1)
+                    : null,
+                theme,
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
                   '$currentPage / $totalPages',
-                  style: theme.textTheme.small.copyWith(fontWeight: FontWeight.w500),
+                  style: theme.textTheme.small.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
-              _navButton(Icons.chevron_right, 'Next',
-                  currentPage < totalPages ? () => controller.goToPage(pageNumber: currentPage + 1) : null, theme),
-              Container(width: 1, height: 20, color: theme.colorScheme.border, margin: const EdgeInsets.symmetric(horizontal: 4)),
-              _navButton(Icons.remove, 'Zoom out', () => controller.zoomDown(), theme),
-              _navButton(Icons.add, 'Zoom in', () => controller.zoomUp(), theme),
+              _navButton(
+                Icons.chevron_right,
+                'Next',
+                currentPage < totalPages
+                    ? () => controller.goToPage(pageNumber: currentPage + 1)
+                    : null,
+                theme,
+              ),
+              Container(
+                width: 1,
+                height: 20,
+                color: theme.colorScheme.border,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+              ),
+              _navButton(
+                Icons.remove,
+                'Zoom out',
+                () => controller.zoomDown(),
+                theme,
+              ),
+              _navButton(
+                Icons.add,
+                'Zoom in',
+                () => controller.zoomUp(),
+                theme,
+              ),
             ],
           ),
         ),
@@ -479,7 +565,12 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     );
   }
 
-  Widget _navButton(IconData icon, String tooltip, VoidCallback? onTap, ShadThemeData theme) {
+  Widget _navButton(
+    IconData icon,
+    String tooltip,
+    VoidCallback? onTap,
+    ShadThemeData theme,
+  ) {
     return Tooltip(
       message: tooltip,
       child: InkWell(
@@ -490,7 +581,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           child: Icon(
             icon,
             size: 18,
-            color: onTap != null ? theme.colorScheme.foreground : theme.colorScheme.mutedForeground,
+            color: onTap != null
+                ? theme.colorScheme.foreground
+                : theme.colorScheme.mutedForeground,
           ),
         ),
       ),
@@ -625,12 +718,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     // First page alone (cover) — centered
     if (i < pages.length) {
       final page = pages[i];
-      pageLayouts.add(Rect.fromLTWH(
-        (docWidth - page.width) / 2,
-        y,
-        page.width,
-        page.height,
-      ));
+      pageLayouts.add(
+        Rect.fromLTWH((docWidth - page.width) / 2, y, page.width, page.height),
+      );
       y += page.height + m;
       i++;
     }
@@ -641,7 +731,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       final hasRight = i + 1 < pages.length;
       final right = hasRight ? pages[i + 1] : null;
 
-      final rowHeight = hasRight ? max(left.height, right!.height) : left.height;
+      final rowHeight = hasRight
+          ? max(left.height, right!.height)
+          : left.height;
 
       // Left page: right-aligned to center gap
       final leftX = docWidth / 2 - gap / 2 - left.width;
@@ -652,7 +744,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         // Right page: left-aligned from center gap
         final rightX = docWidth / 2 + gap / 2;
         final rightY = y + (rowHeight - right!.height) / 2;
-        pageLayouts.add(Rect.fromLTWH(rightX, rightY, right.width, right.height));
+        pageLayouts.add(
+          Rect.fromLTWH(rightX, rightY, right.width, right.height),
+        );
         i += 2;
       } else {
         i += 1;

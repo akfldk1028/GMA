@@ -5,6 +5,7 @@ import '../../../../common_widgets/responsive.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../file_manager/models/note_metadata_model.dart';
 import '../../providers/home_note_list_provider.dart';
+import '../../utils/note_creation_helper.dart';
 import 'note_card.dart';
 
 enum NoteSource { all, folder }
@@ -20,14 +21,24 @@ class NoteGridView extends ConsumerWidget {
         ? ref.watch(allNotesProvider)
         : ref.watch(folderNotesProvider);
 
+    // skipLoadingOnReload + skipLoadingOnRefresh: keep the old grid
+    // visible while the provider re-evaluates (e.g., after rename).
+    // Without these, every rename briefly flashes the spinner because
+    // allNotesProvider awaits fileManagerProvider.future and any
+    // upstream state change cycles through AsyncLoading → AsyncData,
+    // even when the previous list is still valid.
     return notesAsync.when(
+      skipLoadingOnReload: true,
+      skipLoadingOnRefresh: true,
       loading: () => const Center(
         child: CircularProgressIndicator(
-            color: AppColors.primary, strokeWidth: 2),
+          color: AppColors.primary,
+          strokeWidth: 2,
+        ),
       ),
       error: (err, _) => Center(child: Text('Error: $err')),
       data: (notes) {
-        if (notes.isEmpty) return _buildEmpty();
+        if (notes.isEmpty) return _buildEmpty(context, ref);
         return _buildGrid(context, notes);
       },
     );
@@ -37,12 +48,15 @@ class NoteGridView extends ConsumerWidget {
     final isMobile = Responsive.isMobile(context);
 
     return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 32,
+        vertical: isMobile ? 16 : 24,
+      ),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: isMobile ? 140 : 180,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.78,
+        maxCrossAxisExtent: isMobile ? 170 : 210,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 0.95,
       ),
       itemCount: notes.length,
       itemBuilder: (context, index) =>
@@ -50,37 +64,44 @@ class NoteGridView extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty(BuildContext context, WidgetRef ref) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => showCreateNoteFlow(context: context, ref: ref),
               borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              Icons.note_add_outlined,
-              size: 28,
-              color: AppColors.primary.withValues(alpha: 0.5),
+              child: Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppColors.sokHover,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  Icons.note_add_outlined,
+                  size: 28,
+                  color: AppColors.sokAccent.withValues(alpha: 0.72),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 16),
           const Text(
-            'No notes yet',
+            '아직 노트가 없습니다',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: AppColors.sokPrimary,
             ),
           ),
           const SizedBox(height: 4),
           const Text(
-            'Create a new note to get started',
-            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+            '아이콘을 눌러 첫 노트를 만들어보세요',
+            style: TextStyle(fontSize: 13, color: AppColors.sokSecondary),
           ),
         ],
       ),

@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 
 import '../../../../pdf_viewer/drawing/models/drawing_model.dart';
@@ -45,27 +43,16 @@ class AbsoluteStrokePainter extends CustomPainter {
 class NotebookBgPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // Clean white background
     canvas.drawRect(
-        Offset.zero & size, Paint()..color = const Color(0xFFFBFBFB));
+      Offset.zero & size,
+      Paint()..color = const Color(0xFFFFFFFF),
+    );
 
-    // Horizontal lines
     final linePaint = Paint()
-      ..color = const Color(0xFFEEEEEE)
+      ..color = const Color(0xFFE7DED4)
       ..strokeWidth = 0.5;
-    for (double y = 24; y < size.height; y += 24) {
+    for (double y = 28; y < size.height; y += 28) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
-    }
-
-    // Subtle dot grid
-    final dotPaint = Paint()
-      ..color = const Color(0xFFE0E0E0)
-      ..strokeWidth = 1.0
-      ..strokeCap = StrokeCap.round;
-    for (double x = 24; x < size.width; x += 24) {
-      for (double y = 24; y < size.height; y += 24) {
-        canvas.drawPoints(ui.PointMode.points, [Offset(x, y)], dotPaint);
-      }
     }
   }
 
@@ -98,6 +85,7 @@ class GroupStrokePainter extends CustomPainter {
   final double canvasOriginY;
   final double scaleX;
   final double scaleY;
+
   /// Rotation angle in radians around (centerX, centerY).
   final double rotation;
   final double centerX;

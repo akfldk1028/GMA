@@ -36,18 +36,18 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
   String _getTitle(HomeStateData homeState, WidgetRef ref) {
     switch (homeState.activeTab) {
       case HomeTab.allNotes:
-        return 'All Notes';
+        return '모든 노트';
       case HomeTab.trash:
-        return 'Trash';
+        return '휴지통';
       case HomeTab.folders:
         if (homeState.currentFolderId != null) {
           ref.watch(folderStoreProvider);
           final folder = ref
               .read(folderStoreProvider.notifier)
               .getById(homeState.currentFolderId!);
-          return folder?.name ?? 'Folders';
+          return folder?.name ?? '폴더';
         }
-        return 'Folders';
+        return '폴더';
     }
   }
 
@@ -80,16 +80,18 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
         ],
       ),
     );
-    controller.dispose();
     if (title == null || title.isEmpty) return;
 
     try {
+      ref.invalidate(createNoteMutationProvider);
       final mutation = ref.read(createNoteMutationProvider.notifier);
       final note = await mutation.call(title: title);
       if (mounted) {
-        ref
-            .read(workspaceProviderProvider.notifier)
-            .resetForNewNote(note.id);
+        // Use loadNote instead of resetForNewNote — loadNote's generation
+        // guard cancels any in-flight session restore, and it properly
+        // clears the previous PDF (sets currentPdfPath=null when no
+        // linkedPdfPath in frontmatter).
+        await ref.read(workspaceProviderProvider.notifier).loadNote(note.id);
         if (mounted) context.go('/workspace');
       }
     } catch (e) {
@@ -127,14 +129,14 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
         } else if (linkChoice.createNew) {
           // Create new note linked to this PDF
           final mutation = ref.read(createNoteMutationProvider.notifier);
-          final pdfTitle = linkChoice.noteName ?? '${p.basenameWithoutExtension(pdfPath)}_note';
+          final pdfTitle =
+              linkChoice.noteName ??
+              '${p.basenameWithoutExtension(pdfPath)}_note';
           final note = await mutation.call(
             title: pdfTitle,
             linkedPdfPath: pdfPath,
           );
-          await ref
-              .read(workspaceProviderProvider.notifier)
-              .loadNote(note.id);
+          await ref.read(workspaceProviderProvider.notifier).loadNote(note.id);
         }
 
         await ref.read(workspaceProviderProvider.notifier).loadPdf(pdfPath);
@@ -171,47 +173,75 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: const BoxDecoration(
+        color: AppColors.sokBackground,
+        border: Border(
+          bottom: BorderSide(color: AppColors.sokDivider, width: 1),
+        ),
+      ),
       child: Row(
         children: [
           // Tab title
-          Expanded(
-            child: _buildTitle(homeState, ref),
-          ),
+          Expanded(child: _buildTitle(homeState, ref)),
           // Action icons
           if (!isTrash) ...[
             IconButton(
               onPressed: _handleNewNote,
-              icon: const Icon(Icons.note_add_outlined, size: 22),
-              tooltip: 'New Note',
-              color: AppColors.textSecondary,
+              icon: const _NewNoteIcon(),
+              tooltip: '새 노트',
+              color: AppColors.sokPrimary,
+              style: _iconButtonStyle,
             ),
-            if (homeState.activeTab == HomeTab.folders)
-              IconButton(
-                onPressed: () => showFolderCreateDialog(context, ref),
-                icon: const Icon(Icons.create_new_folder_outlined, size: 22),
-                tooltip: 'New Folder',
-                color: AppColors.textSecondary,
-              )
-            else
-              IconButton(
-                onPressed: _handleOpenPdf,
-                icon: const Icon(Icons.picture_as_pdf_outlined, size: 22),
-                tooltip: 'Open PDF',
-                color: AppColors.textSecondary,
+            IconButton(
+              onPressed: () {
+                ref
+                    .read(homeStateProvider.notifier)
+                    .setViewMode(
+                      homeState.viewMode == ViewMode.grid
+                          ? ViewMode.list
+                          : ViewMode.grid,
+                    );
+              },
+              icon: Icon(
+                homeState.viewMode == ViewMode.grid
+                    ? Icons.grid_view_rounded
+                    : Icons.view_list_rounded,
+                size: 22,
               ),
+              tooltip: homeState.viewMode == ViewMode.grid ? '격자 보기' : '목록 보기',
+              color: AppColors.sokPrimary,
+              style: _iconButtonStyle,
+            ),
           ],
           IconButton(
             onPressed: () => setState(() => _isSearching = true),
             icon: const Icon(Icons.search, size: 22),
-            tooltip: 'Search',
-            color: AppColors.textSecondary,
+            tooltip: '검색',
+            color: AppColors.sokPrimary,
+            style: _iconButtonStyle,
           ),
-          OverflowMenu(isTrash: isTrash),
+          OverflowMenu(
+            isTrash: isTrash,
+            onOpenPdf: isTrash ? null : _handleOpenPdf,
+            onCreateFolder: homeState.activeTab == HomeTab.folders
+                ? () => showFolderCreateDialog(context, ref)
+                : null,
+          ),
         ],
       ),
     );
   }
+
+  static final ButtonStyle _iconButtonStyle = IconButton.styleFrom(
+    fixedSize: const Size(40, 40),
+    minimumSize: const Size(40, 40),
+    padding: EdgeInsets.zero,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    hoverColor: AppColors.sokHover,
+    highlightColor: AppColors.sokHover,
+  );
 
   Widget _buildTitle(HomeStateData homeState, WidgetRef ref) {
     final title = _getTitle(homeState, ref);
@@ -220,11 +250,11 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
       final trashAsync = ref.watch(trashNotesProvider);
       final count = trashAsync.valueOrNull?.length ?? 0;
       return Text(
-        '$title  $count files',
+        '$title  $count개',
         style: const TextStyle(
-          fontSize: 18,
+          fontSize: 24,
           fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
+          color: AppColors.sokPrimary,
         ),
       );
     }
@@ -232,10 +262,21 @@ class _HomeTopBarState extends ConsumerState<HomeTopBar> {
     return Text(
       title,
       style: const TextStyle(
-        fontSize: 18,
+        fontSize: 24,
         fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
+        color: AppColors.sokPrimary,
       ),
     );
+  }
+}
+
+class _NewNoteIcon extends StatelessWidget {
+  const _NewNoteIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    final color = IconTheme.of(context).color ?? AppColors.sokPrimary;
+
+    return Icon(LucideIcons.filePlusCorner, size: 22, color: color);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gma_frontend/features/ai_agent/core/ai_message.dart';
 import 'package:gma_frontend/features/ai_agent/services/context_builder.dart';
 import 'package:gma_frontend/features/ai_agent/skills/skill_registry.dart';
 
@@ -12,8 +13,8 @@ void main() {
       );
 
       expect(messages.length, 2);
-      expect(messages[0]['role'], 'system');
-      expect(messages[0]['content'], contains('::: flow'));
+      expect(messages[0].role, AiRole.system);
+      expect(messages[0].textContent, contains('::: flow'));
     });
 
     test('includes PDF text in user message', () {
@@ -24,7 +25,7 @@ void main() {
         pdfPageText: 'Transformer는 attention 기반 모델이다.',
       );
 
-      final userContent = messages[1]['content']!;
+      final userContent = messages[1].textContent;
       expect(userContent, contains('PDF 페이지 내용'));
       expect(userContent, contains('Transformer'));
       expect(userContent, contains('요약해줘'));
@@ -38,7 +39,7 @@ void main() {
         existingNoteContent: '# 기존 노트\n내용이 있음',
       );
 
-      final userContent = messages[1]['content']!;
+      final userContent = messages[1].textContent;
       expect(userContent, contains('기존 노트 내용'));
       expect(userContent, contains('기존 노트'));
     });
@@ -52,9 +53,8 @@ void main() {
         existingNoteContent: longNote,
       );
 
-      final userContent = messages[1]['content']!;
+      final userContent = messages[1].textContent;
       expect(userContent, contains('...'));
-      // Original 5000 chars should be truncated to 2000
       expect(userContent.length, lessThan(5000));
     });
 
@@ -66,7 +66,7 @@ void main() {
       );
 
       expect(messages.length, 2);
-      final userContent = messages[1]['content']!;
+      final userContent = messages[1].textContent;
       expect(userContent, isNot(contains('PDF 페이지 내용')));
       expect(userContent, isNot(contains('기존 노트 내용')));
       expect(userContent, contains('마인드맵 그려줘'));

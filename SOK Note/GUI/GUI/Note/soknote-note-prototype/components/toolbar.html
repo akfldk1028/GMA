@@ -1,0 +1,34 @@
+<!-- components/toolbar.html — 필기 도구 버튼 그룹 (note-topbar__row 안 중앙 note-toolbar__group의 참고용 사본) -->
+<div class="note-toolbar__group">
+  <button class="icon-btn icon-btn--active" aria-label="펜">✎</button>
+  <button class="icon-btn" aria-label="매직 완드">✨</button>
+  <span class="note-toolbar__sep"></span>
+  <button class="color-swatch color-swatch--black color-swatch--active" aria-label="검정"></button>
+  <button class="color-swatch color-swatch--red" aria-label="빨강"></button>
+  <button class="color-swatch color-swatch--blue" aria-label="파랑"></button>
+  <button class="color-swatch color-swatch--green" aria-label="초록"></button>
+  <button class="color-swatch color-swatch--yellow" aria-label="노랑"></button>
+  <span class="note-toolbar__sep"></span>
+  <button class="size-dot size-dot--sm" aria-label="가는 선"></button>
+  <button class="size-dot size-dot--md size-dot--active" aria-label="중간 선"></button>
+  <button class="size-dot size-dot--lg" aria-label="굵은 선"></button>
+  <span class="note-toolbar__sep"></span>
+  <button class="icon-btn" aria-label="형광펜">🖍</button>
+  <button class="icon-btn" aria-label="자르기">⛶</button>
+  <button class="icon-btn" aria-label="자유형 선택">〰</button>
+  <button class="icon-btn" aria-label="빠른 실행">⚡</button>
+  <span class="note-toolbar__sep"></span>
+  <button class="icon-btn" aria-label="실행 취소">↺</button>
+  <button class="icon-btn" aria-label="다시 실행">↻</button>
+</div>
+
+<!-- 더보기(⋮) 드롭다운 — shared/components.css의 .overflow-menu 재사용, .overflow-menu--anchored로 위치만 변형 (note-toolbar__more-wrap 안에 위치) -->
+<div class="overflow-menu overflow-menu--anchored" role="menu">
+  <button class="overflow-menu__item" role="menuitem">Swap Layout</button>
+  <button class="overflow-menu__item" role="menuitem">Note Editor</button>
+  <button class="overflow-menu__item" role="menuitem">ScrapNote Manage</button>
+  <button class="overflow-menu__item" role="menuitem">Show Structure</button>
+  <button class="overflow-menu__item" role="menuitem">PDF → Note Import</button>
+  <div class="overflow-menu__divider"></div>
+  <button class="overflow-menu__item" role="menuitem">Settings</button>
+</div>

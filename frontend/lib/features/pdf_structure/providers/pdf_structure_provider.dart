@@ -25,13 +25,12 @@ class PdfStructureState {
     bool? isAnalyzing,
     String? Function()? error,
     bool? isAvailable,
-  }) =>
-      PdfStructureState(
-        result: result != null ? result() : this.result,
-        isAnalyzing: isAnalyzing ?? this.isAnalyzing,
-        error: error != null ? error() : this.error,
-        isAvailable: isAvailable ?? this.isAvailable,
-      );
+  }) => PdfStructureState(
+    result: result != null ? result() : this.result,
+    isAnalyzing: isAnalyzing ?? this.isAnalyzing,
+    error: error != null ? error() : this.error,
+    isAvailable: isAvailable ?? this.isAvailable,
+  );
 }
 
 /// Provider managing PDF structure analysis state.
@@ -53,18 +52,6 @@ class PdfStructure extends _$PdfStructure {
     debugPrint('[PdfStructureProvider.analyze] starting: $pdfPath');
     state = state.copyWith(isAnalyzing: true, error: () => null);
 
-    // Check Java availability first
-    final javaOk = await PdfStructureService.isJavaAvailable();
-    if (!javaOk) {
-      debugPrint('[PdfStructureProvider.analyze] Java not available');
-      state = state.copyWith(
-        isAnalyzing: false,
-        isAvailable: false,
-        error: () => 'Java 11+ required for PDF structure analysis',
-      );
-      return;
-    }
-
     try {
       final parsed = await PdfStructureService.convert(pdfPath);
       state = state.copyWith(
@@ -80,10 +67,7 @@ class PdfStructure extends _$PdfStructure {
       );
     } on PdfStructureException catch (e) {
       debugPrint('[PdfStructureProvider.analyze] error: $e');
-      state = state.copyWith(
-        isAnalyzing: false,
-        error: () => e.message,
-      );
+      state = state.copyWith(isAnalyzing: false, error: () => e.message);
     } catch (e) {
       debugPrint('[PdfStructureProvider.analyze] unexpected error: $e');
       state = state.copyWith(

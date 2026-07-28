@@ -22,8 +22,9 @@ class _FolderTreeWidgetState extends ConsumerState<FolderTreeWidget> {
   Widget build(BuildContext context) {
     ref.watch(folderStoreProvider);
     final store = ref.read(folderStoreProvider.notifier);
-    final currentFolderId =
-        ref.watch(homeStateProvider.select((s) => s.currentFolderId));
+    final currentFolderId = ref.watch(
+      homeStateProvider.select((s) => s.currentFolderId),
+    );
     final notesAsync = ref.watch(fileManagerProvider);
     final allNotes = notesAsync.valueOrNull ?? [];
     final activeNotes = allNotes.where((n) => !n.isDeleted).toList();
@@ -47,15 +48,18 @@ class _FolderTreeWidgetState extends ConsumerState<FolderTreeWidget> {
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               child: Row(
                 children: [
-                  Icon(Icons.create_new_folder_outlined,
-                      size: 18, color: AppColors.primary),
+                  Icon(
+                    Icons.create_new_folder_outlined,
+                    size: 18,
+                    color: AppColors.sokAccent,
+                  ),
                   SizedBox(width: 8),
                   Text(
                     'New Folder',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.primary,
+                      color: AppColors.sokAccent,
                     ),
                   ),
                 ],
@@ -114,9 +118,8 @@ class _FolderTreeWidgetState extends ConsumerState<FolderTreeWidget> {
           isSelected: currentFolderId == folder.id,
           hasChildren: hasChildren,
           isExpanded: isExpanded,
-          onTap: () => ref
-              .read(homeStateProvider.notifier)
-              .setCurrentFolder(folder.id),
+          onTap: () =>
+              ref.read(homeStateProvider.notifier).setCurrentFolder(folder.id),
           onToggleExpand: hasChildren
               ? () {
                   setState(() {
@@ -134,13 +137,15 @@ class _FolderTreeWidgetState extends ConsumerState<FolderTreeWidget> {
 
       // Render children if expanded
       if (hasChildren && isExpanded) {
-        widgets.addAll(_buildFolderTree(
-          store: store,
-          parentId: folder.id,
-          depth: depth + 1,
-          currentFolderId: currentFolderId,
-          folderCounts: folderCounts,
-        ));
+        widgets.addAll(
+          _buildFolderTree(
+            store: store,
+            parentId: folder.id,
+            depth: depth + 1,
+            currentFolderId: currentFolderId,
+            folderCounts: folderCounts,
+          ),
+        );
       }
     }
 
@@ -148,7 +153,10 @@ class _FolderTreeWidgetState extends ConsumerState<FolderTreeWidget> {
   }
 
   void _showFolderOptions(
-      BuildContext context, WidgetRef ref, FolderModel folder) {
+    BuildContext context,
+    WidgetRef ref,
+    FolderModel folder,
+  ) {
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -173,8 +181,10 @@ class _FolderTreeWidgetState extends ConsumerState<FolderTreeWidget> {
             ),
             ListTile(
               leading: const Icon(Icons.delete, color: AppColors.error),
-              title: const Text('Delete',
-                  style: TextStyle(color: AppColors.error)),
+              title: const Text(
+                'Delete',
+                style: TextStyle(color: AppColors.error),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 ref.read(folderStoreProvider.notifier).delete(folder.id);
@@ -186,8 +196,7 @@ class _FolderTreeWidgetState extends ConsumerState<FolderTreeWidget> {
     );
   }
 
-  void _renameFolder(
-      BuildContext context, WidgetRef ref, FolderModel folder) {
+  void _renameFolder(BuildContext context, WidgetRef ref, FolderModel folder) {
     final controller = TextEditingController(text: folder.name);
     showDialog(
       context: context,
@@ -252,7 +261,7 @@ class _FolderTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       child: Material(
-        color: isSelected ? AppColors.primaryLight : Colors.transparent,
+        color: isSelected ? AppColors.sokHover : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: onTap,
@@ -260,7 +269,11 @@ class _FolderTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: EdgeInsets.only(
-                left: leftPadding, right: 12, top: 8, bottom: 8),
+              left: leftPadding,
+              right: 12,
+              top: 8,
+              bottom: 8,
+            ),
             child: Row(
               children: [
                 // Expand/collapse arrow
@@ -274,17 +287,19 @@ class _FolderTile extends StatelessWidget {
                             ? Icons.keyboard_arrow_down
                             : Icons.chevron_right,
                         size: 18,
-                        color: AppColors.textMuted,
+                        color: AppColors.sokSecondary,
                       ),
                     ),
                   )
                 else if (depth > 0)
                   const SizedBox(width: 22),
-                Icon(icon,
-                    size: 18,
-                    color: isSelected
-                        ? AppColors.primary
-                        : AppColors.textSecondary),
+                Icon(
+                  icon,
+                  size: 18,
+                  color: isSelected
+                      ? AppColors.sokAccent
+                      : AppColors.sokSecondary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -293,11 +308,12 @@ class _FolderTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w400,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
                       color: isSelected
-                          ? AppColors.primary
-                          : AppColors.textPrimary,
+                          ? AppColors.sokAccent
+                          : AppColors.sokPrimary,
                     ),
                   ),
                 ),
@@ -307,8 +323,8 @@ class _FolderTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       color: isSelected
-                          ? AppColors.primary
-                          : AppColors.textMuted,
+                          ? AppColors.sokAccent
+                          : AppColors.sokSecondary,
                     ),
                   ),
               ],

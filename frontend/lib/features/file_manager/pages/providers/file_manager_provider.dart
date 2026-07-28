@@ -22,10 +22,16 @@ class FileManager extends _$FileManager {
     return results;
   }
 
-  /// Manually refresh the notes list
+  /// Manually refresh the notes list.
+  ///
+  /// Skip the explicit `AsyncLoading` transition — without it, watchers
+  /// (note_grid_view, etc.) keep showing the previous list while the
+  /// rescan runs in the background, then swap to the new list once it
+  /// arrives. Setting `AsyncLoading` first makes those widgets briefly
+  /// flash a spinner, which the user perceives as "rename didn't apply
+  /// right away" since the renamed title only appears after the spinner.
   Future<void> refresh() async {
     debugPrint('[FileManager.refresh] refreshing notes list');
-    state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final results = await _scanNotesDirectory();
       debugPrint('[FileManager.refresh] found ${results.length} notes');
@@ -33,8 +39,25 @@ class FileManager extends _$FileManager {
     });
   }
 
+  /// Optimistic in-memory update for a single note's metadata.
+  ///
+  /// Used by rename / pin / folder-move flows so the UI reflects the
+  /// change instantly without waiting for the disk rescan. The next
+  /// [refresh] confirms (and overwrites if disk diverged).
+  void updateNoteLocal(NoteMetadata updated) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final next = [
+      for (final n in current) n.id == updated.id ? updated : n,
+    ];
+    state = AsyncData(next);
+  }
+
   /// Scans the notes directory recursively for .md files and parses metadata
   Future<List<NoteMetadata>> _scanNotesDirectory() async {
+    // Web has no native filesystem — capture/UI-only mode, return empty list
+    if (kIsWeb) return const [];
+
     final notesRoot = await ref.read(notesRootDirectoryProvider.future);
     final notes = <NoteMetadata>[];
 
@@ -129,13 +152,28 @@ class FileManager extends _$FileManager {
             .trim();
       }
 
-      // Use filename as title if not in frontmatter
+      // Title fallback chain: frontmatter `title:` → first `# heading`
+      // line in the body → filename without extension. Falling back
+      // straight to the UUID-shaped filename is ugly in the UI; the body
+      // heading is what the user actually sees inside the note.
       if (title == null || title.isEmpty) {
-        title = file.uri.pathSegments.last.replaceAll('.md', '');
+        final headingMatch =
+            RegExp(r'^#\s+(.+?)\s*$', multiLine: true).firstMatch(content);
+        final heading = headingMatch?.group(1)?.trim();
+        if (heading != null && heading.isNotEmpty) {
+          title = heading;
+        } else {
+          title = file.uri.pathSegments.last.replaceAll('.md', '');
+        }
       }
 
       // Use filename without extension as note ID (matches noteStateProvider lookup)
       final id = path.basenameWithoutExtension(file.path);
+
+      // Extract first markdown image path as cover thumbnail fallback.
+      // Matches `![alt](path)` where path can be a file:// URI or a relative
+      // path. Used when the note has no linked PDF but contains captures.
+      String? coverImagePath = _extractFirstImagePath(content);
 
       return NoteMetadata(
         id: id,
@@ -149,11 +187,27 @@ class FileManager extends _$FileManager {
         isPinned: isPinned,
         isDeleted: isDeleted,
         deletedAt: deletedAt,
+        coverImagePath: coverImagePath,
       );
     } catch (e) {
       // Return null if parsing fails
       return null;
     }
+  }
+
+  /// Find the first markdown image reference in [content] and return a
+  /// resolvable filesystem path (or null if no image).
+  static String? _extractFirstImagePath(String content) {
+    final match = RegExp(r'!\[[^\]]*\]\(([^)]+)\)').firstMatch(content);
+    if (match == null) return null;
+    var raw = match.group(1)?.trim();
+    if (raw == null || raw.isEmpty) return null;
+    // Strip leading file:// (with any number of slashes — file:///, file:////)
+    final fileUriMatch = RegExp(r'^file:/+').firstMatch(raw);
+    if (fileUriMatch != null) {
+      raw = raw.substring(fileUriMatch.end - 1); // keep one leading slash
+    }
+    return raw;
   }
 }
 
@@ -239,6 +293,10 @@ class DeleteNoteMutation extends _$DeleteNoteMutation {
 
   Future<bool> call({required String filePath}) async {
     debugPrint('[DeleteNoteMutation.call] soft-deleting: $filePath');
+    // keepAlive prevents AutoDispose from killing this mutation while the
+    // refresh `await` yields — without it, `state = ...` after the await
+    // throws "Bad state: Future already completed".
+    final keepAlive = ref.keepAlive();
     state = const AsyncLoading();
     try {
       final file = File(filePath);
@@ -261,6 +319,8 @@ class DeleteNoteMutation extends _$DeleteNoteMutation {
       debugPrint('[DeleteNoteMutation.call] FAILED: $e');
       state = AsyncError(e, st);
       rethrow;
+    } finally {
+      keepAlive.close();
     }
   }
 }
@@ -272,6 +332,7 @@ class RestoreNoteMutation extends _$RestoreNoteMutation {
   FutureOr<bool?> build() => null;
 
   Future<bool> call({required String filePath}) async {
+    final keepAlive = ref.keepAlive();
     state = const AsyncLoading();
     try {
       final file = File(filePath);
@@ -290,6 +351,8 @@ class RestoreNoteMutation extends _$RestoreNoteMutation {
     } catch (e, st) {
       state = AsyncError(e, st);
       rethrow;
+    } finally {
+      keepAlive.close();
     }
   }
 }
@@ -302,6 +365,7 @@ class PermanentDeleteMutation extends _$PermanentDeleteMutation {
 
   Future<bool> call({required String filePath}) async {
     debugPrint('[PermanentDeleteMutation.call] permanently deleting: $filePath');
+    final keepAlive = ref.keepAlive();
     state = const AsyncLoading();
     try {
       final file = File(filePath);
@@ -317,6 +381,8 @@ class PermanentDeleteMutation extends _$PermanentDeleteMutation {
     } catch (e, st) {
       state = AsyncError(e, st);
       rethrow;
+    } finally {
+      keepAlive.close();
     }
   }
 }
@@ -328,6 +394,7 @@ class MoveToFolderMutation extends _$MoveToFolderMutation {
   FutureOr<bool?> build() => null;
 
   Future<bool> call({required String filePath, String? folderId}) async {
+    final keepAlive = ref.keepAlive();
     state = const AsyncLoading();
     try {
       final file = File(filePath);
@@ -343,6 +410,8 @@ class MoveToFolderMutation extends _$MoveToFolderMutation {
     } catch (e, st) {
       state = AsyncError(e, st);
       rethrow;
+    } finally {
+      keepAlive.close();
     }
   }
 }
@@ -354,6 +423,7 @@ class TogglePinMutation extends _$TogglePinMutation {
   FutureOr<bool?> build() => null;
 
   Future<bool> call({required String filePath, required bool isPinned}) async {
+    final keepAlive = ref.keepAlive();
     state = const AsyncLoading();
     try {
       final file = File(filePath);
@@ -369,6 +439,8 @@ class TogglePinMutation extends _$TogglePinMutation {
     } catch (e, st) {
       state = AsyncError(e, st);
       rethrow;
+    } finally {
+      keepAlive.close();
     }
   }
 }

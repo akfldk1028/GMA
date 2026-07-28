@@ -281,9 +281,13 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                                               .map((o) => StrokePoint(
                                                   x: o.dx, y: o.dy))
                                               .toList(),
-                                          toolId: 'pen',
-                                          colorValue: _strokeColor,
-                                          size: _strokeSize,
+                                          toolId: ref.read(drawingModeProvider).currentToolId,
+                                          colorValue: ref.read(drawingModeProvider).currentToolId == 'eraser'
+                                              ? 0x40FF0000  // 반투명 빨강
+                                              : _strokeColor,
+                                          size: ref.read(drawingModeProvider).currentToolId == 'eraser'
+                                              ? _strokeSize * 2
+                                              : _strokeSize,
                                         )
                                       : null,
                                 ),
@@ -337,19 +341,24 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
                               },
                               onPanEnd: (_) {
                                 if (_panelCurrentPoints.length >= 2) {
-                                  _panelStrokes.add(DrawingStroke(
-                                    id: DateTime.now()
-                                        .microsecondsSinceEpoch
-                                        .toString(),
-                                    pageNumber: 0,
-                                    points: _panelCurrentPoints
-                                        .map((o) => StrokePoint(
-                                            x: o.dx, y: o.dy))
-                                        .toList(),
-                                    toolId: 'pen',
-                                    colorValue: _strokeColor,
-                                    size: _strokeSize,
-                                  ));
+                                  final toolId = ref.read(drawingModeProvider).currentToolId;
+                                  if (toolId == 'eraser') {
+                                    _handleCanvasErase(_panelCurrentPoints);
+                                  } else {
+                                    _panelStrokes.add(DrawingStroke(
+                                      id: DateTime.now()
+                                          .microsecondsSinceEpoch
+                                          .toString(),
+                                      pageNumber: 0,
+                                      points: _panelCurrentPoints
+                                          .map((o) => StrokePoint(
+                                              x: o.dx, y: o.dy))
+                                          .toList(),
+                                      toolId: 'pen',
+                                      colorValue: _strokeColor,
+                                      size: _strokeSize,
+                                    ));
+                                  }
                                   _persistCanvasStrokes();
                                 }
                                 setState(
@@ -702,6 +711,43 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _layout.isNotEmpty) _fitAllCards();
       });
+    }
+  }
+
+  /// Eraser hit-test: remove panel strokes and scrap cards hit by eraser path.
+  /// Called once on panEnd (same pattern as DrawingOverlay._handleEraserHit).
+  void _handleCanvasErase(List<Offset> eraserPoints) {
+    const hitRadius = 14.0;
+    final hitRadiusSq = hitRadius * hitRadius;
+
+    // 1. Remove drawn strokes that intersect the eraser path
+    _panelStrokes.removeWhere((stroke) {
+      for (final sp in stroke.points) {
+        for (final ep in eraserPoints) {
+          final dx = sp.x - ep.dx;
+          final dy = sp.y - ep.dy;
+          if (dx * dx + dy * dy < hitRadiusSq) return true;
+        }
+      }
+      return false;
+    });
+
+    // 2. Remove scrap cards that intersect the eraser path
+    if (widget.noteId != null) {
+      final hitIds = <String>[];
+      for (final entry in _layout.entries) {
+        final rect = entry.value;
+        for (final ep in eraserPoints) {
+          if (rect.contains(ep)) {
+            hitIds.add(entry.key);
+            break;
+          }
+        }
+      }
+      for (final id in hitIds) {
+        ref.read(workspaceProviderProvider.notifier)
+            .removeScrapElement(widget.noteId!, id);
+      }
     }
   }
 
@@ -1096,3 +1142,4 @@ class WorkspaceCanvasPanelState extends ConsumerState<WorkspaceCanvasPanel> {
   }
 
 }
+

@@ -6,9 +6,12 @@ part of 'ai_agent_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$aiAgentHash() => r'a34d30d0c8d1d912654bfab095ce59204429e034';
+String _$aiAgentHash() => r'c51d05118b496a66990f08efb7860330c6b05614';
 
 /// AI Agent with skill-based GMA MD block generation.
+///
+/// Uses BackendSelector for dynamic backend selection based on
+/// skill capabilities (nanoclaw orchestrator pattern).
 ///
 /// Copied from [AiAgent].
 @ProviderFor(AiAgent)

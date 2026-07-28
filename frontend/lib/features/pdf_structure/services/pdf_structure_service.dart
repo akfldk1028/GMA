@@ -64,10 +64,16 @@ class PdfStructureService {
     // Last resort: check JAVA_HOME environment variable
     final javaHome = Platform.environment['JAVA_HOME'];
     if (javaHome != null && javaHome.isNotEmpty) {
-      final javaBin = p.join(javaHome, 'bin', Platform.isWindows ? 'java.exe' : 'java');
+      final javaBin = p.join(
+        javaHome,
+        'bin',
+        Platform.isWindows ? 'java.exe' : 'java',
+      );
       if (await File(javaBin).exists()) {
         _javaPath = javaBin;
-        debugPrint('[PdfStructureService] resolved java via JAVA_HOME: $javaBin');
+        debugPrint(
+          '[PdfStructureService] resolved java via JAVA_HOME: $javaBin',
+        );
         return _javaPath;
       }
     }
@@ -101,22 +107,26 @@ class PdfStructureService {
     //    frontend/vendor/opendataloader-pdf/java/opendataloader-pdf-cli/target/
     final projectRoot = _findProjectRoot(exeDir);
     if (projectRoot != null) {
-      final targetDir = Directory(p.join(
-        projectRoot,
-        'vendor',
-        'opendataloader-pdf',
-        'java',
-        'opendataloader-pdf-cli',
-        'target',
-      ));
+      final targetDir = Directory(
+        p.join(
+          projectRoot,
+          'vendor',
+          'opendataloader-pdf',
+          'java',
+          'opendataloader-pdf-cli',
+          'target',
+        ),
+      );
       if (await targetDir.exists()) {
         final jars = await targetDir
             .list()
-            .where((f) =>
-                f is File &&
-                f.path.endsWith('.jar') &&
-                !f.path.contains('sources') &&
-                !f.path.contains('javadoc'))
+            .where(
+              (f) =>
+                  f is File &&
+                  f.path.endsWith('.jar') &&
+                  !f.path.contains('sources') &&
+                  !f.path.contains('javadoc'),
+            )
             .toList();
         if (jars.isNotEmpty) {
           final jarPath = jars.first.path;
@@ -174,6 +184,23 @@ class PdfStructureService {
       return _cache[cacheKey]!;
     }
 
+    final javaExe = await _resolveJavaPath();
+    if (javaExe == null) {
+      final repaired = await _tryParseHeadingsFromContentStreams(pdfPath);
+      if (repaired != null) {
+        _cache[cacheKey] = repaired;
+        debugPrint(
+          '[PdfStructureService.convert] recovered headings without Java: '
+          '${repaired.headings.length}',
+        );
+        return repaired;
+      }
+      throw PdfStructureException(
+        'PDF structure analysis is unavailable: Java runtime was not found '
+        'and the fallback parser could not detect headings.',
+      );
+    }
+
     final jarPath = await ensureJarExtracted();
 
     // CLI always writes to files, so use a temp directory for output.
@@ -194,15 +221,9 @@ class PdfStructureService {
         args.addAll(['--pages', pages]);
       }
 
-      final javaExe = await _resolveJavaPath();
-      if (javaExe == null) {
-        throw PdfStructureException(
-          'Java not found. Install Java 21+ and ensure it is on PATH, '
-          'or set JAVA_HOME environment variable.',
-        );
-      }
-
-      debugPrint('[PdfStructureService.convert] running: $javaExe ${args.join(' ')}');
+      debugPrint(
+        '[PdfStructureService.convert] running: $javaExe ${args.join(' ')}',
+      );
 
       final result = await Process.run(
         javaExe,
@@ -213,7 +234,18 @@ class PdfStructureService {
 
       if (result.exitCode != 0) {
         final stderr = (result.stderr as String).trim();
-        debugPrint('[PdfStructureService.convert] error (exit ${result.exitCode}): $stderr');
+        debugPrint(
+          '[PdfStructureService.convert] error (exit ${result.exitCode}): $stderr',
+        );
+        final repaired = await _tryParseHeadingsFromContentStreams(pdfPath);
+        if (repaired != null) {
+          _cache[cacheKey] = repaired;
+          debugPrint(
+            '[PdfStructureService.convert] recovered headings from PDF streams: '
+            '${repaired.headings.length}',
+          );
+          return repaired;
+        }
         throw PdfStructureException(
           'opendataloader-pdf failed (exit ${result.exitCode}): $stderr',
         );
@@ -242,7 +274,9 @@ class PdfStructureService {
         return parsed;
       } catch (e) {
         debugPrint('[PdfStructureService.convert] JSON parse error: $e');
-        throw PdfStructureException('Failed to parse opendataloader-pdf output: $e');
+        throw PdfStructureException(
+          'Failed to parse opendataloader-pdf output: $e',
+        );
       }
     } finally {
       try {
@@ -255,8 +289,7 @@ class PdfStructureService {
   static Future<PdfStructureResult> convertPage(
     String pdfPath,
     int pageNumber,
-  ) =>
-      convert(pdfPath, pages: '$pageNumber');
+  ) => convert(pdfPath, pages: '$pageNumber');
 
   /// Clear the in-memory cache (e.g. when closing a PDF).
   static void clearCache([String? pdfPath]) {
@@ -265,6 +298,103 @@ class PdfStructureService {
     } else {
       _cache.clear();
     }
+  }
+
+  /// Best-effort parser for simple PDFs whose xref table is malformed enough
+  /// for opendataloader/verapdf to reject, while Flutter's renderer can still
+  /// display them. It extracts visible text commands from content streams and
+  /// promotes bold/large text to heading nodes for the structure sidebar.
+  static Future<PdfStructureResult?> _tryParseHeadingsFromContentStreams(
+    String pdfPath,
+  ) async {
+    try {
+      final file = File(pdfPath);
+      if (!await file.exists()) return null;
+      final text = latin1.decode(await file.readAsBytes(), allowInvalid: true);
+      final streams = RegExp(
+        r'stream\r?\n([\s\S]*?)\r?\nendstream',
+        multiLine: true,
+      ).allMatches(text).map((m) => m.group(1) ?? '').toList();
+      if (streams.isEmpty) return null;
+
+      final kids = <StructureElement>[];
+      var id = 1;
+      for (var pageIndex = 0; pageIndex < streams.length; pageIndex++) {
+        final pageNumber = pageIndex + 1;
+        var currentFont = '';
+        var currentFontSize = 0.0;
+        var currentX = 0.0;
+        var currentY = 0.0;
+
+        final lines = const LineSplitter().convert(streams[pageIndex]);
+        for (var i = 0; i < lines.length; i++) {
+          final line = lines[i].trim();
+          final fontMatch = RegExp(
+            r'^/(\S+)\s+([\d.]+)\s+Tf$',
+          ).firstMatch(line);
+          if (fontMatch != null) {
+            currentFont = fontMatch.group(1) ?? '';
+            currentFontSize = double.tryParse(fontMatch.group(2) ?? '') ?? 0;
+            continue;
+          }
+
+          final posMatch = RegExp(
+            r'^(-?[\d.]+)\s+(-?[\d.]+)\s+Td$',
+          ).firstMatch(line);
+          if (posMatch != null) {
+            currentX = double.tryParse(posMatch.group(1) ?? '') ?? currentX;
+            currentY = double.tryParse(posMatch.group(2) ?? '') ?? currentY;
+            continue;
+          }
+
+          final textMatch = RegExp(r'^\((.*)\)\s*Tj$').firstMatch(line);
+          if (textMatch == null) continue;
+          final content = _decodePdfLiteral(textMatch.group(1) ?? '').trim();
+          if (content.isEmpty) continue;
+
+          final isHeadingFont =
+              currentFont == 'F2' || currentFont.toLowerCase().contains('bold');
+          final isHeading = isHeadingFont && currentFontSize >= 14;
+          if (!isHeading) continue;
+
+          kids.add(
+            StructureElement(
+              id: id++,
+              type: 'heading',
+              pageNumber: pageNumber,
+              content: content,
+              font: currentFont,
+              fontSize: currentFontSize,
+              headingLevel: currentFontSize >= 20 ? 1 : 2,
+              boundingBox: [
+                currentX,
+                currentY - currentFontSize,
+                currentX + content.length * currentFontSize * 0.55,
+                currentY + currentFontSize,
+              ],
+            ),
+          );
+        }
+      }
+
+      if (kids.isEmpty) return null;
+      return PdfStructureResult(
+        fileName: p.basename(pdfPath),
+        numberOfPages: streams.length,
+        title: p.basenameWithoutExtension(pdfPath),
+        kids: kids,
+      );
+    } catch (e) {
+      debugPrint('[PdfStructureService] stream heading recovery failed: $e');
+      return null;
+    }
+  }
+
+  static String _decodePdfLiteral(String value) {
+    return value
+        .replaceAll(r'\(', '(')
+        .replaceAll(r'\)', ')')
+        .replaceAll(r'\\', r'\');
   }
 }
 

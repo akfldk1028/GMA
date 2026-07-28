@@ -1,3 +1,5 @@
+import '../core/ai_capability.dart';
+
 /// Definition of an AI agent skill.
 ///
 /// Each skill knows:
@@ -5,8 +7,9 @@
 /// - What system prompt to use
 /// - What GMA MD block to output
 /// - How to validate the output
+/// - What capabilities it requires from the backend
 ///
-/// Same pattern as BlockDefinition — new skill = 1 file + 1 line in registry.
+/// Pattern: nanoclaw container/skills/ — one folder per skill, self-registration.
 class AgentSkill {
   const AgentSkill({
     required this.id,
@@ -16,6 +19,8 @@ class AgentSkill {
     required this.systemPrompt,
     this.outputBlockType,
     this.validator,
+    this.requiredCapabilities = const {AiCapability.text},
+    this.enabled = true,
   });
 
   /// Unique skill ID, e.g. 'draw-flow'.
@@ -42,4 +47,11 @@ class AgentSkill {
   /// Optional validator function.
   /// Returns true if the LLM output is valid for this skill.
   final bool Function(String output)? validator;
+
+  /// Backend capabilities this skill needs (default: text only).
+  /// BackendSelector uses this to find a matching backend.
+  final Set<AiCapability> requiredCapabilities;
+
+  /// Whether this skill is enabled by the user.
+  final bool enabled;
 }

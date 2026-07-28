@@ -24,6 +24,7 @@ class DrawingCanvas extends StatefulWidget {
     required this.strokeSize,
     required this.pageNumber,
     required this.onStrokeCompleted,
+    this.onEraserStroke,
   });
 
   final bool isActive;
@@ -33,6 +34,9 @@ class DrawingCanvas extends StatefulWidget {
   final double strokeSize;
   final int pageNumber;
   final void Function(DrawingStroke stroke) onStrokeCompleted;
+
+  /// Called when an eraser stroke completes — used to hit-test against markers.
+  final void Function(DrawingStroke stroke)? onEraserStroke;
 
   @override
   State<DrawingCanvas> createState() => _DrawingCanvasState();
@@ -46,13 +50,17 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
 
   @override
   Widget build(BuildContext context) {
-    final child = RepaintBoundary(
-      child: CustomPaint(
-        painter: StrokePainter(
-          strokes: widget.strokes,
-          currentStroke: _currentStroke,
+    // ClipRect: keeps stroke rendering within this page's overlay rect even
+    // when the pointer is dragged outside (Listener captures pointer to end).
+    final child = ClipRect(
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: StrokePainter(
+            strokes: widget.strokes,
+            currentStroke: _currentStroke,
+          ),
+          size: Size.infinite,
         ),
-        size: Size.infinite,
       ),
     );
 
@@ -135,6 +143,10 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
     _activePointerId = null;
     if (_currentStroke != null && _currentStroke!.points.length >= 2) {
       widget.onStrokeCompleted(_currentStroke!);
+      // Also notify eraser hit-test if this was an eraser stroke
+      if (widget.toolId == 'eraser' && widget.onEraserStroke != null) {
+        widget.onEraserStroke!(_currentStroke!);
+      }
     }
     setState(() {
       _currentStroke = null;
