@@ -33,6 +33,10 @@ mixin _$NoteMetadata {
   bool get isDeleted => throw _privateConstructorUsedError;
   DateTime? get deletedAt => throw _privateConstructorUsedError;
 
+  /// Path to the first capture/lasso image referenced in the note body.
+  /// Used as a thumbnail fallback when the note has no linked PDF.
+  String? get coverImagePath => throw _privateConstructorUsedError;
+
   /// Serializes this NoteMetadata to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -62,6 +66,7 @@ abstract class $NoteMetadataCopyWith<$Res> {
     bool isPinned,
     bool isDeleted,
     DateTime? deletedAt,
+    String? coverImagePath,
   });
 }
 
@@ -91,6 +96,7 @@ class _$NoteMetadataCopyWithImpl<$Res, $Val extends NoteMetadata>
     Object? isPinned = null,
     Object? isDeleted = null,
     Object? deletedAt = freezed,
+    Object? coverImagePath = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -138,6 +144,10 @@ class _$NoteMetadataCopyWithImpl<$Res, $Val extends NoteMetadata>
                 ? _value.deletedAt
                 : deletedAt // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
+            coverImagePath: freezed == coverImagePath
+                ? _value.coverImagePath
+                : coverImagePath // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -165,6 +175,7 @@ abstract class _$$NoteMetadataImplCopyWith<$Res>
     bool isPinned,
     bool isDeleted,
     DateTime? deletedAt,
+    String? coverImagePath,
   });
 }
 
@@ -193,6 +204,7 @@ class __$$NoteMetadataImplCopyWithImpl<$Res>
     Object? isPinned = null,
     Object? isDeleted = null,
     Object? deletedAt = freezed,
+    Object? coverImagePath = freezed,
   }) {
     return _then(
       _$NoteMetadataImpl(
@@ -240,6 +252,10 @@ class __$$NoteMetadataImplCopyWithImpl<$Res>
             ? _value.deletedAt
             : deletedAt // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
+        coverImagePath: freezed == coverImagePath
+            ? _value.coverImagePath
+            : coverImagePath // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -260,6 +276,7 @@ class _$NoteMetadataImpl extends _NoteMetadata {
     this.isPinned = false,
     this.isDeleted = false,
     this.deletedAt,
+    this.coverImagePath,
   }) : super._();
 
   factory _$NoteMetadataImpl.fromJson(Map<String, dynamic> json) =>
@@ -290,9 +307,14 @@ class _$NoteMetadataImpl extends _NoteMetadata {
   @override
   final DateTime? deletedAt;
 
+  /// Path to the first capture/lasso image referenced in the note body.
+  /// Used as a thumbnail fallback when the note has no linked PDF.
+  @override
+  final String? coverImagePath;
+
   @override
   String toString() {
-    return 'NoteMetadata(id: $id, title: $title, filePath: $filePath, createdAt: $createdAt, modifiedAt: $modifiedAt, linkedPdfPath: $linkedPdfPath, previewText: $previewText, folderId: $folderId, isPinned: $isPinned, isDeleted: $isDeleted, deletedAt: $deletedAt)';
+    return 'NoteMetadata(id: $id, title: $title, filePath: $filePath, createdAt: $createdAt, modifiedAt: $modifiedAt, linkedPdfPath: $linkedPdfPath, previewText: $previewText, folderId: $folderId, isPinned: $isPinned, isDeleted: $isDeleted, deletedAt: $deletedAt, coverImagePath: $coverImagePath)';
   }
 
   @override
@@ -319,7 +341,9 @@ class _$NoteMetadataImpl extends _NoteMetadata {
             (identical(other.isDeleted, isDeleted) ||
                 other.isDeleted == isDeleted) &&
             (identical(other.deletedAt, deletedAt) ||
-                other.deletedAt == deletedAt));
+                other.deletedAt == deletedAt) &&
+            (identical(other.coverImagePath, coverImagePath) ||
+                other.coverImagePath == coverImagePath));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -337,6 +361,7 @@ class _$NoteMetadataImpl extends _NoteMetadata {
     isPinned,
     isDeleted,
     deletedAt,
+    coverImagePath,
   );
 
   /// Create a copy of NoteMetadata
@@ -366,6 +391,7 @@ abstract class _NoteMetadata extends NoteMetadata {
     final bool isPinned,
     final bool isDeleted,
     final DateTime? deletedAt,
+    final String? coverImagePath,
   }) = _$NoteMetadataImpl;
   const _NoteMetadata._() : super._();
 
@@ -394,6 +420,11 @@ abstract class _NoteMetadata extends NoteMetadata {
   bool get isDeleted;
   @override
   DateTime? get deletedAt;
+
+  /// Path to the first capture/lasso image referenced in the note body.
+  /// Used as a thumbnail fallback when the note has no linked PDF.
+  @override
+  String? get coverImagePath;
 
   /// Create a copy of NoteMetadata
   /// with the given fields replaced by the non-null parameter values.

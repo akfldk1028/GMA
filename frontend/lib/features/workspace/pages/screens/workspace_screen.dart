@@ -1,60 +1,52 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:path/path.dart' as p;
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../common_widgets/responsive.dart';
-import '../../../pdf_viewer/drawing/pages/widgets/drawing_toolbar.dart';
+import '../../../../utils/file_system_provider.dart';
+import '../../../note_editor/pages/providers/note_editor_provider.dart';
+import '../../../pdf_structure/services/pdf_to_markdown_service.dart';
+import '../../../pdf_structure/services/pdf_structure_service.dart';
 import '../../../pdf_viewer/pages/screens/pdf_viewer_screen.dart';
-import '../../../pdf_viewer/pages/widgets/marker_pills_strip.dart';
 import '../../../scrapnote/pages/widgets/confirm_scrap_popup.dart';
 import '../../../scrapnote/pages/widgets/element_navigator_drawer.dart';
 import '../../../scrapnote/providers/scrap_insertion_provider.dart';
-import '../../models/pdf_marker_model.dart';
+import '../../../../constants/marker_colors.dart';
+import '../../../../constants/app_colors.dart';
 import '../../models/workspace_state.dart';
 import '../providers/workspace_provider.dart';
 import '../widgets/file_browser_drawer.dart';
-import '../widgets/scrapnote_panel.dart';
-import '../widgets/marker_edit_modal.dart';
+// MarkerEditModal replaced by ScrapBoardPopup
 import '../widgets/note_editor_modal.dart';
-import '../widgets/page_thumbnails_panel.dart';
-import '../widgets/sticky_note_widget.dart';
 import '../widgets/pdf_tab_bar.dart';
-import '../widgets/workspace_header_v3.dart';
+import '../widgets/scrap_board_popup.dart';
+import '../widgets/notebook_scrap_panel.dart';
+import '../widgets/scrap_thumbnails_sidebar.dart';
+import '../widgets/sticky_note_widget.dart';
+import '../widgets/workspace_unified_header.dart';
+import '../../../ai_agent/pages/widgets/agent_chat_panel.dart';
 
-/// Main workspace screen: 3-panel layout with PDF + page nav + live scraps.
+/// Main workspace screen: new 3-panel layout per 260316 기획안.
 ///
 /// Desktop layout:
 /// ┌──────────────────────────────────────────────────────────┐
-/// │ WorkspaceHeaderV3 (48px)                                │
+/// │ UnifiedHeader (< 제목 | 도구들 | ⋮)                       │
 /// ├──────────────────────────────────────────────────────────┤
-/// │ DrawingToolbar (when note loaded)                       │
-/// ├────────┬──────┬─────────────────────────┬───────────────┤
-/// │ Page   │ M    │                         │ Live          │
-/// │ Thumb  │ A    │  PDF Viewer             │ Scraps        │
-/// │ nails  │ R    │  (pdfrx)                │ Panel         │
-/// │ (180)  │ K    │                         │ (280)         │
-/// │        │ E    │                         │               │
-/// │ Toggle │ R    │                         │ Toggle        │
-/// │ able   │ S    │                         │ able          │
-/// │        │~72px │                         │               │
-/// └────────┴──────┴─────────────────────────┴───────────────┘
-///
-/// Mobile layout:
-/// ┌──────────────────┐
-/// │ Header (48px)    │
-/// ├──────────────────┤
-/// │ DrawingToolbar   │
-/// ├──────────────────┤
-/// │                  │
-/// │  PDF Viewer      │
-/// │  (full width)    │
-/// │                  │
-/// ├──────────────────┤
-/// │ MarkerPillsStrip │
-/// │ (horizontal,52px)│
-/// └──────────────────┘
+/// │ PdfTabBar (열린 PDF 탭)                                   │
+/// ├──────────┬────────────────────────────┬───────────────────┤
+/// │ Scrap    │                            │  ScrapNote        │
+/// │ Thumbs   │  PDF Viewer                │  Card Panel       │
+/// │ Sidebar  │  (비례 조절)                │  (접기/위치전환)   │
+/// │ (140px)  │                            │  (flex)           │
+/// └──────────┴────────────────────────────┴───────────────────┘
 class WorkspaceScreen extends ConsumerStatefulWidget {
   const WorkspaceScreen({super.key});
 
@@ -64,6 +56,9 @@ class WorkspaceScreen extends ConsumerStatefulWidget {
 
 class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   late final PdfViewerController _pdfController;
+  final GlobalKey<NotebookScrapPanelState> _canvasKey =
+      GlobalKey<NotebookScrapPanelState>();
+  List<String>? _canvasOrder;
 
   @override
   void initState() {
@@ -77,29 +72,48 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     required int pageNumber,
     String? selectedText,
     PdfRect? textRect,
+    List<PdfRect>? lineRects,
   }) {
-    ref.read(workspaceProviderProvider.notifier).openMarkerEditModal(
+    debugPrint(
+      '[WorkspaceScreen._handleAddMarkerPressed] page: $pageNumber, text: ${selectedText != null ? selectedText.substring(0, selectedText.length.clamp(0, 50)) : null}, hasRect: ${textRect != null}, lineRects: ${lineRects?.length}',
+    );
+    final ws = ref.read(workspaceProviderProvider).valueOrNull;
+    debugPrint(
+      '[WorkspaceScreen._handleAddMarkerPressed] quickScrapMode: ${ws?.isQuickScrapMode}, noteId: ${ws?.currentNoteId}',
+    );
+
+    // Quick scrap mode: create instantly without popup (슬라이드 10~12)
+    if (ws?.isQuickScrapMode == true) {
+      debugPrint(
+        '[WorkspaceScreen._handleAddMarkerPressed] quick scrap mode, creating instantly',
+      );
+      final selectedColor = MarkerColor.fromName(
+        ws?.highlightModeColorName ?? 'yellow',
+      );
+      ref
+          .read(workspaceProviderProvider.notifier)
+          .createMarker(
+            pageNumber: pageNumber,
+            color: selectedColor,
+            selectedText: selectedText,
+            textRect: textRect,
+            lineRects: lineRects,
+          );
+      return;
+    }
+
+    // Normal mode: open ScrapBoardPopup (슬라이드 7~9)
+    debugPrint(
+      '[WorkspaceScreen._handleAddMarkerPressed] normal mode, opening scrap board',
+    );
+    ref
+        .read(workspaceProviderProvider.notifier)
+        .openScrapBoard(
           pageNumber: pageNumber,
           selectedText: selectedText,
           textRect: textRect,
+          lineRects: lineRects,
         );
-  }
-
-  // ─── Marker pill interactions ────────────────────────────
-
-  void _handleMarkerPillTap(PdfMarker marker) {
-    if (marker.textRect != null) {
-      _pdfController.goToRectInsidePage(
-        pageNumber: marker.pageNumber,
-        rect: marker.textRect!,
-      );
-    } else {
-      _pdfController.goToPage(pageNumber: marker.pageNumber);
-    }
-  }
-
-  void _handleMarkerPillLongPress(PdfMarker marker) {
-    ref.read(workspaceProviderProvider.notifier).openEditorModal();
   }
 
   // ─── Marker click in note editor → PDF jump ──────────────
@@ -111,8 +125,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         ShadToaster.of(context).show(
           const ShadToast.destructive(
             title: Text('No PDF Loaded'),
-            description:
-                Text('Please open a PDF file to navigate to markers.'),
+            description: Text('Please open a PDF file to navigate to markers.'),
           ),
         );
       }
@@ -124,11 +137,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         final pagePart = markerId.substring(5);
         final parts = pagePart.split('-');
         final pageNumber = int.tryParse(parts[0]);
-        final subNumber =
-            parts.length > 1 ? (int.tryParse(parts[1]) ?? 1) : 1;
+        final subNumber = parts.length > 1 ? (int.tryParse(parts[1]) ?? 1) : 1;
 
         if (pageNumber != null && pageNumber > 0) {
-          final pageMarkers = workspaceState?.markers
+          final pageMarkers =
+              workspaceState?.markers
                   .where((m) => m.pageNumber == pageNumber)
                   .toList() ??
               [];
@@ -188,12 +201,49 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         ShadToaster.of(context).show(
           ShadToast.destructive(
             title: const Text('Navigation Error'),
-            description:
-                Text('Failed to navigate to marker: ${e.toString()}'),
+            description: Text('Failed to navigate to marker: ${e.toString()}'),
           ),
         );
       }
     }
+  }
+
+  // ─── Scrap board confirm → create marker + element ──────
+
+  Future<void> _confirmScrapCreation(WorkspaceState state, String memo) async {
+    debugPrint(
+      '[WorkspaceScreen._confirmScrapCreation] memo: ${memo.substring(0, memo.length.clamp(0, 50))}, pendingPage: ${state.pendingScrapPageNumber}, pendingText: ${state.pendingScrapText?.substring(0, (state.pendingScrapText?.length ?? 0).clamp(0, 50))}',
+    );
+    final pageNumber = state.pendingScrapPageNumber;
+    if (pageNumber == null) {
+      debugPrint(
+        '[WorkspaceScreen._confirmScrapCreation] pageNumber is null, returning',
+      );
+      return;
+    }
+
+    final text = memo.isNotEmpty ? memo : state.pendingScrapText;
+    // pendingScrapImagePath may be a full absolute path (for popup preview).
+    // createMarker expects a filename only — extract basename if absolute.
+    final rawImagePath = state.pendingScrapImagePath;
+    final imagePath = rawImagePath != null && p.isAbsolute(rawImagePath)
+        ? p.basename(rawImagePath)
+        : rawImagePath;
+    debugPrint(
+      '[WorkspaceScreen._confirmScrapCreation] creating marker on page $pageNumber with text: ${text != null ? text.substring(0, text.length.clamp(0, 50)) : null}',
+    );
+    final selectedColor = MarkerColor.fromName(state.highlightModeColorName);
+    await ref
+        .read(workspaceProviderProvider.notifier)
+        .createMarker(
+          pageNumber: pageNumber,
+          color: selectedColor,
+          selectedText: text,
+          textRect: state.pendingScrapTextRect,
+          lineRects: state.pendingScrapLineRects,
+          capturedImagePath: imagePath,
+          elementTypeOverride: state.pendingScrapElementType,
+        );
   }
 
   // ─── Scrap confirm popup overlay ─────────────────────────
@@ -217,6 +267,168 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         },
       ),
     );
+  }
+
+  // ─── Menu action handler ───────────────────────────────
+
+  Future<void> _handleOpenPdf() async {
+    debugPrint('[WorkspaceScreen._handleOpenPdf] opening file picker');
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        dialogTitle: 'Select PDF File',
+      );
+      if (result != null && result.files.single.path != null) {
+        final pickedPath = result.files.single.path!;
+        debugPrint('[WorkspaceScreen._handleOpenPdf] picked: $pickedPath');
+        // file_picker on Android returns a path inside the app cache
+        // (/data/data/<app>/cache/file_picker/...) which the OS can clear.
+        // Copy to permanent assets dir so the PDF survives across sessions.
+        final pdfPath = await _persistPickedPdf(pickedPath);
+        debugPrint('[WorkspaceScreen._handleOpenPdf] persisted: $pdfPath');
+        await ref.read(workspaceProviderProvider.notifier).loadPdf(pdfPath);
+      }
+    } catch (e) {
+      if (mounted) {
+        ShadToaster.of(context).show(
+          ShadToast.destructive(
+            title: const Text('PDF Load Failed'),
+            description: Text('$e'),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Copy a freshly-picked PDF from the file_picker cache to the permanent
+  /// app assets directory so the file survives across sessions and OS cache
+  /// clears. Returns the new permanent path; on web returns the picked path.
+  Future<String> _persistPickedPdf(String pickedPath) async {
+    if (kIsWeb) return pickedPath;
+    try {
+      final assetsDir = await ref.read(assetsDirectoryProvider.future);
+      final filename = p.basename(pickedPath);
+      final permanentPath = p.join(assetsDir.path, filename);
+      final destFile = File(permanentPath);
+      if (!await destFile.exists()) {
+        await File(pickedPath).copy(permanentPath);
+      }
+      return permanentPath;
+    } catch (e) {
+      debugPrint('[WorkspaceScreen._persistPickedPdf] copy failed: $e');
+      // Fall back to picked path; session within app will work, but the
+      // path may not survive an OS cache clear.
+      return pickedPath;
+    }
+  }
+
+  void _handleMenuAction(String action) {
+    debugPrint('[WorkspaceScreen._handleMenuAction] action: $action');
+    final notifier = ref.read(workspaceProviderProvider.notifier);
+    switch (action) {
+      case 'swap':
+        notifier.swapLayout();
+        break;
+      case 'editor':
+        final s = ref.read(workspaceProviderProvider).valueOrNull;
+        if (s?.isEditorModalOpen == true) {
+          notifier.closeEditorModal();
+        } else {
+          notifier.openEditorModal();
+        }
+        break;
+      case 'open_pdf':
+        _handleOpenPdf();
+        break;
+      case 'scrapnote_manage':
+        // TODO: ScrapNote management screen
+        break;
+      case 'settings':
+        // TODO: Settings
+        break;
+      case 'toggle_structure':
+        notifier.toggleStructureOverlay();
+        break;
+      case 'import_pdf_md':
+        _handleImportPdfToMarkdown();
+        break;
+    }
+  }
+
+  // ─── PDF → Markdown import ──────────────────────────────
+
+  Future<void> _handleImportPdfToMarkdown() async {
+    final ws = ref.read(workspaceProviderProvider).valueOrNull;
+    final pdfPath = ws?.currentPdfPath;
+    if (pdfPath == null) {
+      if (mounted) {
+        ShadToaster.of(
+          context,
+        ).show(const ShadToast(title: Text('PDF를 먼저 열어주세요')));
+      }
+      return;
+    }
+
+    // Check Java availability
+    final javaOk = await PdfStructureService.isJavaAvailable();
+    if (!javaOk) {
+      if (mounted) {
+        ShadToaster.of(
+          context,
+        ).show(const ShadToast(title: Text('Java 11+ 필요 (PDF 변환)')));
+      }
+      return;
+    }
+
+    if (mounted) {
+      ShadToaster.of(
+        context,
+      ).show(const ShadToast(title: Text('PDF → Markdown 변환 중...')));
+    }
+
+    try {
+      final markdown = await PdfToMarkdownService.convert(pdfPath);
+      if (markdown.isEmpty) {
+        if (mounted) {
+          ShadToaster.of(
+            context,
+          ).show(const ShadToast(title: Text('변환 결과가 비어있습니다')));
+        }
+        return;
+      }
+
+      // Append markdown to the current note via TextEditingController
+      final noteId = ws?.currentNoteId;
+      if (noteId != null) {
+        final controller = ref.read(noteEditorProvider(noteId));
+        if (controller != null) {
+          final current = controller.text;
+          controller.text = '$current\n\n---\n\n$markdown';
+          // Move cursor to end
+          controller.selection = TextSelection.collapsed(
+            offset: controller.text.length,
+          );
+        }
+        if (mounted) {
+          ShadToaster.of(context).show(
+            ShadToast(title: Text('PDF 변환 완료 (${markdown.length} chars)')),
+          );
+        }
+      }
+    } on PdfStructureException catch (e) {
+      debugPrint('[WorkspaceScreen._handleImportPdfToMarkdown] error: $e');
+      if (mounted) {
+        ShadToaster.of(
+          context,
+        ).show(ShadToast(title: Text('변환 실패: ${e.message}')));
+      }
+    } catch (e) {
+      debugPrint('[WorkspaceScreen._handleImportPdfToMarkdown] unexpected: $e');
+      if (mounted) {
+        ShadToaster.of(context).show(ShadToast(title: Text('변환 실패: $e')));
+      }
+    }
   }
 
   // ─── Keyboard shortcuts ──────────────────────────────────
@@ -260,68 +472,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       return KeyEventResult.handled;
     }
 
+    if (event.logicalKey == LogicalKeyboardKey.keyI &&
+        HardwareKeyboard.instance.isControlPressed) {
+      notifier.toggleAiPanel();
+      return KeyEventResult.handled;
+    }
+
     return KeyEventResult.ignored;
-  }
-
-  // ─── Mobile bottom sheet helpers ──────────────────────────
-
-  void _showPageThumbnailsSheet(BuildContext context) {
-    final theme = ShadTheme.of(context);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: theme.colorScheme.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (_) => SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.5,
-        child: Column(
-          children: [
-            // Drag handle
-            Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 4),
-              child: Center(
-                child: Container(
-                  width: 32,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: PageThumbnailsPanel(
-                controller: _pdfController,
-                isSheet: true,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showLiveScrapsSheet(BuildContext context) {
-    final theme = ShadTheme.of(context);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: theme.colorScheme.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.3,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (ctx, controller) {
-          return const ScrapnotePanel(isSheet: true);
-        },
-      ),
-    );
   }
 
   // ─── Build ───────────────────────────────────────────────
@@ -332,9 +489,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
     return workspaceAsync.when(
       data: (state) => _buildWorkspace(context, state),
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, stack) => Scaffold(
         body: Center(
           child: Text(
@@ -353,6 +509,15 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         : _buildDesktopWorkspace(context, state);
   }
 
+  // ─── Title helper ─────────────────────────────────────────
+
+  String _getTitle(WorkspaceState state) {
+    if (state.currentPdfPath != null) {
+      return p.basenameWithoutExtension(state.currentPdfPath!);
+    }
+    return 'Workspace';
+  }
+
   // ─── Mobile workspace ─────────────────────────────────────
 
   Widget _buildMobileWorkspace(BuildContext context, WorkspaceState state) {
@@ -362,47 +527,24 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       onKeyEvent: _handleKeyEvent,
       autofocus: true,
       child: Scaffold(
+        backgroundColor: AppColors.sokBackground,
         body: SafeArea(
           child: Stack(
             children: [
-              // ── Base layer: Header + Toolbar + PDF ──
               Column(
                 children: [
-                  // Header V3 (with mobile sheet callbacks)
-                  WorkspaceHeaderV3(
-                    onToggleEditor: () {
-                      if (state.isEditorModalOpen) {
-                        notifier.closeEditorModal();
-                      } else {
-                        notifier.openEditorModal();
-                      }
-                    },
-                    onTogglePageNav: () => _showPageThumbnailsSheet(context),
-                    onToggleLiveScraps: () => _showLiveScrapsSheet(context),
+                  // Unified header
+                  WorkspaceUnifiedHeader(
+                    title: _getTitle(state),
+                    noteId: state.currentNoteId,
+                    pageNumber: _pdfController.isReady
+                        ? _pdfController.pageNumber
+                        : null,
+                    onToggleScrapnote: () => notifier.toggleLiveScraps(),
+                    onOpenPdf: _handleOpenPdf,
+                    onMenuAction: _handleMenuAction,
+                    onToggleAiPanel: () => notifier.toggleAiPanel(),
                   ),
-
-                  // Drawing toolbar (scrollable on mobile)
-                  if (state.currentNoteId != null)
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: ShadTheme.of(context).colorScheme.border,
-                          ),
-                        ),
-                      ),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        child: DrawingToolbar(
-                          noteId: state.currentNoteId,
-                          pageNumber: _pdfController.isReady
-                              ? _pdfController.pageNumber
-                              : null,
-                        ),
-                      ),
-                    ),
 
                   // PDF viewer (full width)
                   Expanded(
@@ -413,26 +555,19 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                       externalToolbar: true,
                     ),
                   ),
-
-                  // Marker pills strip (horizontal at bottom)
-                  MarkerPillsStrip(
-                    axis: Axis.horizontal,
-                    onMarkerTap: _handleMarkerPillTap,
-                    onMarkerLongPress: _handleMarkerPillLongPress,
-                  ),
                 ],
               ),
 
-              // ── Overlay: Sidebar drawers ──
+              // Overlay: Sidebar drawers
               if (state.isFileBrowserOpen &&
                   state.sidebarMode == SidebarMode.fileBrowser)
                 FileBrowserDrawer(
                   onClose: () => notifier.closeFileBrowser(),
                   onNoteSelected: (note) async {
-                    await notifier.loadNote(note.id);
-                    if (note.hasLinkedPdf) {
-                      await notifier.loadPdf(note.linkedPdfPath!);
-                    }
+                    await notifier.loadNote(
+                      note.id,
+                      linkedPdfPath: note.linkedPdfPath,
+                    );
                   },
                 ),
               if (state.isFileBrowserOpen &&
@@ -440,15 +575,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 ElementNavigatorDrawer(
                   onClose: () => notifier.closeFileBrowser(),
                   onElementTap: (element) async {
-                    final page =
-                        await notifier.navigateToElement(element.id);
+                    final page = await notifier.navigateToElement(element.id);
                     if (page != null && mounted) {
                       await _pdfController.goToPage(pageNumber: page);
                     }
                   },
                 ),
 
-              // ── Overlay: Note editor modal (full screen on mobile) ──
+              // Overlay: Note editor modal
               if (state.isEditorModalOpen)
                 NoteEditorModal(
                   noteId: state.currentNoteId,
@@ -456,13 +590,21 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   onMarkerClick: _handleMarkerClick,
                 ),
 
-              // ── Overlay: Marker edit modal ──
-              if (state.isMarkerEditModalOpen)
-                MarkerEditModal(
-                  onClose: () => notifier.closeMarkerEditModal(),
+              // Overlay: Scrap board popup (replaces MarkerEditModal)
+              if (state.isScrapBoardOpen)
+                ScrapBoardPopup(
+                  pageNumber: state.pendingScrapPageNumber,
+                  capturedImagePath: state.pendingScrapImagePath,
+                  pdfPath: state.currentPdfPath,
+                  textRect: state.pendingScrapTextRect,
+                  onConfirm: (memo) async {
+                    notifier.closeScrapBoard();
+                    await _confirmScrapCreation(state, memo);
+                  },
+                  onCancel: () => notifier.closeScrapBoard(),
                 ),
 
-              // ── Overlay: Scrap confirm popup ──
+              // Overlay: Scrap confirm popup (legacy, kept for capture flow)
               _buildConfirmScrapPopup(),
             ],
           ),
@@ -476,139 +618,196 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   Widget _buildDesktopWorkspace(BuildContext context, WorkspaceState state) {
     final notifier = ref.read(workspaceProviderProvider.notifier);
 
-    return Focus(
-      onKeyEvent: _handleKeyEvent,
-      autofocus: true,
-      child: Scaffold(
-        body: Stack(
-          children: [
-            // ── Base layer: Header + Toolbar + 3-panel layout ──
-            Column(
+    // Always 1:1 layout (PDF and scrap panel equal width)
+    const pdfFlex = 1;
+    const scrapFlex = 1;
+
+    // Build PDF viewer (Listener instead of GestureDetector to not block scroll)
+    final pdfViewer = Expanded(
+      flex: pdfFlex,
+      child: Listener(
+        onPointerDown: (_) => notifier.setFocusedPanel(FocusedPanel.pdf),
+        child: PdfViewerScreen(
+          controller: _pdfController,
+          onAddMarkerPressed: _handleAddMarkerPressed,
+          noteId: state.currentNoteId,
+          externalToolbar: true,
+        ),
+      ),
+    );
+
+    // Build ScrapNote canvas panel
+    final scrapPanel = state.isLiveScrapsOpen
+        ? Expanded(
+            flex: scrapFlex,
+            child: Listener(
+              onPointerDown: (_) =>
+                  notifier.setFocusedPanel(FocusedPanel.scrapnote),
+              child: NotebookScrapPanel(
+                key: _canvasKey,
+                noteId: state.currentNoteId,
+                pdfPath: state.currentPdfPath,
+                onNavigateToPage: (page) {
+                  _pdfController.goToPage(pageNumber: page);
+                },
+                onOrderChanged: (ids) {
+                  setState(() => _canvasOrder = ids);
+                },
+              ),
+            ),
+          )
+        : const SizedBox.shrink();
+
+    // Determine order based on swap
+    final isSwapped = state.isLayoutSwapped;
+    final leftPanel = isSwapped ? scrapPanel : pdfViewer;
+    final rightPanel = isSwapped ? pdfViewer : scrapPanel;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/home');
+      },
+      child: Focus(
+        onKeyEvent: _handleKeyEvent,
+        autofocus: true,
+        child: Scaffold(
+          backgroundColor: AppColors.sokBackground,
+          body: SafeArea(
+            child: Stack(
               children: [
-                // Header V3
-                WorkspaceHeaderV3(
-                  onToggleEditor: () {
-                    if (state.isEditorModalOpen) {
-                      notifier.closeEditorModal();
-                    } else {
-                      notifier.openEditorModal();
-                    }
-                  },
-                  onTogglePageNav: () => notifier.togglePageNav(),
-                  onToggleLiveScraps: () => notifier.toggleLiveScraps(),
-                ),
-
-                // PDF document tab bar (shows when 2+ PDFs are open)
-                const PdfTabBar(),
-
-                // Drawing toolbar
-                if (state.currentNoteId != null)
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: ShadTheme.of(context).colorScheme.border,
-                        ),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          DrawingToolbar(
-                            noteId: state.currentNoteId,
-                            pageNumber: _pdfController.isReady
-                                ? _pdfController.pageNumber
-                                : null,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                // Main content: Page Nav + Markers + PDF + Live Scraps
-                Expanded(
-                  child: Row(
+                // ── Base layer ──
+                ColoredBox(
+                  color: AppColors.sokBackground,
+                  child: Column(
                     children: [
-                      // Page thumbnails panel (togglable)
-                      if (state.isPageNavOpen)
-                        PageThumbnailsPanel(controller: _pdfController),
-
-                      // Marker pills strip
-                      MarkerPillsStrip(
-                        onMarkerTap: _handleMarkerPillTap,
-                        onMarkerLongPress: _handleMarkerPillLongPress,
+                      // Unified header (tools integrated)
+                      WorkspaceUnifiedHeader(
+                        title: _getTitle(state),
+                        noteId: state.currentNoteId,
+                        pageNumber: _pdfController.isReady
+                            ? _pdfController.pageNumber
+                            : null,
+                        onToggleScrapnote: () => notifier.toggleLiveScraps(),
+                        onOpenPdf: _handleOpenPdf,
+                        onMenuAction: _handleMenuAction,
+                        onToggleAiPanel: () => notifier.toggleAiPanel(),
                       ),
 
-                      // PDF viewer
+                      // PDF tab bar
+                      const PdfTabBar(),
+
+                      // Main content: Thumbnails + PDF + ScrapNote
                       Expanded(
-                        child: PdfViewerScreen(
-                          controller: _pdfController,
-                          onAddMarkerPressed: _handleAddMarkerPressed,
-                          noteId: state.currentNoteId,
-                          externalToolbar: true,
+                        child: Row(
+                          children: [
+                            // Left: Scrap thumbnails sidebar
+                            if (state.isPageNavOpen)
+                              ScrapThumbnailsSidebar(
+                                width: 152,
+                                onPageTap: (page) {
+                                  _pdfController.goToPage(pageNumber: page);
+                                },
+                                onElementTap: (id) {
+                                  _canvasKey.currentState?.scrollToElement(id);
+                                },
+                                onHeadingTap: (pageNumber, pdfRect) {
+                                  if (pdfRect != null) {
+                                    _pdfController.goToRectInsidePage(
+                                      pageNumber: pageNumber,
+                                      rect: pdfRect,
+                                    );
+                                  } else {
+                                    _pdfController.goToPage(
+                                      pageNumber: pageNumber,
+                                    );
+                                  }
+                                },
+                                capturesDir: ref
+                                    .watch(capturesDirectoryProvider)
+                                    .valueOrNull
+                                    ?.path,
+                                canvasOrder: _canvasOrder,
+                              ),
+
+                            // Center + Right: PDF and ScrapNote (swappable)
+                            leftPanel,
+                            rightPanel,
+                          ],
                         ),
                       ),
-
-                      // Scrapnote canvas panel (togglable)
-                      if (state.isLiveScrapsOpen)
-                        const ScrapnotePanel(),
                     ],
                   ),
                 ),
+
+                // ── Overlay: Sidebar drawers ──
+                if (state.isFileBrowserOpen &&
+                    state.sidebarMode == SidebarMode.fileBrowser)
+                  FileBrowserDrawer(
+                    onClose: () => notifier.closeFileBrowser(),
+                    onNoteSelected: (note) async {
+                      await notifier.loadNote(
+                        note.id,
+                        linkedPdfPath: note.linkedPdfPath,
+                      );
+                    },
+                  ),
+                if (state.isFileBrowserOpen &&
+                    state.sidebarMode == SidebarMode.elementNavigator)
+                  ElementNavigatorDrawer(
+                    onClose: () => notifier.closeFileBrowser(),
+                    onElementTap: (element) async {
+                      final page = await notifier.navigateToElement(element.id);
+                      if (page != null && mounted) {
+                        await _pdfController.goToPage(pageNumber: page);
+                      }
+                    },
+                  ),
+
+                // ── Overlay: Sticky note ──
+                if (state.isStickyNoteVisible && state.currentNoteId != null)
+                  StickyNoteWidget(
+                    noteId: state.currentNoteId,
+                    onMarkerClick: _handleMarkerClick,
+                  ),
+
+                // ── Overlay: AI Agent panel ──
+                if (state.isAiPanelOpen)
+                  Positioned(
+                    right: 24,
+                    top: 136,
+                    child: AgentChatPanel(
+                      onClose: () => notifier.toggleAiPanel(),
+                    ),
+                  ),
+
+                // ── Overlay: Note editor modal ──
+                if (state.isEditorModalOpen)
+                  NoteEditorModal(
+                    noteId: state.currentNoteId,
+                    onClose: () => notifier.closeEditorModal(),
+                    onMarkerClick: _handleMarkerClick,
+                  ),
+
+                // ── Overlay: Scrap board popup (replaces MarkerEditModal) ──
+                if (state.isScrapBoardOpen)
+                  ScrapBoardPopup(
+                    pageNumber: state.pendingScrapPageNumber,
+                    capturedImagePath: state.pendingScrapImagePath,
+                    pdfPath: state.currentPdfPath,
+                    textRect: state.pendingScrapTextRect,
+                    onConfirm: (memo) async {
+                      notifier.closeScrapBoard();
+                      await _confirmScrapCreation(state, memo);
+                    },
+                    onCancel: () => notifier.closeScrapBoard(),
+                  ),
+
+                // ── Overlay: Scrap confirm popup (legacy) ──
+                _buildConfirmScrapPopup(),
               ],
             ),
-
-            // ── Overlay: Sidebar drawers ──
-            if (state.isFileBrowserOpen &&
-                state.sidebarMode == SidebarMode.fileBrowser)
-              FileBrowserDrawer(
-                onClose: () => notifier.closeFileBrowser(),
-                onNoteSelected: (note) async {
-                  await notifier.loadNote(note.id);
-                  if (note.hasLinkedPdf) {
-                    await notifier.loadPdf(note.linkedPdfPath!);
-                  }
-                },
-              ),
-            if (state.isFileBrowserOpen &&
-                state.sidebarMode == SidebarMode.elementNavigator)
-              ElementNavigatorDrawer(
-                onClose: () => notifier.closeFileBrowser(),
-                onElementTap: (element) async {
-                  final page = await notifier.navigateToElement(element.id);
-                  if (page != null && mounted) {
-                    await _pdfController.goToPage(pageNumber: page);
-                  }
-                },
-              ),
-
-            // ── Overlay: Sticky note ──
-            if (state.isStickyNoteVisible && state.currentNoteId != null)
-              StickyNoteWidget(
-                noteId: state.currentNoteId,
-                onMarkerClick: _handleMarkerClick,
-              ),
-
-            // ── Overlay: Note editor modal ──
-            if (state.isEditorModalOpen)
-              NoteEditorModal(
-                noteId: state.currentNoteId,
-                onClose: () => notifier.closeEditorModal(),
-                onMarkerClick: _handleMarkerClick,
-              ),
-
-            // ── Overlay: Marker edit modal ──
-            if (state.isMarkerEditModalOpen)
-              MarkerEditModal(
-                onClose: () => notifier.closeMarkerEditModal(),
-              ),
-
-            // ── Overlay: Scrap confirm popup ──
-            _buildConfirmScrapPopup(),
-          ],
+          ),
         ),
       ),
     );

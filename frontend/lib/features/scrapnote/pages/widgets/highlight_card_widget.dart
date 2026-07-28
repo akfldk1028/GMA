@@ -11,10 +11,14 @@ class HighlightCardWidget extends StatefulWidget {
   const HighlightCardWidget({
     super.key,
     required this.element,
+    this.onTap,
     this.onReposition,
   });
 
   final CanvasElement element;
+
+  /// Called when the user taps the element (single tap).
+  final VoidCallback? onTap;
 
   /// Called when the user drags the element after a long-press.
   /// Provides the element id and the new (x, y) position.
@@ -34,6 +38,7 @@ class _HighlightCardWidgetState extends State<HighlightCardWidget> {
     final stripColor = colorValue != null ? Color(colorValue) : Colors.yellow;
 
     return GestureDetector(
+      onTap: widget.onTap,
       onLongPressStart: (_) {
         setState(() => _isDragging = true);
       },

@@ -36,4 +36,5 @@ const _$ElementTypeEnumMap = {
   ElementType.highlight: 'highlight',
   ElementType.capture: 'capture',
   ElementType.drawing: 'drawing',
+  ElementType.lasso: 'lasso',
 };

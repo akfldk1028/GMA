@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
 import '../common_widgets/app_shell.dart';
+import '../main.dart' show talker;
 import '../features/dashboard/pages/screens/dashboard_screen.dart';
 import '../features/home/pages/screens/home_screen.dart';
 import '../features/note_editor/pages/screens/note_editor_screen.dart';
@@ -19,6 +21,7 @@ part 'app_router.g.dart';
 GoRouter appRouter(Ref ref) {
   return GoRouter(
     initialLocation: '/splash',
+    observers: [TalkerRouteObserver(talker)],
     routes: [
       GoRoute(
         path: '/splash',
@@ -93,6 +96,12 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => NoteEditorScreen(
           noteId: state.pathParameters['id'],
         ),
+      ),
+      // Debug log viewer (Talker)
+      GoRoute(
+        path: '/logs',
+        name: 'logs',
+        builder: (context, state) => TalkerScreen(talker: talker),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

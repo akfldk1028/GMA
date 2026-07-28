@@ -108,6 +108,8 @@ class ScrapnoteCanvas extends StatefulWidget {
     required this.elements,
     required this.isActive,
     required this.onStrokeCompleted,
+    this.onElementTap,
+    this.onElementRepositioned,
     this.toolId = 'pen',
     this.colorValue = 0xFF000000,
     this.strokeSize = 3.0,
@@ -118,6 +120,8 @@ class ScrapnoteCanvas extends StatefulWidget {
   final List<CanvasElement> elements;
   final bool isActive;
   final void Function(DrawingStroke stroke) onStrokeCompleted;
+  final void Function(CanvasElement element)? onElementTap;
+  final void Function(String elementId, double x, double y)? onElementRepositioned;
   final String toolId;
   final int colorValue;
   final double strokeSize;
@@ -156,7 +160,8 @@ class _ScrapnoteCanvasState extends State<ScrapnoteCanvas> {
     );
 
     if (!widget.isActive) {
-      return IgnorePointer(child: interactiveCanvas);
+      // View mode: allow element taps/drags but no drawing
+      return interactiveCanvas;
     }
 
     return Listener(
@@ -190,9 +195,21 @@ class _ScrapnoteCanvasState extends State<ScrapnoteCanvas> {
   Widget _buildElementWidget(CanvasElement element) {
     switch (element.type) {
       case CanvasElementType.capture:
-        return CaptureElementWidget(element: element);
+        return CaptureElementWidget(
+          element: element,
+          onTap: widget.onElementTap != null
+              ? () => widget.onElementTap!(element)
+              : null,
+          onReposition: widget.onElementRepositioned,
+        );
       case CanvasElementType.highlight:
-        return HighlightCardWidget(element: element);
+        return HighlightCardWidget(
+          element: element,
+          onTap: widget.onElementTap != null
+              ? () => widget.onElementTap!(element)
+              : null,
+          onReposition: widget.onElementRepositioned,
+        );
     }
   }
 

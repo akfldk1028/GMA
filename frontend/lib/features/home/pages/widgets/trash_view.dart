@@ -18,7 +18,9 @@ class TrashView extends ConsumerWidget {
     return trashAsync.when(
       loading: () => const Center(
         child: CircularProgressIndicator(
-            color: AppColors.primary, strokeWidth: 2),
+          color: AppColors.sokAccent,
+          strokeWidth: 2,
+        ),
       ),
       error: (err, _) => Center(child: Text('Error: $err')),
       data: (notes) {
@@ -41,26 +43,28 @@ class TrashView extends ConsumerWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: AppColors.surfaceDim,
+              color: AppColors.sokHover,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(Icons.delete_outline,
-                size: 28,
-                color: AppColors.textMuted.withValues(alpha: 0.5)),
+            child: Icon(
+              Icons.delete_outline,
+              size: 28,
+              color: AppColors.sokSecondary.withValues(alpha: 0.5),
+            ),
           ),
           const SizedBox(height: 16),
           const Text(
-            'Trash is empty',
+            '휴지통이 비어 있습니다',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: AppColors.sokPrimary,
             ),
           ),
           const SizedBox(height: 4),
           const Text(
-            'Deleted notes will appear here',
-            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+            '삭제한 노트가 여기에 표시됩니다',
+            style: TextStyle(fontSize: 13, color: AppColors.sokSecondary),
           ),
         ],
       ),
@@ -68,28 +72,32 @@ class TrashView extends ConsumerWidget {
   }
 
   Widget _buildGrid(
-      BuildContext context, WidgetRef ref, List<NoteMetadata> notes) {
+    BuildContext context,
+    WidgetRef ref,
+    List<NoteMetadata> notes,
+  ) {
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 180,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.78,
+        maxCrossAxisExtent: 210,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 0.95,
       ),
       itemCount: notes.length,
-      itemBuilder: (context, index) =>
-          _TrashCard(note: notes[index]),
+      itemBuilder: (context, index) => _TrashCard(note: notes[index]),
     );
   }
 
   Widget _buildList(
-      BuildContext context, WidgetRef ref, List<NoteMetadata> notes) {
+    BuildContext context,
+    WidgetRef ref,
+    List<NoteMetadata> notes,
+  ) {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
       itemCount: notes.length,
-      itemBuilder: (context, index) =>
-          _TrashListTile(note: notes[index]),
+      itemBuilder: (context, index) => _TrashListTile(note: notes[index]),
     );
   }
 }
@@ -114,13 +122,12 @@ class _TrashCard extends ConsumerWidget {
           ref.read(homeStateProvider.notifier).toggleNoteSelection(note.id),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.sokSurface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.borderLight,
+            color: isSelected ? AppColors.sokAccent : AppColors.sokDivider,
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: AppColors.cardShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,14 +138,19 @@ class _TrashCard extends ConsumerWidget {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceDim.withValues(alpha: 0.7),
+                      color: AppColors.sokPreviewBackdrop.withValues(
+                        alpha: 0.7,
+                      ),
                       borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(12)),
+                        top: Radius.circular(12),
+                      ),
                     ),
                     child: Center(
-                      child: Icon(Icons.description_outlined,
-                          size: 28,
-                          color: AppColors.textMuted.withValues(alpha: 0.3)),
+                      child: Icon(
+                        Icons.description_outlined,
+                        size: 28,
+                        color: AppColors.sokSecondary.withValues(alpha: 0.35),
+                      ),
                     ),
                   ),
                   if (homeState.isMultiSelectMode)
@@ -152,17 +164,20 @@ class _TrashCard extends ConsumerWidget {
                           shape: BoxShape.circle,
                           color: isSelected
                               ? AppColors.primary
-                              : AppColors.surface,
+                              : AppColors.sokSurface,
                           border: Border.all(
                             color: isSelected
                                 ? AppColors.primary
-                                : AppColors.textMuted,
+                                : AppColors.sokSecondary,
                             width: 2,
                           ),
                         ),
                         child: isSelected
-                            ? const Icon(Icons.check,
-                                size: 12, color: Colors.white)
+                            ? const Icon(
+                                Icons.check,
+                                size: 12,
+                                color: Colors.white,
+                              )
                             : null,
                       ),
                     ),
@@ -181,14 +196,16 @@ class _TrashCard extends ConsumerWidget {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
+                      color: AppColors.sokSecondary,
                     ),
                   ),
                   if (note.deletedAt != null)
                     Text(
-                      'Deleted ${DateFormat('M/d').format(note.deletedAt!)}',
+                      '삭제됨 ${DateFormat('M/d').format(note.deletedAt!)}',
                       style: const TextStyle(
-                          fontSize: 10, color: AppColors.textMuted),
+                        fontSize: 10,
+                        color: AppColors.sokSecondary,
+                      ),
                     ),
                 ],
               ),
@@ -213,19 +230,27 @@ class _TrashListTile extends ConsumerWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: AppColors.surfaceDim,
+          color: AppColors.sokHover,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Icon(Icons.description_outlined,
-            size: 18, color: AppColors.textMuted),
+        child: const Icon(
+          Icons.description_outlined,
+          size: 18,
+          color: AppColors.sokSecondary,
+        ),
       ),
-      title: Text(note.title,
-          style: const TextStyle(
-              fontSize: 14, color: AppColors.textSecondary)),
+      title: Text(
+        note.title,
+        style: const TextStyle(fontSize: 14, color: AppColors.sokSecondary),
+      ),
       subtitle: note.deletedAt != null
-          ? Text('Deleted ${DateFormat('M/d').format(note.deletedAt!)}',
-              style:
-                  const TextStyle(fontSize: 11, color: AppColors.textMuted))
+          ? Text(
+              '삭제됨 ${DateFormat('M/d').format(note.deletedAt!)}',
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.sokSecondary,
+              ),
+            )
           : null,
       onTap: () {
         ref.read(homeStateProvider.notifier).toggleNoteSelection(note.id);

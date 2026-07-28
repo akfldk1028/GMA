@@ -1,0 +1,34 @@
+<!-- screens/note.html — 노트 편집 화면 조립 참고 파일 -->
+<!--
+  이 파일은 컴포넌트 조각들이 어떻게 조합되는지 보여주는 참고용입니다.
+  실제 진입점은 index.html 입니다.
+-->
+
+<div class="note-shell">
+
+  <!-- Topbar (components/topbar.html): note-rail/note-editor/note-panel 전체 폭에 걸쳐 배치되는
+       상단 헤더. note-editor 안이 아니라 note-content와 형제 관계여야 함.
+       note-topbar__row (뒤로+제목 · 필기 도구 · 링크/분할/AI/더보기) + note-topbar__tabstrip (열린 문서 탭)
+       두 줄 구성. 필기 도구 상세는 components/toolbar.html 참고.
+       moreMenuOpen 상태일 때 overflow-menu--open 표시 -->
+  <div class="note-topbar">...</div>
+
+  <div class="note-content">
+    <!-- Rail (components/rail.html) -->
+    <aside class="note-rail">...</aside>
+
+    <!-- Editor: 헤더 없이 문서 페이지 스크롤 영역만 포함 -->
+    <div class="note-editor">
+      <div class="note-editor__pages">
+        <!-- NotePage × N (components/note-page.html) -->
+      </div>
+    </div>
+
+    <!-- Panel (우측) -->
+    <aside class="note-panel">
+      <!-- 기본 상태 (components/scraps-panel.html) -->
+      <!-- AI Agent 상태 (components/ai-agent-panel.html) — aiAgentOpen 상태일 때 ai-agent--active 표시 -->
+    </aside>
+  </div>
+
+</div>

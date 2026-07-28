@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../file_manager/models/note_metadata_model.dart';
 import '../../../workspace/pages/providers/workspace_provider.dart';
-import '../../../pdf_viewer/pages/providers/pdf_document_provider.dart';
+
 import '../../providers/home_note_list_provider.dart';
 import '../../providers/home_state_provider.dart';
 import 'note_grid_view.dart';
@@ -23,22 +23,28 @@ class NoteListView extends ConsumerWidget {
         : ref.watch(folderNotesProvider);
 
     return notesAsync.when(
+      skipLoadingOnReload: true,
+      skipLoadingOnRefresh: true,
       loading: () => const Center(
         child: CircularProgressIndicator(
-            color: AppColors.primary, strokeWidth: 2),
+          color: AppColors.primary,
+          strokeWidth: 2,
+        ),
       ),
       error: (err, _) => Center(child: Text('Error: $err')),
       data: (notes) {
         if (notes.isEmpty) {
           return const Center(
-            child: Text('No notes', style: TextStyle(color: AppColors.textMuted)),
+            child: Text(
+              '노트가 없습니다',
+              style: TextStyle(color: AppColors.sokSecondary),
+            ),
           );
         }
         return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           itemCount: notes.length,
-          itemBuilder: (context, index) =>
-              _NoteListTile(note: notes[index]),
+          itemBuilder: (context, index) => _NoteListTile(note: notes[index]),
         );
       },
     );
@@ -59,9 +65,7 @@ class _NoteListTile extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
       child: Material(
-        color: isSelected
-            ? AppColors.primaryLight
-            : Colors.transparent,
+        color: isSelected ? AppColors.sokHover : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
@@ -77,9 +81,6 @@ class _NoteListTile extends ConsumerWidget {
               await ref
                   .read(workspaceProviderProvider.notifier)
                   .loadPdf(note.linkedPdfPath!);
-              await ref
-                  .read(pdfDocumentProvider.notifier)
-                  .loadFromFile(note.linkedPdfPath!);
             }
             if (context.mounted) context.go('/workspace');
           },
@@ -96,17 +97,18 @@ class _NoteListTile extends ConsumerWidget {
                     height: 22,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isSelected ? AppColors.primary : AppColors.surface,
+                      color: isSelected
+                          ? AppColors.sokAccent
+                          : AppColors.sokSurface,
                       border: Border.all(
                         color: isSelected
-                            ? AppColors.primary
-                            : AppColors.textMuted,
+                            ? AppColors.sokAccent
+                            : AppColors.sokSecondary,
                         width: 2,
                       ),
                     ),
                     child: isSelected
-                        ? const Icon(Icons.check,
-                            size: 12, color: Colors.white)
+                        ? const Icon(Icons.check, size: 12, color: Colors.white)
                         : null,
                   ),
                   const SizedBox(width: 12),
@@ -124,7 +126,7 @@ class _NoteListTile extends ConsumerWidget {
                         ? Icons.picture_as_pdf_outlined
                         : Icons.description_outlined,
                     size: 20,
-                    color: AppColors.textMuted.withValues(alpha: 0.5),
+                    color: AppColors.sokSecondary.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -140,22 +142,25 @@ class _NoteListTile extends ConsumerWidget {
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
+                          color: AppColors.sokPrimary,
                         ),
                       ),
                       Text(
                         DateFormat('yyyy-MM-dd').format(note.modifiedAt),
                         style: const TextStyle(
                           fontSize: 11,
-                          color: AppColors.textMuted,
+                          color: AppColors.sokSecondary,
                         ),
                       ),
                     ],
                   ),
                 ),
                 if (note.isPinned)
-                  const Icon(Icons.push_pin,
-                      size: 14, color: AppColors.primary),
+                  const Icon(
+                    Icons.push_pin,
+                    size: 14,
+                    color: AppColors.sokAccent,
+                  ),
               ],
             ),
           ),

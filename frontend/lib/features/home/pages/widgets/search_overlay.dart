@@ -17,27 +17,34 @@ class SearchOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: const BoxDecoration(
+        color: AppColors.sokBackground,
+        border: Border(
+          bottom: BorderSide(color: AppColors.sokDivider, width: 1),
+        ),
+      ),
       child: Row(
         children: [
           IconButton(
             onPressed: onClose,
             icon: const Icon(Icons.arrow_back, size: 22),
-            color: AppColors.textSecondary,
+            color: AppColors.sokPrimary,
+            tooltip: '검색 닫기',
           ),
+          const SizedBox(width: 8),
           Expanded(
             child: TextField(
               controller: controller,
               autofocus: true,
               onChanged: onChanged,
               decoration: InputDecoration(
-                hintText: 'Search notes...',
+                hintText: '노트 검색...',
                 border: InputBorder.none,
-                hintStyle: TextStyle(
-                  color: AppColors.textMuted.withValues(alpha: 0.6),
-                ),
+                hintStyle: TextStyle(color: AppColors.sokDisabled),
               ),
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16, color: AppColors.sokPrimary),
             ),
           ),
           if (controller.text.isNotEmpty)
@@ -47,7 +54,8 @@ class SearchOverlay extends StatelessWidget {
                 onChanged('');
               },
               icon: const Icon(Icons.close, size: 20),
-              color: AppColors.textMuted,
+              color: AppColors.sokSecondary,
+              tooltip: '검색어 지우기',
             ),
         ],
       ),

@@ -15,6 +15,9 @@ _$PdfMarkerImpl _$$PdfMarkerImplFromJson(Map<String, dynamic> json) =>
       textRect: const PdfRectConverter().fromJson(
         json['textRect'] as Map<String, dynamic>?,
       ),
+      lineRects: const PdfRectListConverter().fromJson(
+        json['lineRects'] as List?,
+      ),
       capturedImagePath: json['capturedImagePath'] as String?,
     );
 
@@ -25,6 +28,7 @@ Map<String, dynamic> _$$PdfMarkerImplToJson(_$PdfMarkerImpl instance) =>
       'color': _$MarkerColorEnumMap[instance.color]!,
       'selectedText': instance.selectedText,
       'textRect': const PdfRectConverter().toJson(instance.textRect),
+      'lineRects': const PdfRectListConverter().toJson(instance.lineRects),
       'capturedImagePath': instance.capturedImagePath,
     };
 

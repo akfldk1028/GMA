@@ -1,0 +1,50 @@
+<!-- components/note-page.html — 문서 페이지 카드 (index.html 안 마크업의 참고용 사본) -->
+<!-- PDF 내용은 generic placeholder(막대/블록)로만 표현한다. 실제 문서 텍스트/이미지 금지.
+     색상은 tokens.css의 --color-pdf-* 토큰만 사용. -->
+
+<!-- 페이지 1: 커버 페이지 느낌 -->
+<article class="note-page">
+  <div class="note-page__slide note-page__slide--cover">
+    <button class="note-page__more" aria-label="페이지 옵션">⋯</button>
+    <span class="pdf-ph__bar pdf-ph__bar--eyebrow"></span>
+    <span class="pdf-ph__bar pdf-ph__bar--title"></span>
+    <span class="pdf-ph__bar pdf-ph__bar--title-2"></span>
+    <div class="pdf-ph__rule"></div>
+    <span class="pdf-ph__bar pdf-ph__bar--sub"></span>
+    <span class="pdf-ph__bar pdf-ph__bar--meta"></span>
+  </div>
+  <div class="pdf-ph__footer">
+    <span class="pdf-ph__bar"></span>
+    <span class="pdf-ph__bar"></span>
+  </div>
+</article>
+
+<!-- 페이지 2: 콘텐츠 슬라이드 느낌 -->
+<article class="note-page">
+  <div class="note-page__slide note-page__slide--content">
+    <button class="note-page__more" aria-label="페이지 옵션">⋯</button>
+    <span class="pdf-ph__bar pdf-ph__bar--heading"></span>
+    <div class="pdf-ph__banner"></div>
+    <div class="pdf-ph__body">
+      <div class="pdf-ph__image" aria-hidden="true"><!-- 사진 글리프 SVG (index.html 참고) --></div>
+      <div class="pdf-ph__lines">
+        <span class="pdf-ph__bar"></span>
+        <span class="pdf-ph__bar pdf-ph__bar--w80"></span>
+        <span class="pdf-ph__bar"></span>
+        <span class="pdf-ph__bar pdf-ph__bar--w60"></span>
+      </div>
+    </div>
+    <span class="pdf-ph__bar pdf-ph__bar--quote"></span>
+  </div>
+</article>
+
+<!-- 페이지 네비게이션 플로팅 필 (PDF 뷰어 영역 하단 중앙 고정).
+     ※ 배치 위치: note-editor__pages 밖, note-editor 직속 sibling (스크롤과 함께 움직이지 않음) -->
+<div class="page-nav">
+  <button class="icon-btn icon-btn--sm" aria-label="이전 페이지">‹</button>
+  <span class="page-nav__label">1 / 14</span>
+  <button class="icon-btn icon-btn--sm" aria-label="다음 페이지">›</button>
+  <span class="note-toolbar__sep"></span>
+  <button class="icon-btn icon-btn--sm" aria-label="축소">–</button>
+  <button class="icon-btn icon-btn--sm" aria-label="확대">+</button>
+</div>

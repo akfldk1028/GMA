@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../constants/app_colors.dart';
+import '../../providers/home_note_list_provider.dart';
 import '../../providers/home_state_provider.dart';
 import '../widgets/folders_view.dart';
 import '../widgets/home_top_bar.dart';
@@ -17,27 +19,115 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeStateProvider);
 
-    return Column(
-      children: [
-        const HomeTopBar(),
-        if (homeState.activeTab == HomeTab.allNotes) const SortBar(),
-        Expanded(child: _buildBody(homeState)),
-        if (homeState.isMultiSelectMode)
-          MultiSelectBottomBar(activeTab: homeState.activeTab),
-      ],
+    return ColoredBox(
+      color: AppColors.sokBackground,
+      child: Stack(
+        children: [
+          Positioned(
+            right: 72,
+            bottom: 72,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: 0.18,
+                child: Image.asset(
+                  'assets/brand/soknote_deco.png',
+                  width: 460,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              const HomeTopBar(),
+              if (homeState.activeTab == HomeTab.allNotes) const SortBar(),
+              if (homeState.isMultiSelectMode)
+                _buildSelectAllBar(ref, homeState),
+              Expanded(child: _buildBody(homeState, ref)),
+              if (homeState.isMultiSelectMode)
+                MultiSelectBottomBar(activeTab: homeState.activeTab),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildBody(HomeStateData homeState) {
+  Widget _buildSelectAllBar(WidgetRef ref, HomeStateData homeState) {
+    final notesAsync = ref.watch(allNotesProvider);
+    final allIds = notesAsync.valueOrNull?.map((n) => n.id).toList() ?? [];
+    final selectedCount = homeState.selectedNoteIds.length;
+    final isAllSelected = allIds.isNotEmpty && selectedCount == allIds.length;
+
+    return Container(
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.sokHover,
+        border: Border(bottom: BorderSide(color: AppColors.sokDivider)),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () {
+              if (isAllSelected) {
+                ref.read(homeStateProvider.notifier).exitMultiSelect();
+              } else {
+                ref.read(homeStateProvider.notifier).selectAll(allIds);
+              }
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isAllSelected
+                      ? Icons.check_box
+                      : Icons.check_box_outline_blank,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isAllSelected ? 'Deselect All' : 'Select All',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          Text(
+            '$selectedCount selected',
+            style: TextStyle(fontSize: 12, color: AppColors.sokSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody(HomeStateData homeState, [WidgetRef? ref]) {
+    Widget content;
     switch (homeState.activeTab) {
       case HomeTab.allNotes:
-        return homeState.viewMode == ViewMode.grid
+        content = homeState.viewMode == ViewMode.grid
             ? const NoteGridView(source: NoteSource.all)
             : const NoteListView(source: NoteSource.all);
       case HomeTab.trash:
-        return const TrashView();
+        content = const TrashView();
       case HomeTab.folders:
-        return const FoldersView();
+        content = const FoldersView();
     }
+    // In multi-select mode, tapping empty area exits multi-select
+    if (homeState.isMultiSelectMode && ref != null) {
+      return GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => ref.read(homeStateProvider.notifier).exitMultiSelect(),
+        child: content,
+      );
+    }
+    return content;
   }
 }

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../ai_agent/pages/widgets/model_download_widget.dart';
 import '../../../ocr/pages/providers/ocr_provider.dart';
+import '../../../pdf_structure/services/pdf_structure_service.dart';
 import '../../../workspace/pages/providers/theme_provider.dart';
 
 /// Settings screen with theme, about, and keyboard shortcuts.
@@ -145,6 +147,20 @@ class SettingsScreen extends ConsumerWidget {
 
                       const SizedBox(height: 32),
 
+                      // PDF Structure section
+                      _SectionHeader(title: 'PDF Structure Analysis', theme: theme),
+                      const SizedBox(height: 12),
+                      _PdfStructureSettingsSection(theme: theme),
+
+                      const SizedBox(height: 32),
+
+                      // AI Agent section
+                      _SectionHeader(title: 'AI Agent', theme: theme),
+                      const SizedBox(height: 12),
+                      const ModelDownloadWidget(),
+
+                      const SizedBox(height: 32),
+
                       // Keyboard Shortcuts section
                       _SectionHeader(title: 'Keyboard Shortcuts', theme: theme),
                       const SizedBox(height: 12),
@@ -163,6 +179,27 @@ class SettingsScreen extends ConsumerWidget {
                         ],
                       ),
 
+                      const SizedBox(height: 32),
+
+                      // Debug section
+                      _SectionHeader(title: 'Debug', theme: theme),
+                      const SizedBox(height: 12),
+                      _SettingsCard(
+                        theme: theme,
+                        children: [
+                          _SettingsRow(
+                            theme: theme,
+                            icon: Icons.bug_report_outlined,
+                            title: 'App Logs',
+                            subtitle: 'View real-time logs, errors, routes, providers',
+                            trailing: ShadButton.outline(
+                              onPressed: () => context.push('/logs'),
+                              size: ShadButtonSize.sm,
+                              child: const Text('Open'),
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 32),
 
                       // About section
@@ -576,5 +613,92 @@ class _OcrSettingsSectionState extends ConsumerState<_OcrSettingsSection> {
         });
       }
     }
+  }
+}
+
+/// PDF Structure Analysis settings section.
+class _PdfStructureSettingsSection extends ConsumerStatefulWidget {
+  const _PdfStructureSettingsSection({required this.theme});
+  final ShadThemeData theme;
+
+  @override
+  ConsumerState<_PdfStructureSettingsSection> createState() =>
+      _PdfStructureSettingsSectionState();
+}
+
+class _PdfStructureSettingsSectionState
+    extends ConsumerState<_PdfStructureSettingsSection> {
+  bool? _javaAvailable;
+  bool _checking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkJava();
+  }
+
+  Future<void> _checkJava() async {
+    setState(() => _checking = true);
+    final ok = await PdfStructureService.isJavaAvailable();
+    if (mounted) {
+      setState(() {
+        _javaAvailable = ok;
+        _checking = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsCard(
+      theme: widget.theme,
+      children: [
+        _SettingsRow(
+          theme: widget.theme,
+          icon: Icons.account_tree_outlined,
+          title: 'PDF Structure Analysis',
+          subtitle: 'opendataloader-pdf (Java)',
+          trailing: _checking
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(
+                  _javaAvailable == true
+                      ? Icons.check_circle
+                      : Icons.error_outline,
+                  size: 18,
+                  color: _javaAvailable == true
+                      ? const Color(0xFF10B981)
+                      : widget.theme.colorScheme.destructive,
+                ),
+        ),
+        SettingsScreen._divider(widget.theme),
+        _SettingsRow(
+          theme: widget.theme,
+          icon: Icons.coffee,
+          title: 'Java Runtime',
+          subtitle: _javaAvailable == null
+              ? 'Checking...'
+              : _javaAvailable == true
+                  ? 'Available'
+                  : 'Not found — install JDK 11+ from adoptium.net',
+        ),
+        SettingsScreen._divider(widget.theme),
+        _SettingsRow(
+          theme: widget.theme,
+          icon: Icons.auto_awesome,
+          title: 'Auto-analyze on PDF open',
+          subtitle: 'Extract headings and structure when opening a PDF',
+          trailing: ShadSwitch(
+            value: true,
+            onChanged: (_) {
+              // TODO: persist to Hive app_settings
+            },
+          ),
+        ),
+      ],
+    );
   }
 }

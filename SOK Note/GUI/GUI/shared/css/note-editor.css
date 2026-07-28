@@ -1,0 +1,665 @@
+/* note-editor.css — Note 편집 화면 전용 셸/툴바/패널 레이아웃
+   주의: 이 파일은 Note 화면(Note/soknote-note-prototype)에서만 사용합니다.
+   .app-shell / .device-frame 등 공용 셸 클래스는 layout.css를 그대로 재사용합니다. */
+
+/* ════════════════════════════
+   Shell: 상단 통합 헤더(전체 폭) + 하단 3열 콘텐츠(rail/editor/panel)
+   note-topbar가 note-rail 위까지 전체 폭에 걸쳐 배치되도록
+   app-shell(기본 flex row) 안에 column 방향 래퍼를 둔다.
+════════════════════════════ */
+.note-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.note-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 펜 색상 스와치 색상 값 (인라인 스타일 대신 클래스로 지정, 색은 tokens.css의 --ink-* 토큰 참조) */
+.color-swatch--black  { background: var(--ink-black); }
+.color-swatch--red    { background: var(--ink-red); }
+.color-swatch--blue   { background: var(--ink-blue); }
+.color-swatch--green  { background: var(--ink-green); }
+.color-swatch--yellow { background: var(--ink-yellow); }
+
+/* ════════════════════════════
+   Rail (좌측 탭 · 주석 목록)
+════════════════════════════ */
+.note-rail {
+  width: var(--note-rail-width);
+  height: 100%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-right: var(--border-default);
+  overflow: hidden;
+}
+
+/* 필터 탭: 한 줄, 탭 사이 세로 구분선으로 섹션 분리, 활성 탭은 하단 액센트 밑줄 */
+.note-rail__tabs {
+  display: flex;
+  align-items: stretch;
+  border-bottom: var(--border-default);
+  flex-shrink: 0;
+}
+
+.note-rail__tab {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--space-2) var(--space-1);
+  font-size: var(--font-size-caption);
+  color: var(--color-text-secondary);
+  text-align: center;
+  line-height: var(--line-height-caption);
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.note-rail__tab + .note-rail__tab {
+  border-left: var(--border-default);
+}
+
+.note-rail__tab--active {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-medium);
+  border-bottom-color: var(--color-accent);
+}
+
+.note-rail__list {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4) var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-caption);
+  white-space: nowrap; /* 좁은 레일 안에서 안내 문구가 줄바꿈되지 않게 */
+  text-align: center;
+}
+
+/* ════════════════════════════
+   Editor (중앙 문서 뷰어)
+════════════════════════════ */
+.note-editor {
+  flex: 1;
+  min-width: 0;
+  position: relative; /* page-nav 플로팅 조작 UI의 기준 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Topbar: 뒤로가기 + 필기 도구 (한 줄) + 열린 문서 탭 (아래 줄) ── */
+.note-topbar {
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-bottom: var(--border-default);
+  position: relative;
+  z-index: 20;
+}
+
+.note-topbar__row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--note-topbar-height);
+  padding: 0 var(--space-4);
+  border-bottom: var(--border-default);
+  min-width: 0; /* 좁은 폭에서 그리드 트랙이 넘치지 않게 */
+}
+
+.note-toolbar__group--end {
+  justify-self: end;
+  min-width: 0;
+}
+
+.note-topbar__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0; /* 제목 말줄임(ellipsis)이 동작하도록 */
+}
+
+.note-topbar__title {
+  max-width: 180px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 열린 문서 탭 줄: 배경색 띠 위에 테두리 있는 탭 (원본 프로토타입 구조) */
+.note-topbar__tabstrip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--note-tabbar-height);
+  padding: 0 var(--space-2);
+  background: var(--color-background);
+}
+
+.note-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 220px;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  border: var(--border-default);
+  transition: background var(--transition-fast);
+}
+
+.note-tab--active {
+  background: var(--color-hover);
+}
+
+.note-tab--active .note-tab__icon,
+.note-tab--active .note-tab__label {
+  color: var(--color-accent);
+}
+
+.note-tab__icon {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.note-tab__label {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-caption);
+  color: var(--color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-tab__close {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+
+.note-tab__close:hover {
+  background: var(--color-divider);
+}
+
+/* ── Toolbar: 필기 도구 (note-topbar__row 안에서 사용) ── */
+.note-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0; /* 좁은 폭에서 그리드 트랙 넘침 방지 */
+}
+
+.note-toolbar__sep {
+  width: 1px;
+  height: 20px;
+  background: var(--color-divider);
+  margin: 0 var(--space-2); /* 기능군 사이 리듬을 살리는 간격 */
+  flex-shrink: 0;
+}
+
+.note-toolbar__more-wrap {
+  position: relative;
+}
+
+/* ── Pages: 문서 페이지 스크롤 영역 (여백 없이 컬럼에 꽉 참 — 원본 프로토타입 구조) ── */
+.note-editor__pages {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  padding: 0;
+}
+
+.note-editor__pages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.note-editor__pages::-webkit-scrollbar-thumb {
+  background: var(--color-divider);
+  border-radius: var(--radius-full);
+}
+
+.note-page {
+  background: var(--color-surface);
+  border: var(--border-default);
+  overflow: hidden;
+  margin: 0 0 var(--space-1);
+}
+
+/* 슬라이드 비율(16:9)을 강제해 실제 PDF 페이지 미리보기처럼 보이게 한다 */
+.note-page__slide {
+  aspect-ratio: 16 / 9;
+  padding: var(--space-8);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.note-page__slide--content {
+  justify-content: flex-start;
+}
+
+.note-page__more {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  color: inherit;
+  opacity: 0.7;
+}
+
+/* 예시 PDF placeholder — 실제 문서 내용 없이 구조(막대/블록)만 표현.
+   색상은 tokens.css의 --color-pdf-* 토큰만 사용한다. */
+.note-page__slide--cover {
+  background: var(--color-pdf-cover-bg);
+}
+
+/* 커버 우하단의 큰 링 장식 — 밋밋한 스켈레톤 느낌을 줄이는 generic 데코 */
+.note-page__slide--cover::after {
+  content: '';
+  position: absolute;
+  right: -48px;
+  bottom: -64px;
+  width: 208px;
+  height: 208px;
+  border: 2px solid var(--color-pdf-cover-line);
+  border-radius: var(--radius-full);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.note-page__slide--content {
+  background: var(--color-pdf-page-bg);
+}
+
+.pdf-ph__bar {
+  display: block;
+  width: 100%;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-pdf-line);
+}
+
+.note-page__slide--cover .pdf-ph__bar {
+  background: var(--color-pdf-cover-line);
+}
+
+/* 커버 텍스트 위계: 제목만 밝게, 보조 정보는 어둡게 */
+.note-page__slide--cover .pdf-ph__bar--eyebrow,
+.note-page__slide--cover .pdf-ph__bar--sub,
+.note-page__slide--cover .pdf-ph__bar--meta {
+  opacity: 0.55;
+}
+
+.pdf-ph__bar--eyebrow {
+  width: 28%;
+  height: 8px;
+  margin-bottom: var(--space-4);
+}
+
+.pdf-ph__bar--title {
+  width: 72%;
+  height: 18px;
+  margin-bottom: var(--space-2);
+}
+
+.pdf-ph__bar--title-2 {
+  width: 48%;
+  height: 18px;
+  margin-bottom: var(--space-4);
+}
+
+.pdf-ph__rule {
+  height: 1px;
+  background: var(--color-pdf-cover-line);
+  opacity: 0.6;
+  margin-bottom: var(--space-4);
+}
+
+.pdf-ph__bar--sub {
+  width: 40%;
+  height: 8px;
+}
+
+.pdf-ph__bar--meta {
+  width: 34%;
+  height: 8px;
+  margin: var(--space-8) auto 0;
+}
+
+/* 커버 하단 정보 스트립 (밝은 띠 + 좌우 짧은 막대) */
+.pdf-ph__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-pdf-page-bg);
+}
+
+.pdf-ph__footer .pdf-ph__bar {
+  width: 72px;
+  height: 8px;
+  background: var(--color-pdf-line-strong);
+}
+
+/* 콘텐츠 슬라이드 placeholder */
+.pdf-ph__bar--heading {
+  width: 52%;
+  height: 14px;
+  background: var(--color-pdf-line-strong);
+  margin-bottom: var(--space-4);
+}
+
+.pdf-ph__banner {
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--color-pdf-cover-bg);
+  opacity: 0.85;
+  margin-bottom: var(--space-4);
+}
+
+.pdf-ph__body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* 이미지 placeholder: 회색 박스 안에 사진 글리프를 넣어 '이미지 자리'로 읽히게 한다 */
+.pdf-ph__image {
+  flex-shrink: 0;
+  width: 34%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-sm);
+  background: var(--color-pdf-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-pdf-line-strong);
+}
+
+.pdf-ph__lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pdf-ph__lines .pdf-ph__bar {
+  height: 8px;
+}
+
+.pdf-ph__bar--w80 { width: 80%; }
+.pdf-ph__bar--w60 { width: 60%; }
+
+.pdf-ph__bar--quote {
+  width: 46%;
+  height: 8px;
+  background: var(--color-pdf-line-strong);
+  margin: var(--space-4) auto 0;
+}
+
+/* 페이지 네비게이션 플로팅 필 — 테두리 없이 shadow-menu의 얇은 외곽선만 사용 (가벼운 인상) */
+.page-nav {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-6);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-surface);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-menu);
+  z-index: 10;
+}
+
+.page-nav .note-toolbar__sep {
+  margin: 0 var(--space-1); /* 필 내부는 촘촘하게 유지 */
+}
+
+.page-nav__label {
+  min-width: 44px;
+  text-align: center;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+/* ════════════════════════════
+   Panel (우측 Scraps / AI Agent)
+════════════════════════════ */
+.note-panel {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  position: relative; /* .ai-agent 플로팅 패널의 기준 */
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-left: var(--border-default);
+  overflow: hidden;
+}
+
+.note-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--note-panel-header-height);
+  padding: 0 var(--space-4);
+  border-bottom: var(--border-default);
+  flex-shrink: 0;
+}
+
+.note-panel__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.note-panel__count {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-regular);
+}
+
+.note-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.note-panel__scraps-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* 빈 스크랩 목록: 가로 줄눈(빈 행) 패턴 + 아주 연한 안내 문구.
+   background-size 28px 타일 + background-position 50%로 패턴을 세로 중앙에 정렬해,
+   영역 정중앙이 항상 줄눈 '빈 칸'의 한가운데가 되도록 한다.
+   (백분율 위치 = (영역-타일)×50% → 타일 중앙(빈 칸 중앙)이 영역 중앙과 일치) */
+.note-panel__scraps {
+  position: relative;
+  flex: 1;
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 27px,
+    var(--color-divider) 27px,
+    var(--color-divider) 28px
+  );
+  background-size: 100% 28px;
+  background-repeat: repeat;
+  background-position: 0 50%;
+}
+
+/* 안내 문구: 배경 없이 영역 정중앙 — 위 패턴 정렬 덕분에 항상 줄 사이 빈 칸에 놓인다 */
+.note-panel__empty-hint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--font-size-small);
+  line-height: 1; /* 27px 빈 칸 안에 확실히 들어가도록 라인 박스 축소 */
+  color: var(--color-disabled);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* ── AI Agent 패널: 우측 노트 영역 위에 뜨는 플로팅 패널 (Scraps 뷰는 뒤에 그대로 보임) ── */
+.ai-agent {
+  position: absolute;
+  top: 50%;
+  right: var(--space-6);
+  transform: translateY(-50%);
+  width: var(--ai-agent-width);
+  max-width: calc(100% - var(--space-12));
+  height: var(--ai-agent-height);
+  max-height: calc(100% - var(--space-12));
+  display: none;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-dialog);
+  overflow: hidden;
+  z-index: 30;
+}
+
+.ai-agent--active {
+  display: flex;
+}
+
+.ai-agent__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.ai-agent__title svg {
+  width: 20px;
+  height: 20px;
+  /* 시각 보정: 별 클러스터의 무게중심이 뷰박스 좌상단에 있어 살짝 내려 텍스트와 맞춘다 */
+  transform: translateY(1px);
+  color: var(--color-accent);
+}
+
+.ai-agent__intro {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-6);
+}
+
+.ai-agent__icon {
+  color: var(--color-accent);
+}
+
+.ai-agent__desc {
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+  text-align: center;
+  line-height: var(--line-height-body);
+}
+
+/* 스킬 칩: 3개 + 2개 두 줄 고정 배치 */
+.ai-agent__chips {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-6) var(--space-6);
+}
+
+.ai-agent__chips-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.ai-agent__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: var(--border-default);
+  flex-shrink: 0;
+}
+
+.ai-agent__input {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-small);
+  font-family: var(--font-family);
+  color: var(--color-primary);
+  background: transparent;
+}
+
+.ai-agent__input::placeholder {
+  color: var(--color-disabled);
+}
+
+.ai-agent__send {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: var(--color-surface);
+  transition: opacity var(--transition-fast);
+}
+
+.ai-agent__send svg {
+  width: 16px;
+  height: 16px;
+  /* 시각 보정: 종이비행기가 우상향이라 무게중심이 우상단에 쏠려 좌하단으로 1px 이동 */
+  transform: translate(-1px, 1px);
+}
+
+/* 스킬 선택 메뉴: 기본 22px보다 살짝 작게 */
+.ai-agent__skill svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* 대화 삭제(휴지통): --sm 기본 16px보다 살짝 키워 창닫기 X와 크기 맞춤 */
+.ai-agent__trash svg {
+  width: 19px;
+  height: 19px;
+}
+
+.ai-agent__send:hover {
+  opacity: 0.9;
+}

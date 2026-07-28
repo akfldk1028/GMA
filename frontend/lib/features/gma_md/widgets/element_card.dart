@@ -36,6 +36,8 @@ class ElementCard extends ConsumerWidget {
         return Icons.image;
       case ElementType.drawing:
         return Icons.draw;
+      case ElementType.lasso:
+        return Icons.gesture;
     }
   }
 
@@ -56,6 +58,8 @@ class ElementCard extends ConsumerWidget {
         return const Color(0xFF3B82F6); // blue
       case ElementType.drawing:
         return const Color(0xFF8B5CF6); // purple
+      case ElementType.lasso:
+        return const Color(0xFF10B981); // green
     }
   }
 

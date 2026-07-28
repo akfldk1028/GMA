@@ -6,7 +6,7 @@ part of 'pdf_marker_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$markersForPageHash() => r'55e252f7e03793df07aafe050d6667d463e283b7';
+String _$markersForPageHash() => r'f288b8e1707b883783f71469bd6583ce37079ea6';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -30,21 +30,25 @@ class _SystemHash {
 }
 
 /// Provider to get markers for a specific page number.
+/// Only returns markers belonging to the current note (by @el IDs in scrapnote block).
 ///
 /// Copied from [markersForPage].
 @ProviderFor(markersForPage)
 const markersForPageProvider = MarkersForPageFamily();
 
 /// Provider to get markers for a specific page number.
+/// Only returns markers belonging to the current note (by @el IDs in scrapnote block).
 ///
 /// Copied from [markersForPage].
 class MarkersForPageFamily extends Family<List<PdfMarker>> {
   /// Provider to get markers for a specific page number.
+  /// Only returns markers belonging to the current note (by @el IDs in scrapnote block).
   ///
   /// Copied from [markersForPage].
   const MarkersForPageFamily();
 
   /// Provider to get markers for a specific page number.
+  /// Only returns markers belonging to the current note (by @el IDs in scrapnote block).
   ///
   /// Copied from [markersForPage].
   MarkersForPageProvider call(int pageNumber) {
@@ -74,10 +78,12 @@ class MarkersForPageFamily extends Family<List<PdfMarker>> {
 }
 
 /// Provider to get markers for a specific page number.
+/// Only returns markers belonging to the current note (by @el IDs in scrapnote block).
 ///
 /// Copied from [markersForPage].
 class MarkersForPageProvider extends AutoDisposeProvider<List<PdfMarker>> {
   /// Provider to get markers for a specific page number.
+  /// Only returns markers belonging to the current note (by @el IDs in scrapnote block).
   ///
   /// Copied from [markersForPage].
   MarkersForPageProvider(int pageNumber)
@@ -197,10 +203,10 @@ final markerCountProvider = AutoDisposeProvider<int>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef MarkerCountRef = AutoDisposeProviderRef<int>;
-String _$pdfMarkerStateHash() => r'edb2fb0648bd87ea203943d47aed54bd0643fcf9';
+String _$pdfMarkerStateHash() => r'e1e4d0890f4df6b24e95bb45bcd2533e0a089649';
 
 /// Provider for managing PDF markers with Hive storage.
-/// Handles CRUD operations for PdfMarker instances.
+/// Uses marker ID as Hive key for safe CRUD (no index-based access).
 ///
 /// Copied from [PdfMarkerState].
 @ProviderFor(PdfMarkerState)

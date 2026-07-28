@@ -6,7 +6,7 @@ part of 'folder_store.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$folderStoreHash() => r'a3cdb9e43a7d58b9267520085f0568be5167e1ae';
+String _$folderStoreHash() => r'c86785a772fac2eef378530d92bb3a775bc67ab2';
 
 /// See also [FolderStore].
 @ProviderFor(FolderStore)

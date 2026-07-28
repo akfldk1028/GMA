@@ -1,3 +1,5 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
@@ -22,6 +24,7 @@ class DrawingCanvas extends StatefulWidget {
     required this.strokeSize,
     required this.pageNumber,
     required this.onStrokeCompleted,
+    this.onEraserStroke,
   });
 
   final bool isActive;
@@ -31,6 +34,9 @@ class DrawingCanvas extends StatefulWidget {
   final double strokeSize;
   final int pageNumber;
   final void Function(DrawingStroke stroke) onStrokeCompleted;
+
+  /// Called when an eraser stroke completes — used to hit-test against markers.
+  final void Function(DrawingStroke stroke)? onEraserStroke;
 
   @override
   State<DrawingCanvas> createState() => _DrawingCanvasState();
@@ -44,13 +50,17 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
 
   @override
   Widget build(BuildContext context) {
-    final child = RepaintBoundary(
-      child: CustomPaint(
-        painter: StrokePainter(
-          strokes: widget.strokes,
-          currentStroke: _currentStroke,
+    // ClipRect: keeps stroke rendering within this page's overlay rect even
+    // when the pointer is dragged outside (Listener captures pointer to end).
+    final child = ClipRect(
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: StrokePainter(
+            strokes: widget.strokes,
+            currentStroke: _currentStroke,
+          ),
+          size: Size.infinite,
         ),
-        size: Size.infinite,
       ),
     );
 
@@ -58,12 +68,14 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
       return IgnorePointer(child: child);
     }
 
+    // Stylus draws, finger passes through to PDF viewer for scroll/zoom.
+    // HitTestBehavior.translucent lets finger events reach the PDF viewer.
     return Listener(
       onPointerDown: _onPointerDown,
       onPointerMove: _onPointerMove,
       onPointerUp: _onPointerUp,
       onPointerCancel: _onPointerCancel,
-      behavior: HitTestBehavior.opaque,
+      behavior: HitTestBehavior.translucent,
       child: child,
     );
   }
@@ -71,6 +83,9 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
   void _onPointerDown(PointerDownEvent event) {
     // Only track a single pointer (ignore second finger for pinch-zoom)
     if (_activePointerId != null) return;
+    // Finger → pass through to PDF viewer for scroll/zoom
+    // Stylus/mouse → draw
+    if (event.kind == PointerDeviceKind.touch) return;
     _activePointerId = event.pointer;
 
     final box = context.findRenderObject() as RenderBox;
@@ -128,6 +143,10 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
     _activePointerId = null;
     if (_currentStroke != null && _currentStroke!.points.length >= 2) {
       widget.onStrokeCompleted(_currentStroke!);
+      // Also notify eraser hit-test if this was an eraser stroke
+      if (widget.toolId == 'eraser' && widget.onEraserStroke != null) {
+        widget.onEraserStroke!(_currentStroke!);
+      }
     }
     setState(() {
       _currentStroke = null;

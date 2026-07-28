@@ -2,17 +2,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:uuid/uuid.dart';
-
 import '../../../../constants/marker_colors.dart';
+import '../../../scrapnote/utils/scrapnote_block_editor.dart';
+import '../../../note_editor/pages/providers/note_editor_provider.dart';
+import '../../../note_editor/pages/providers/note_provider.dart';
 import '../../../workspace/models/pdf_marker_model.dart';
+import '../../../workspace/pages/providers/workspace_provider.dart';
 
 part 'pdf_marker_provider.g.dart';
 
 const String _markersBoxName = 'pdf_markers';
 
 /// Provider for managing PDF markers with Hive storage.
-/// Handles CRUD operations for PdfMarker instances.
+/// Uses marker ID as Hive key for safe CRUD (no index-based access).
 @riverpod
 class PdfMarkerState extends _$PdfMarkerState {
   Box<Map<dynamic, dynamic>>? _box;
@@ -28,8 +30,8 @@ class PdfMarkerState extends _$PdfMarkerState {
     if (_box == null) return [];
 
     final markers = <PdfMarker>[];
-    for (var i = 0; i < _box!.length; i++) {
-      final value = _box!.getAt(i);
+    for (final key in _box!.keys) {
+      final value = _box!.get(key);
       if (value != null) {
         try {
           final json = Map<String, dynamic>.from(value);
@@ -44,11 +46,15 @@ class PdfMarkerState extends _$PdfMarkerState {
   }
 
   /// Create a new marker and persist to storage.
+  /// [id] must be provided by the caller to keep IDs consistent across
+  /// workspace markers, ScrapElements, and Hive storage.
   Future<PdfMarker> createMarker({
+    required String id,
     required int pageNumber,
     required MarkerColor color,
     String? selectedText,
     PdfRect? textRect,
+    List<PdfRect>? lineRects,
     String? capturedImagePath,
   }) async {
     if (_box == null) {
@@ -56,15 +62,16 @@ class PdfMarkerState extends _$PdfMarkerState {
     }
 
     final marker = PdfMarker(
-      id: const Uuid().v4(),
+      id: id,
       pageNumber: pageNumber,
       color: color,
       selectedText: selectedText,
       textRect: textRect,
+      lineRects: lineRects,
       capturedImagePath: capturedImagePath,
     );
 
-    await _box!.add(marker.toJson());
+    await _box!.put(marker.id, marker.toJson());
 
     // Update state with new marker
     final currentMarkers = state.valueOrNull ?? [];
@@ -102,8 +109,8 @@ class PdfMarkerState extends _$PdfMarkerState {
       throw Exception('Marker not found: ${updatedMarker.id}');
     }
 
-    // Update in Hive storage
-    await _box!.putAt(index, updatedMarker.toJson());
+    // Update in Hive by marker ID key
+    await _box!.put(updatedMarker.id, updatedMarker.toJson());
 
     // Update state
     final newMarkers = [...currentMarkers];
@@ -117,20 +124,12 @@ class PdfMarkerState extends _$PdfMarkerState {
       throw Exception('Marker storage not initialized');
     }
 
-    final currentMarkers = state.valueOrNull ?? [];
-    final index = currentMarkers.indexWhere((m) => m.id == id);
-
-    if (index == -1) {
-      throw Exception('Marker not found: $id');
-    }
-
-    // Delete from Hive storage
-    await _box!.deleteAt(index);
+    // Delete from Hive by key
+    await _box!.delete(id);
 
     // Update state
-    final newMarkers = [...currentMarkers];
-    newMarkers.removeAt(index);
-    state = AsyncData(newMarkers);
+    final currentMarkers = state.valueOrNull ?? [];
+    state = AsyncData(currentMarkers.where((m) => m.id != id).toList());
   }
 
   /// Delete all markers for a specific page.
@@ -154,11 +153,33 @@ class PdfMarkerState extends _$PdfMarkerState {
 }
 
 /// Provider to get markers for a specific page number.
+/// Only returns markers belonging to the current note (by @el IDs in scrapnote block).
 @riverpod
 List<PdfMarker> markersForPage(Ref ref, int pageNumber) {
   final markerState = ref.watch(pdfMarkerStateProvider);
+
+  // Get current note's valid element IDs from the scrapnote block
+  final ws = ref.watch(workspaceProviderProvider).valueOrNull;
+  final noteId = ws?.currentNoteId;
+  Set<String>? validIds;
+  if (noteId != null) {
+    final controller = ref.watch(noteEditorProvider(noteId));
+    final noteState = ref.watch(noteStateProvider(noteId)).valueOrNull;
+    final content = controller?.text ?? noteState?.content;
+    if (content != null && ScrapnoteBlockEditor.hasBlock(content)) {
+      validIds = ScrapnoteBlockEditor.getElementIds(content).toSet();
+    }
+  }
+
   return markerState.when(
-    data: (markers) => markers.where((m) => m.pageNumber == pageNumber).toList(),
+    data: (markers) {
+      var filtered = markers.where((m) => m.pageNumber == pageNumber);
+      // If note has a scrapnote block, only show markers that belong to it
+      if (validIds != null) {
+        filtered = filtered.where((m) => validIds!.contains(m.id));
+      }
+      return filtered.toList();
+    },
     loading: () => [],
     error: (_, _) => [],
   );

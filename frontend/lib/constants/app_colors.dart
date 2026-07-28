@@ -45,6 +45,21 @@ class AppColors {
   static const Color textSecondary = Color(0xFF475569);
   static const Color textMuted = Color(0xFF94A3B8);
 
+  // SOK Note Home visual system. Keep scoped to Home surfaces so the
+  // existing Workspace/PDF theme is not changed by the redesign.
+  static const Color sokBackground = Color(0xFFF7F3EE);
+  static const Color sokSurface = Color(0xFFFFFFFF);
+  static const Color sokPrimary = Color(0xFF1F2937);
+  static const Color sokAccent = Color(0xFFD9462F);
+  static const Color sokDivider = Color(0xFFE7DED4);
+  static const Color sokSecondary = Color(0xFF6B7280);
+  static const Color sokDisabled = Color(0xFFB6B6B6);
+  static const Color sokHover = Color(0xFFF2EEE8);
+  static const Color sokPreviewBackdrop = Color(0xFFD6D0C8);
+  static const Color sokBorderHover = Color(0xFFC9BFB3);
+  static const Color sokThumbnailDark = Color(0xFF0D1020);
+  static const Color sokThumbnailLight = Color(0xFFDAE6F5);
+
   // ── Semantic ──────────────────────────────────────────────
   static const Color error = Color(0xFFEF4444);
   static const Color success = Color(0xFF10B981);
@@ -53,41 +68,54 @@ class AppColors {
 
   // ── Shadows ───────────────────────────────────────────────
   static final List<BoxShadow> cardShadow = [
-        BoxShadow(
-          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-        BoxShadow(
-          color: const Color(0xFF0F172A).withValues(alpha: 0.02),
-          blurRadius: 24,
-          offset: const Offset(0, 8),
-        ),
-      ];
+    BoxShadow(
+      color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+      blurRadius: 8,
+      offset: const Offset(0, 2),
+    ),
+    BoxShadow(
+      color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+      blurRadius: 24,
+      offset: const Offset(0, 8),
+    ),
+  ];
 
   static final List<BoxShadow> cardShadowHover = [
-        BoxShadow(
-          color: primary.withValues(alpha: 0.08),
-          blurRadius: 16,
-          offset: const Offset(0, 4),
-        ),
-        BoxShadow(
-          color: primary.withValues(alpha: 0.04),
-          blurRadius: 32,
-          offset: const Offset(0, 12),
-        ),
-      ];
+    BoxShadow(
+      color: primary.withValues(alpha: 0.08),
+      blurRadius: 16,
+      offset: const Offset(0, 4),
+    ),
+    BoxShadow(
+      color: primary.withValues(alpha: 0.04),
+      blurRadius: 32,
+      offset: const Offset(0, 12),
+    ),
+  ];
 
   static final List<BoxShadow> elevatedShadow = [
-        BoxShadow(
-          color: const Color(0xFF0F172A).withValues(alpha: 0.06),
-          blurRadius: 16,
-          offset: const Offset(0, 4),
-        ),
-        BoxShadow(
-          color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-          blurRadius: 40,
-          offset: const Offset(0, 12),
-        ),
-      ];
+    BoxShadow(
+      color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+      blurRadius: 16,
+      offset: const Offset(0, 4),
+    ),
+    BoxShadow(
+      color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+      blurRadius: 40,
+      offset: const Offset(0, 12),
+    ),
+  ];
+
+  static final List<BoxShadow> sokFloatingShadow = [
+    BoxShadow(
+      color: const Color(0xFF1F2937).withValues(alpha: 0.10),
+      blurRadius: 18,
+      offset: const Offset(0, 8),
+    ),
+    BoxShadow(
+      color: const Color(0xFF1F2937).withValues(alpha: 0.05),
+      blurRadius: 4,
+      offset: const Offset(0, 1),
+    ),
+  ];
 }

@@ -23,6 +23,8 @@ class AppTheme {
         brightness: Brightness.light,
         textSelectionTheme: TextSelectionThemeData(
           selectionColor: AppColors.primary.withValues(alpha: 0.4),
+          cursorColor: AppColors.primary,
+          selectionHandleColor: AppColors.primary,
         ),
       );
 
@@ -32,6 +34,8 @@ class AppTheme {
         brightness: Brightness.dark,
         textSelectionTheme: TextSelectionThemeData(
           selectionColor: AppColors.primary.withValues(alpha: 0.4),
+          cursorColor: AppColors.primary,
+          selectionHandleColor: AppColors.primary,
         ),
       );
 

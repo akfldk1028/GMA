@@ -10,6 +10,7 @@ enum ElementType {
   highlight,
   capture,
   drawing,
+  lasso,
 }
 
 /// ScrapElement represents an element in a scrapnote (renamed to avoid dart:core Element conflict)

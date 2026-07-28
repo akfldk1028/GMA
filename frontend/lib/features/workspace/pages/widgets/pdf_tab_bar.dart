@@ -18,21 +18,20 @@ class PdfTabBar extends ConsumerWidget {
     if (ws == null) return const SizedBox.shrink();
 
     final openPdfs = ws.openPdfPaths;
-    if (openPdfs.length <= 1) return const SizedBox.shrink();
+    // Always show tab bar per 기획안 슬라이드 2 (even with 1 PDF)
+    if (openPdfs.isEmpty) return const SizedBox.shrink();
 
     final activePath = ws.currentPdfPath;
 
     return Container(
-      height: 36,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(
-          bottom: BorderSide(color: AppColors.border),
-        ),
+      height: 40,
+      decoration: const BoxDecoration(
+        color: AppColors.sokBackground,
+        border: Border(bottom: BorderSide(color: AppColors.sokDivider)),
       ),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.only(left: 4),
+        padding: const EdgeInsets.only(left: 8, top: 4),
         itemCount: openPdfs.length,
         itemBuilder: (context, index) {
           final path = openPdfs[index];
@@ -40,12 +39,10 @@ class PdfTabBar extends ConsumerWidget {
           return _PdfTab(
             label: _extractLabel(path),
             isActive: isActive,
-            onTap: () => ref
-                .read(workspaceProviderProvider.notifier)
-                .switchPdfTab(path),
-            onClose: () => ref
-                .read(workspaceProviderProvider.notifier)
-                .closePdfTab(path),
+            onTap: () =>
+                ref.read(workspaceProviderProvider.notifier).switchPdfTab(path),
+            onClose: () =>
+                ref.read(workspaceProviderProvider.notifier).closePdfTab(path),
           );
         },
       ),
@@ -87,22 +84,23 @@ class _PdfTabState extends State<_PdfTab> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
+      child: InkWell(
         onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(8),
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-          padding: const EdgeInsets.only(left: 10, right: 4),
+          margin: const EdgeInsets.only(right: 6),
+          padding: const EdgeInsets.only(left: 12, right: 6),
           decoration: BoxDecoration(
             color: widget.isActive
-                ? AppColors.primary.withValues(alpha: 0.1)
+                ? AppColors.sokHover
                 : _isHovered
-                    ? AppColors.surfaceHover
-                    : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
+                ? AppColors.sokSurface
+                : AppColors.sokSurface,
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: widget.isActive
-                  ? AppColors.primary.withValues(alpha: 0.3)
-                  : Colors.transparent,
+                  ? AppColors.sokDivider
+                  : AppColors.sokDivider,
             ),
           ),
           child: Row(
@@ -110,38 +108,38 @@ class _PdfTabState extends State<_PdfTab> {
             children: [
               Icon(
                 Icons.picture_as_pdf_rounded,
-                size: 13,
+                size: 14,
                 color: widget.isActive
-                    ? AppColors.primary
-                    : AppColors.textMuted,
+                    ? AppColors.sokAccent
+                    : AppColors.sokSecondary,
               ),
               const SizedBox(width: 6),
               Text(
                 widget.label,
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight:
-                      widget.isActive ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight: widget.isActive
+                      ? FontWeight.w600
+                      : FontWeight.w400,
                   color: widget.isActive
-                      ? AppColors.primary
-                      : AppColors.textSecondary,
+                      ? AppColors.sokAccent
+                      : AppColors.sokPrimary,
                 ),
               ),
               const SizedBox(width: 4),
               // Close button
-              InkWell(
-                onTap: widget.onClose,
-                borderRadius: BorderRadius.circular(4),
-                child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: Icon(
-                    Icons.close,
-                    size: 12,
-                    color: _isHovered || widget.isActive
-                        ? AppColors.textSecondary
-                        : Colors.transparent,
-                  ),
+              IconButton(
+                onPressed: widget.onClose,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 20,
+                  height: 20,
                 ),
+                iconSize: 12,
+                color: _isHovered || widget.isActive
+                    ? AppColors.textSecondary
+                    : Colors.transparent,
+                icon: const Icon(Icons.close),
               ),
             ],
           ),

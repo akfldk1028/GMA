@@ -17,7 +17,14 @@ part 'element_store.g.dart';
 class ElementStore extends _$ElementStore {
   static const String _boxName = 'element_store';
 
-  Box<String> get _box => Hive.box<String>(_boxName);
+  Box<String> get _box {
+    try {
+      return Hive.box<String>(_boxName);
+    } catch (e) {
+      debugPrint('[ElementStore] BAD STATE: $e');
+      rethrow;
+    }
+  }
 
   @override
   int build() => 0;
@@ -26,21 +33,22 @@ class ElementStore extends _$ElementStore {
 
   /// Add (or overwrite) an element.
   void add(ScrapElement element) {
-    _box.put(element.id, jsonEncode(element.toJson()));
-    debugPrint('ElementStore.add: ${element.id} (${element.type.name})');
-    _bump();
+    try {
+      _box.put(element.id, jsonEncode(element.toJson()));
+      _bump();
+    } catch (e) {
+      debugPrint('[ElementStore.add] error: $e');
+    }
   }
 
   /// Look up a single element by ID.
   ScrapElement? getById(String id) {
-    final raw = _box.get(id);
-    if (raw == null) return null;
     try {
-      return ScrapElement.fromJson(
-        jsonDecode(raw) as Map<String, dynamic>,
-      );
+      final raw = _box.get(id);
+      if (raw == null) return null;
+      return ScrapElement.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (e) {
-      debugPrint('ElementStore.getById($id) decode error: $e');
+      debugPrint('[ElementStore.getById] error for $id: $e');
       return null;
     }
   }
@@ -62,25 +70,31 @@ class ElementStore extends _$ElementStore {
 
   /// Delete an element by ID.
   void delete(String id) {
-    _box.delete(id);
-    debugPrint('ElementStore.delete: $id');
-    _bump();
+    try {
+      _box.delete(id);
+      _bump();
+    } catch (e) {
+      debugPrint('[ElementStore.delete] error: $e');
+    }
   }
 
   /// Return every stored element.
   List<ScrapElement> all() {
-    final results = <ScrapElement>[];
-    for (final key in _box.keys) {
-      final raw = _box.get(key);
-      if (raw == null) continue;
-      try {
-        results.add(
-          ScrapElement.fromJson(jsonDecode(raw) as Map<String, dynamic>),
-        );
-      } catch (_) {
-        // skip corrupt entries
+    try {
+      final results = <ScrapElement>[];
+      for (final key in _box.keys) {
+        final raw = _box.get(key);
+        if (raw == null) continue;
+        try {
+          results.add(
+            ScrapElement.fromJson(jsonDecode(raw) as Map<String, dynamic>),
+          );
+        } catch (_) {}
       }
+      return results;
+    } catch (e) {
+      debugPrint('[ElementStore.all] error: $e');
+      return [];
     }
-    return results;
   }
 }

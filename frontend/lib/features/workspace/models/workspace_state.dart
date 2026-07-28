@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:pdfrx/pdfrx.dart';
+import '../../scrapnote/models/element_model.dart';
 import 'pdf_marker_model.dart';
 
 part 'workspace_state.freezed.dart';
@@ -9,6 +10,20 @@ part 'workspace_state.g.dart';
 enum SidebarMode {
   fileBrowser,
   elementNavigator,
+}
+
+/// Which panel is currently focused (determines size ratio)
+enum FocusedPanel {
+  pdf,
+  scrapnote,
+}
+
+/// PDF page layout mode
+enum PdfViewMode {
+  /// Single column, continuous scroll (one page per row)
+  continuous,
+  /// Facing pages (book-style, 2-up)
+  facing,
 }
 
 /// Panel size configuration (legacy, kept for test compatibility)
@@ -40,17 +55,47 @@ class WorkspaceState with _$WorkspaceState {
     @Default(false) bool isFileBrowserOpen,
     @Default(false) bool isMarkerEditModalOpen,
     /// Whether the sticky note floating window is visible
-    @Default(true) bool isStickyNoteVisible,
+    @Default(false) bool isStickyNoteVisible,
     /// Whether the left page thumbnails panel is open
     @Default(true) bool isPageNavOpen,
     /// Whether the right live scraps panel is open
     @Default(true) bool isLiveScrapsOpen,
+    /// Which panel is focused (pdf or scrapnote) — controls size ratio
+    @Default(FocusedPanel.scrapnote) FocusedPanel focusedPanel,
+    /// Whether PDF and ScrapNote positions are swapped (left↔right)
+    @Default(false) bool isLayoutSwapped,
+    /// Set of currently selected scrap element IDs (for edit mode)
+    @Default({}) Set<String> selectedScrapIds,
+    /// Scrap groups: each inner list = one group of element IDs
+    @Default([]) List<List<String>> scrapGroups,
+    /// Quick scrap mode — skip popup, create element immediately (슬라이드 10~12)
+    @Default(false) bool isQuickScrapMode,
+    /// Whether the scrap board popup is open
+    @Default(false) bool isScrapBoardOpen,
+    /// Pending scrap data for scrap board popup
+    int? pendingScrapPageNumber,
+    String? pendingScrapText,
+    String? pendingScrapImagePath,
+    @PdfRectConverter() PdfRect? pendingScrapTextRect,
+    @PdfRectListConverter() List<PdfRect>? pendingScrapLineRects,
+    /// Element type override for pending scrap (e.g. lasso vs capture)
+    ElementType? pendingScrapElementType,
+    /// Whether highlight mode is active (text drag → auto-highlight)
+    @Default(false) bool isHighlightMode,
+    /// Selected color name for highlight mode (defaults to yellow)
+    @Default('yellow') String highlightModeColorName,
     /// ID of the marker currently being edited in the modal (null = new marker)
     String? editingMarkerId,
     /// Pending marker data for the marker edit modal (from text selection)
     int? pendingMarkerPageNumber,
     String? pendingMarkerText,
     @PdfRectConverter() PdfRect? pendingMarkerTextRect,
+    /// Whether the PDF structure overlay is visible on the viewer
+    @Default(false) bool isStructureOverlayVisible,
+    /// PDF page layout mode (continuous scroll vs facing pages)
+    @Default(PdfViewMode.continuous) PdfViewMode pdfViewMode,
+    /// Whether the AI agent panel is open
+    @Default(false) bool isAiPanelOpen,
   }) = _WorkspaceState;
 
   factory WorkspaceState.fromJson(Map<String, dynamic> json) =>

@@ -6,7 +6,7 @@ part of 'file_manager_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$fileManagerHash() => r'0bfc9afb627115c83f77ef6f328365c649da4ad2';
+String _$fileManagerHash() => r'cf2311a378cc3c68f4c6fa7f8e35771eef6c525c';
 
 /// See also [FileManager].
 @ProviderFor(FileManager)
@@ -23,7 +23,7 @@ final fileManagerProvider =
 
 typedef _$FileManager = AutoDisposeAsyncNotifier<List<NoteMetadata>>;
 String _$createNoteMutationHash() =>
-    r'b383608670d3e72f82099e5912b6f3dbd7cebef0';
+    r'5756e9e7f1be5d244cc43488c3800f5d65f3bdff';
 
 /// Mutation provider for creating a new note
 ///
@@ -45,7 +45,7 @@ final createNoteMutationProvider =
 
 typedef _$CreateNoteMutation = AutoDisposeAsyncNotifier<NoteMetadata?>;
 String _$deleteNoteMutationHash() =>
-    r'4317cffb7eace24810af316fbe1842a76d3f3847';
+    r'1277531404d929dbd2843452b23d36777ee8ace0';
 
 /// Mutation provider for soft-deleting a note (marks isDeleted in frontmatter)
 ///
@@ -83,7 +83,7 @@ final restoreNoteMutationProvider =
 
 typedef _$RestoreNoteMutation = AutoDisposeAsyncNotifier<bool?>;
 String _$permanentDeleteMutationHash() =>
-    r'7553cabcad546f1e572ab5259a61d63ef7f50312';
+    r'c227ae64d94c9b6456cdee9b0f95d7be3af80ce4';
 
 /// Permanently delete a note file
 ///

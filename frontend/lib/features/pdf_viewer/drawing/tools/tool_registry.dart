@@ -1,6 +1,5 @@
 import 'drawing_tool_handler.dart';
 import 'eraser_tool.dart';
-import 'highlighter_tool.dart';
 import 'pen_tool.dart';
 
 /// Drawing tool registry — add 1 line here to register a new tool.
@@ -9,7 +8,6 @@ import 'pen_tool.dart';
 /// Toolbar and painter only depend on DrawingToolHandler interface.
 final List<DrawingToolHandler> drawingTools = [
   PenTool(),
-  HighlighterTool(),
   EraserTool(),
   // Future: LaserPointerTool(), ShapeTool(), TextAnnotationTool(), ...
 ];
