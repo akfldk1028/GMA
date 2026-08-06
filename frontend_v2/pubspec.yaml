@@ -1,0 +1,60 @@
+name: gma_app
+description: "GMA SecPlan - Dual-Panel Document Editor"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI
+  shadcn_ui: ^0.45.1
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Routing
+  go_router: ^14.6.2
+
+  # PDF Viewer
+  pdfrx: ^2.2.0
+
+  # Local Storage
+  hive_flutter: ^1.1.0
+
+  # Model
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # File System
+  path_provider: ^2.1.4
+  path: ^1.9.0
+  file_picker: ^8.1.6
+
+  # Drawing
+  perfect_freehand: ^2.5.2+1
+
+  # Utils
+  uuid: ^4.5.1
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # Code Generation
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.6.2
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/sample.pdf
